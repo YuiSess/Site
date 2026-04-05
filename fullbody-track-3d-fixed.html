@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>FullBody Track 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- MediaPipe Holistic (pose + hands + face) -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Share Tech Mono',monospace}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0,rgba(0,0,0,.04) 1px,transparent 1px,transparent 3px);pointer-events:none;z-index:9998}
+
+/* TOPBAR */
+#topbar{position:fixed;top:0;left:0;right:0;height:46px;background:rgba(0,0,0,.93);border-bottom:1px solid rgba(0,245,255,.12);display:flex;align-items:center;gap:8px;padding:0 12px;z-index:300;backdrop-filter:blur(20px)}
+.logo{font-family:'Orbitron',sans-serif;font-size:.82rem;color:#00f5ff;letter-spacing:4px;white-space:nowrap}
+.logo b{color:#ff3cac}
+.tpill{display:flex;align-items:center;gap:5px;border-radius:20px;padding:3px 9px;font-size:.55rem;letter-spacing:1px;white-space:nowrap}
+.tpill.lp{border:1px solid rgba(0,245,255,.2);color:#00f5ff}
+.tpill.rp{border:1px solid rgba(255,60,172,.2);color:#ff3cac}
+.tpill.pp{border:1px solid rgba(57,255,20,.2);color:#39ff14}
+.tpill.hp{border:1px solid rgba(255,214,10,.2);color:#ffd60a}
+.tdot{width:6px;height:6px;border-radius:50%;background:#1a2a4a;transition:all .3s}
+.tdot.on-c{background:#00f5ff;box-shadow:0 0 7px #00f5ff;animation:dp .9s ease-in-out infinite}
+.tdot.on-m{background:#ff3cac;box-shadow:0 0 7px #ff3cac;animation:dp .9s ease-in-out infinite}
+.tdot.on-g{background:#39ff14;box-shadow:0 0 7px #39ff14;animation:dp .9s ease-in-out infinite}
+.tdot.on-y{background:#ffd60a;box-shadow:0 0 7px #ffd60a;animation:dp .9s ease-in-out infinite}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.3}}
+.tbtn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#e8f0ff;border-radius:5px;padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:.58rem;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap}
+.tbtn:hover{background:rgba(0,245,255,.1);border-color:#00f5ff;color:#00f5ff}
+.tbtn.r{border-color:rgba(255,60,172,.3);color:#ff3cac}
+.tbtn.r:hover{background:rgba(255,60,172,.12)}
+
+/* CÂMERA */
+#cam-wrap{position:fixed;bottom:14px;right:14px;width:360px;height:260px;border:2px solid rgba(0,245,255,.35);border-radius:10px;overflow:hidden;box-shadow:0 0 25px rgba(0,245,255,.18);z-index:200;transition:all .35s cubic-bezier(.4,0,.2,1)}
+#cam-wrap.big{width:560px;height:400px}
+#cam-wrap.fullscreen{width:calc(100vw - 28px);height:calc(100vh - 74px);top:60px;bottom:auto;right:14px}
+#video-el{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0;transition:opacity .5s}
+#video-el.on{opacity:1}
+#ov-canvas{position:absolute;inset:0;pointer-events:none}
+#cam-lbl{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.85);border:1px solid rgba(0,245,255,.3);color:#00f5ff;font-size:.52rem;padding:2px 7px;border-radius:3px;letter-spacing:1.5px}
+#cam-btns{position:absolute;top:7px;right:7px;display:flex;gap:4px}
+#cam-off{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.95)}
+#cam-off.h{display:none}
+.co-ico{font-size:2.2rem;opacity:.3}
+.co-txt{color:#1a2a4a;font-size:.62rem;text-align:center;line-height:1.7}
+
+/* HUD LATERAL */
+#hud{position:fixed;top:54px;left:12px;display:flex;flex-direction:column;gap:5px;z-index:200;max-width:155px}
+.hcard{background:rgba(0,0,0,.88);border-radius:7px;padding:7px 10px;font-size:.54rem;line-height:1.85}
+.hcard.lc{border:1px solid rgba(0,245,255,.22)}
+.hcard.rc{border:1px solid rgba(255,60,172,.22)}
+.hcard.pc{border:1px solid rgba(57,255,20,.22)}
+.hcard.hc{border:1px solid rgba(255,214,10,.22)}
+.hcard .ht{font-size:.58rem;letter-spacing:1.5px;margin-bottom:2px}
+.lc .ht{color:#00f5ff}.rc .ht{color:#ff3cac}.pc .ht{color:#39ff14}.hc .ht{color:#ffd60a}
+.hcard .kk{color:#243040}.hcard .vv{color:#e8f0ff}
+.hcard .row{display:flex;justify-content:space-between;gap:8px}
+
+/* CONTROLES */
+#ctrl-info{position:fixed;bottom:14px;left:14px;background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:9px 12px;font-size:.54rem;color:#2a4060;z-index:200;line-height:1.9}
+#ctrl-info b{color:#00f5ff}
+
+/* SCORE */
+#score{position:fixed;top:54px;right:14px;background:rgba(0,0,0,.85);border:1px solid rgba(57,255,20,.2);border-radius:7px;padding:6px 12px;font-size:.54rem;color:#39ff14;z-index:200;text-align:right}
+#score .big{font-family:'Orbitron',sans-serif;font-size:1.2rem;display:block}
+
+/* CROSSHAIR */
+#xhair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:100;opacity:.35}
+
+/* WALK INDICATOR */
+#walk-ind{position:fixed;top:50%;right:16px;transform:translateY(-50%);background:rgba(0,0,0,.85);border:1px solid rgba(57,255,20,.3);border-radius:10px;padding:10px 12px;text-align:center;z-index:200;font-size:.55rem;color:#39ff14;letter-spacing:1px}
+#walk-ind .wi-val{font-family:'Orbitron',sans-serif;font-size:1.1rem;display:block;margin:3px 0}
+#walk-bar{width:70px;height:6px;background:rgba(57,255,20,.15);border-radius:3px;margin:0 auto}
+#walk-fill{height:100%;background:#39ff14;border-radius:3px;width:0%;transition:width .1s;box-shadow:0 0 6px #39ff14}
+
+/* START OVERLAY */
+#start-ov{position:fixed;inset:0;z-index:600;background:rgba(0,1,6,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;animation:fi .5s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.s-title{font-family:'Orbitron',sans-serif;font-size:clamp(1.4rem,3.5vw,2.5rem);color:#00f5ff;letter-spacing:5px;text-align:center;text-shadow:0 0 40px rgba(0,245,255,.4)}
+.s-title span{color:#ff3cac}
+.s-sub{color:#243040;font-size:.75rem;text-align:center;line-height:2;max-width:540px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:500px;width:100%;padding:0 14px}
+.fbox{background:rgba(0,3,12,.9);border-radius:9px;padding:12px 8px;text-align:center}
+.fbox:nth-child(1){border:1px solid rgba(0,245,255,.15)}.fbox:nth-child(2){border:1px solid rgba(255,60,172,.15)}.fbox:nth-child(3){border:1px solid rgba(57,255,20,.15)}.fbox:nth-child(4){border:1px solid rgba(255,214,10,.15)}.fbox:nth-child(5){border:1px solid rgba(255,107,53,.15)}.fbox:nth-child(6){border:1px solid rgba(191,95,255,.15)}
+.fbox-ico{font-size:1.6rem;margin-bottom:4px}
+.fbox-n{font-family:'Orbitron',sans-serif;font-size:.5rem;letter-spacing:2px}
+.fbox:nth-child(1) .fbox-n{color:#00f5ff}.fbox:nth-child(2) .fbox-n{color:#ff3cac}.fbox:nth-child(3) .fbox-n{color:#39ff14}.fbox:nth-child(4) .fbox-n{color:#ffd60a}.fbox:nth-child(5) .fbox-n{color:#ff6b35}.fbox:nth-child(6) .fbox-n{color:#bf5fff}
+.fbox-d{font-size:.58rem;color:#1a2a3a;margin-top:3px;line-height:1.3}
+.s-btn{background:linear-gradient(135deg,#00f5ff,#0088aa);color:#000;border:none;border-radius:9px;padding:12px 36px;font-family:'Orbitron',sans-serif;font-size:.76rem;letter-spacing:3px;cursor:pointer;font-weight:700;transition:all .25s}
+.s-btn:hover{transform:translateY(-3px);box-shadow:0 12px 35px rgba(0,245,255,.3)}
+.s-note{font-size:.55rem;color:#102030;letter-spacing:1px}
+
+/* TOAST */
+#toast{position:fixed;bottom:280px;right:14px;background:rgba(0,3,10,.95);border:1px solid rgba(0,245,255,.2);color:#e8f0ff;padding:6px 14px;border-radius:7px;font-size:.65rem;z-index:9000;pointer-events:none;opacity:0;transition:opacity .3s;max-width:280px;text-align:center}
+#toast.show{opacity:1}
+
+/* LOADING */
+#loading{position:fixed;inset:0;z-index:700;background:rgba(0,1,6,.95);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#loading.show{display:flex}
+.ld-bar-wrap{width:260px;height:4px;background:rgba(0,245,255,.1);border-radius:2px}
+.ld-bar{height:100%;background:linear-gradient(90deg,#00f5ff,#ff3cac);border-radius:2px;width:0%;transition:width .4s}
+.ld-txt{color:#00f5ff;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:3px}
+.ld-sub{color:#243040;font-size:.6rem}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">FULL<b>BODY</b> 3D</div>
+  <div class="tpill lp"><div class="tdot" id="ld"></div><span id="lt">MÃO ESQ</span></div>
+  <div class="tpill rp"><div class="tdot" id="rd"></div><span id="rt">MÃO DIR</span></div>
+  <div class="tpill pp"><div class="tdot" id="pd"></div><span id="pt">POSE</span></div>
+  <div class="tpill hp"><div class="tdot" id="hd"></div><span id="ht">CABEÇA</span></div>
+  <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+    <button class="tbtn" onclick="spawnBoxes(5)">+ Blocos</button>
+    <button class="tbtn" onclick="toggleSkel()">🦴</button>
+    <button class="tbtn" onclick="toggleCam()">⤢ Cam</button>
+    <button class="tbtn r" id="btn-stop" onclick="stopCam()" style="display:none">⏹ Parar</button>
+  </div>
+</div>
+
+<!-- CENA 3D -->
+<canvas id="cv3" style="position:fixed;inset:0;width:100%;height:100%"></canvas>
+
+<!-- CROSSHAIR -->
+<div id="xhair">
+  <svg width="22" height="22" viewBox="0 0 22 22">
+    <line x1="11" y1="1" x2="11" y2="7" stroke="#00f5ff" stroke-width="1.5"/>
+    <line x1="11" y1="15" x2="11" y2="21" stroke="#00f5ff" stroke-width="1.5"/>
+    <line x1="1" y1="11" x2="7" y2="11" stroke="#00f5ff" stroke-width="1.5"/>
+    <line x1="15" y1="11" x2="21" y2="11" stroke="#00f5ff" stroke-width="1.5"/>
+    <circle cx="11" cy="11" r="2.5" stroke="#00f5ff" stroke-width="1" fill="none"/>
+  </svg>
+</div>
+
+<!-- CÂMERA -->
+<div id="cam-wrap">
+  <div id="cam-off"><div class="co-ico">📷</div><div class="co-txt">Clique em <b style="color:#00f5ff">Iniciar</b><br>para ativar tracking</div></div>
+  <video id="video-el" autoplay playsinline muted></video>
+  <canvas id="ov-canvas"></canvas>
+  <div id="cam-lbl">📷 FULL BODY TRACK</div>
+  <div id="cam-btns">
+    <div class="tbtn" onclick="toggleCam()" style="padding:2px 6px;font-size:.55rem">⤢</div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hcard lc">
+    <div class="ht">✋ MÃO ESQ</div>
+    <div class="row"><span class="kk">GESTO</span><span class="vv" id="l-g">—</span></div>
+    <div class="row"><span class="kk">DEDOS</span><span class="vv" id="l-f">—</span></div>
+    <div class="row"><span class="kk">AGARRE</span><span class="vv" id="l-a">—</span></div>
+  </div>
+  <div class="hcard rc">
+    <div class="ht">🤚 MÃO DIR</div>
+    <div class="row"><span class="kk">GESTO</span><span class="vv" id="r-g">—</span></div>
+    <div class="row"><span class="kk">DEDOS</span><span class="vv" id="r-f">—</span></div>
+    <div class="row"><span class="kk">AGARRE</span><span class="vv" id="r-a">—</span></div>
+  </div>
+  <div class="hcard pc">
+    <div class="ht">🚶 CORPO</div>
+    <div class="row"><span class="kk">PASSOS</span><span class="vv" id="p-s">0</span></div>
+    <div class="row"><span class="kk">PÉ ESQ</span><span class="vv" id="p-le">—</span></div>
+    <div class="row"><span class="kk">PÉ DIR</span><span class="vv" id="p-re">—</span></div>
+  </div>
+  <div class="hcard hc">
+    <div class="ht">🎯 CABEÇA</div>
+    <div class="row"><span class="kk">YAW</span><span class="vv" id="h-y">—</span></div>
+    <div class="row"><span class="kk">PITCH</span><span class="vv" id="h-p">—</span></div>
+  </div>
+</div>
+
+<!-- SCORE -->
+<div id="score">ARREMESSOS<br><span class="big" id="throw-c">0</span></div>
+
+<!-- WALK INDICATOR -->
+<div id="walk-ind">
+  🚶 ANDAR<br>
+  <span class="wi-val" id="wi-spd">0.0</span>
+  <div id="walk-bar"><div id="walk-fill"></div></div>
+  <div style="margin-top:4px;color:#243040">m/s</div>
+</div>
+
+<!-- CONTROLES -->
+<div id="ctrl-info">
+  <b>BODY:</b> Mova o corpo p/ andar<br>
+  <b>✊</b> Punho = agarrar bloco<br>
+  <b>🖐</b> Aberto = soltar/arremessar<br>
+  <b>☝️</b> Apontar = empurrar<br>
+  <b>WASD</b> move também<br>
+  <b>Mouse</b> olhar (clique na cena)
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="ld-txt" id="ld-txt">CARREGANDO</div>
+  <div class="ld-bar-wrap"><div class="ld-bar" id="ld-bar"></div></div>
+  <div class="ld-sub" id="ld-sub">Iniciando câmera...</div>
+</div>
+
+<!-- START -->
+<div id="start-ov">
+  <div class="s-title">👁 FULLBODY<br><span>3D WORLD</span></div>
+  <p class="s-sub">Mãos 3D estilo Rec Room • Rastreamento da cabeça • Corpo inteiro<br>Mova os pés no lugar pra andar no mundo 3D!</p>
+  <div class="feat-grid">
+    <div class="fbox"><div class="fbox-ico">👐</div><div class="fbox-n">MÃOS 3D</div><div class="fbox-d">Texturas Rec Room, dedos e palma</div></div>
+    <div class="fbox"><div class="fbox-ico">🧠</div><div class="fbox-n">CABEÇA</div><div class="fbox-d">Vira a cabeça = gira câmera</div></div>
+    <div class="fbox"><div class="fbox-ico">🚶</div><div class="fbox-n">CAMINHAR</div><div class="fbox-d">Mova pés no lugar = anda</div></div>
+    <div class="fbox"><div class="fbox-ico">🧊</div><div class="fbox-n">FÍSICA 3D</div><div class="fbox-d">Blocos com gravidade real</div></div>
+    <div class="fbox"><div class="fbox-ico">✊</div><div class="fbox-n">AGARRAR</div><div class="fbox-d">Feche o punho p/ pegar</div></div>
+    <div class="fbox"><div class="fbox-ico">🎮</div><div class="fbox-n">FULL BODY</div><div class="fbox-d">33 pontos corporais</div></div>
+  </div>
+  <button class="s-btn" onclick="startCam()">▶ INICIAR CÂMERA</button>
+  <p class="s-note">🔒 100% local — nada enviado para servidores</p>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// THREE.JS — SETUP
+// ══════════════════════════════════════════════════
+const cvEl = document.getElementById('cv3');
+const renderer = new THREE.WebGLRenderer({canvas:cvEl, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000408, 0.028);
+scene.background = new THREE.Color(0x000510);
+
+const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, 0.04, 200);
+camera.position.set(0, 1.7, 0);
+scene.add(camera);
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  resizeOv();
+});
+renderer.setSize(innerWidth,innerHeight);
+
+// ── LUZES ────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x080f1e, 1.5));
+const sun = new THREE.DirectionalLight(0x4466cc, 1.0);
+sun.position.set(8,20,8); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-30; sun.shadow.camera.right=30;
+sun.shadow.camera.top=30; sun.shadow.camera.bottom=-30;
+sun.shadow.camera.near=.5; sun.shadow.camera.far=80;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0xff2255, .35);
+fill.position.set(-6,4,-4); scene.add(fill);
+const rim = new THREE.PointLight(0x00f5ff, 4, 25);
+rim.position.set(0,8,0); scene.add(rim);
+
+// ── CHÃO ─────────────────────────────────────────
+const floorMat = new THREE.MeshStandardMaterial({color:0x010810, roughness:.95, metalness:.05});
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(100,100,1,1), floorMat);
+floor.rotation.x = -Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const grid = new THREE.GridHelper(100,50,0x001a33,0x00080f);
+grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
+
+// ── MUNDO: pilares e plataformas ──────────────────
+const pilCols=[0x0a1428,0x120820,0x081420];
+[[-6,0,-6],[6,0,-6],[-6,0,6],[6,0,6],[-12,0,-12],[12,0,-12],[-12,0,12],[12,0,12],[0,0,-14],[0,0,14],[-14,0,0],[14,0,0]].forEach(([x,,z],i)=>{
+  const h=4+Math.random()*4;
+  const g=new THREE.BoxGeometry(.7,h,.7);
+  const m=new THREE.MeshStandardMaterial({color:pilCols[i%3],roughness:.7,metalness:.4});
+  const mesh=new THREE.Mesh(g,m); mesh.position.set(x,h/2,z); mesh.castShadow=true; scene.add(mesh);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.44,.04,6,16),new THREE.MeshBasicMaterial({color:[0x00f5ff,0xff3cac,0x39ff14][i%3]}));
+  ring.rotation.x=Math.PI/2; ring.position.set(x,h+.05,z); scene.add(ring);
+  const pl=new THREE.PointLight([0x00f5ff,0xff3cac,0x39ff14][i%3],1.8,5); pl.position.set(x,h+.4,z); scene.add(pl);
+});
+
+// Plataforma central
+const platM=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.7,.12,32),new THREE.MeshStandardMaterial({color:0x030c20,roughness:.55,metalness:.5}));
+platM.position.y=.06; platM.receiveShadow=true; scene.add(platM);
+const platR=new THREE.Mesh(new THREE.TorusGeometry(3.52,.05,8,64),new THREE.MeshBasicMaterial({color:0x00f5ff}));
+platR.rotation.x=Math.PI/2; platR.position.y=.12; scene.add(platR);
+
+// Paredes invisíveis (colisão)
+// ... (handled in player bounds)
+
+// Skybox stars
+const starGeo=new THREE.BufferGeometry();
+const starPos=new Float32Array(600*3);
+for(let i=0;i<600*3;i+=3){starPos[i]=(Math.random()-.5)*180;starPos[i+1]=5+Math.random()*60;starPos[i+2]=(Math.random()-.5)*180}
+starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0x2244aa,size:.08,transparent:true,opacity:.7}));
+scene.add(stars);
+
+// ══════════════════════════════════════════════════
+// CRIA TEXTURA REC ROOM estilo pra mão
+// ══════════════════════════════════════════════════
+function makeHandTexture(hexColor){
+  const size=256;
+  const cvt=document.createElement('canvas'); cvt.width=size; cvt.height=size;
+  const c=cvt.getContext('2d');
+  const r=(hexColor>>16)&0xff, g=(hexColor>>8)&0xff, b=hexColor&0xff;
+  const base=`rgb(${r},${g},${b})`;
+  const lightRGB=`${Math.min(255,r+60)},${Math.min(255,g+60)},${Math.min(255,b+60)}`;
+  const darkRGB=`${Math.max(0,r-40)},${Math.max(0,g-40)},${Math.max(0,b-40)}`;
+  // Base
+  c.fillStyle=base; c.fillRect(0,0,size,size);
+  // Highlight radial
+  const grad=c.createRadialGradient(size*.35,size*.28,0,size*.5,size*.5,size*.7);
+  grad.addColorStop(0, `rgba(${lightRGB}, 0.8)`);
+  grad.addColorStop(.4, `rgba(${r}, ${g}, ${b}, 0.27)`);
+  grad.addColorStop(1, `rgba(${darkRGB}, 0.67)`);
+  c.fillStyle=grad; c.fillRect(0,0,size,size);
+  // Knuckle lines
+  c.strokeStyle=`rgba(${Math.max(0,r-40)}, ${Math.max(0,g-40)}, ${Math.max(0,b-40)}, 0.53)`; c.lineWidth=3;
+  for(let i=0;i<4;i++){
+    c.beginPath(); c.moveTo(size*.1+i*(size*.22),size*.2); c.quadraticCurveTo(size*.15+i*(size*.22),size*.45,size*.12+i*(size*.22),size*.75);
+    c.stroke();
+  }
+  // Subtle noise
+  for(let i=0;i<300;i++){
+    c.fillStyle=`rgba(255,255,255,${Math.random()*.03})`;
+    c.fillRect(Math.random()*size,Math.random()*size,2,2);
+  }
+  // Rim glow
+  const rimG=c.createRadialGradient(size/2,size/2,size*.3,size/2,size/2,size*.52);
+  rimG.addColorStop(0,'transparent');
+  rimG.addColorStop(1,`rgba(${r},${g},${b},.6)`);
+  c.fillStyle=rimG; c.fillRect(0,0,size,size);
+
+  const tex=new THREE.CanvasTexture(cvt);
+  return tex;
+}
+
+// ══════════════════════════════════════════════════
+// MÃOS 3D — ESTILO REC ROOM
+// ══════════════════════════════════════════════════
+const HAND_CONNS=[
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
+];
+
+class RecRoomHand {
+  constructor(hexColor, side){
+    this.side = side;
+    this.hexColor = hexColor;
+    this.group = new THREE.Group(); scene.add(this.group);
+    this.group.visible = false;
+    this.active = false;
+    this.gesture = '';
+    this.pinching = false;
+    this.raisedCount = 0;
+    this.heldBox = null;
+    this.vel = new THREE.Vector3();
+    this.prevWrist = new THREE.Vector3();
+
+    // ── Materiais estilo Rec Room ──
+    const tex = makeHandTexture(hexColor);
+    const col = new THREE.Color(hexColor);
+
+    // Palma: mesh arredondada
+    this.palmMat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: .35, metalness: .0,
+      emissive: col, emissiveIntensity: .12,
+    });
+    this.fingerMat = new THREE.MeshStandardMaterial({
+      map: tex,
+      roughness: .4, metalness: .0,
+      emissive: col, emissiveIntensity: .08,
+    });
+    this.tipMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(hexColor).lerp(new THREE.Color(0xffffff),.25),
+      roughness: .25, emissive: col, emissiveIntensity: .2,
+    });
+    this.jointMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(hexColor).lerp(new THREE.Color(0x000000),.15),
+      roughness: .2, metalness: .5,
+      emissive: col, emissiveIntensity: .3,
+    });
+    this.edgeMat = new THREE.LineBasicMaterial({color:hexColor, transparent:true, opacity:.4});
+
+    // Palma 3D (forma de mão estilo RR — caixa arredondada)
+    const palmGeo = new THREE.BoxGeometry(.12,.025,.15);
+    this.palmMesh = new THREE.Mesh(palmGeo, this.palmMat);
+    this.palmMesh.castShadow = true;
+    this.group.add(this.palmMesh);
+
+    // Juntas (esferas)
+    this.joints = [];
+    for(let i=0;i<21;i++){
+      const isTip=[4,8,12,16,20].includes(i);
+      const isWrist=i===0;
+      const r=isTip?.022:isWrist?.028:.015;
+      const mat=isTip?this.tipMat:isWrist?this.palmMat:this.jointMat;
+      const j=new THREE.Mesh(new THREE.SphereGeometry(r,10,7),mat);
+      j.castShadow=false;
+      this.group.add(j);
+      this.joints.push(j);
+    }
+
+    // Ossos (cilindros + edges para estilo Rec Room)
+    this.boneObjs = [];
+    HAND_CONNS.forEach(([a,b])=>{
+      const bGeo = new THREE.CylinderGeometry(.009,.008,.1,8);
+      const bone = new THREE.Mesh(bGeo, this.fingerMat.clone());
+      bone.castShadow=false;
+      this.group.add(bone);
+      // Edge highlight
+      const eGeo=new THREE.EdgesGeometry(bGeo);
+      const edge=new THREE.LineSegments(eGeo, this.edgeMat.clone());
+      bone.add(edge);
+      this.boneObjs.push({mesh:bone,a,b});
+    });
+
+    // Contorno brilhante ao redor da palma
+    const outGeo=new THREE.BoxGeometry(.13,.027,.16);
+    const outEdges=new THREE.EdgesGeometry(outGeo);
+    this.palmEdge=new THREE.LineSegments(outEdges,new THREE.LineBasicMaterial({color:hexColor,transparent:true,opacity:.6}));
+    this.palmMesh.add(this.palmEdge);
+
+    // Luz pontual da mão
+    this.light = new THREE.PointLight(hexColor, 0, 1.5);
+    scene.add(this.light);
+
+    // Cursor de agarre (esfera wireframe)
+    this.grabCursor = new THREE.Mesh(
+      new THREE.SphereGeometry(.035,12,8),
+      new THREE.MeshStandardMaterial({color:hexColor,emissive:col,emissiveIntensity:1,transparent:true,opacity:.4,wireframe:true})
+    );
+    this.grabCursor.visible=false;
+    scene.add(this.grabCursor);
+  }
+
+  // smooth buffer para evitar jitter
+  _buf = [];
+  _smoothLms(lms){
+    this._buf.push(lms);
+    if(this._buf.length>3) this._buf.shift();
+    // Media dos últimos 3 frames
+    return lms.map((_,i)=>({
+      x: this._buf.reduce((s,f)=>s+f[i].x,0)/this._buf.length,
+      y: this._buf.reduce((s,f)=>s+f[i].y,0)/this._buf.length,
+      z: this._buf.reduce((s,f)=>s+f[i].z,0)/this._buf.length,
+    }));
+  }
+
+  update(rawLms, camPos, camQuat){
+    if(!rawLms){
+      this.active=false; this.group.visible=false;
+      this.light.intensity=0; this.grabCursor.visible=false;
+      if(this.heldBox) this.releaseBox(new THREE.Vector3());
+      return;
+    }
+
+    // Smooth (anti-jitter)
+    const lms = this._smoothLms(rawLms);
+
+    this.active=true; this.group.visible=true; this.light.intensity=1.2;
+
+    // ── Project landmarks para mundo 3D ──
+    // Tamanho da mão escalado pela distância média (tamanho Z do landmark)
+    const palmZ = lms[0].z;
+    const scale = .32 + palmZ * .5; // mais perto = mão maior
+    const depth = .55;
+
+    const worldPos = lms.map(lm=>{
+      const lx = (lm.x - .5) * scale * (this.side==='Left'?-1:1);
+      // Rec Room style: mãos um pouco mais baixas, não exatamente no centro
+      const ly = -(lm.y - .55) * scale + .04;
+      const lz = -depth + lm.z * .2;
+      const v = new THREE.Vector3(lx,ly,lz);
+      v.applyQuaternion(camQuat);
+      v.add(camPos);
+      return v;
+    });
+
+    // Posiciona juntas
+    worldPos.forEach((wp,i)=>this.joints[i].position.copy(wp));
+
+    // Posiciona ossos
+    this.boneObjs.forEach(({mesh,a,b})=>{
+      const pa=worldPos[a], pb=worldPos[b];
+      const mid=new THREE.Vector3().lerpVectors(pa,pb,.5);
+      mesh.position.copy(mid);
+      const dir=new THREE.Vector3().subVectors(pb,pa);
+      const len=dir.length();
+      mesh.scale.y=len/.1;
+      dir.normalize();
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir);
+    });
+
+    // Posiciona palma (entre wrist e middle MCP)
+    const palmCenter=new THREE.Vector3().lerpVectors(worldPos[0],worldPos[9],.45);
+    this.palmMesh.position.copy(palmCenter);
+    // Orienta palma com a mão
+    const palmDir=new THREE.Vector3().subVectors(worldPos[9],worldPos[0]).normalize();
+    const palmSide=new THREE.Vector3().subVectors(worldPos[17],worldPos[5]).normalize();
+    const palmNorm=new THREE.Vector3().crossVectors(palmDir,palmSide).normalize();
+    const palmMat4=new THREE.Matrix4().makeBasis(palmSide,palmDir,palmNorm);
+    this.palmMesh.quaternion.setFromRotationMatrix(palmMat4);
+
+    // Luz
+    this.light.position.copy(worldPos[0]);
+
+    // Velocidade do pulso
+    this.vel.subVectors(worldPos[0],this.prevWrist);
+    this.prevWrist.copy(worldPos[0]);
+
+    // Análise de gesto
+    this._analyzeGesture(lms, worldPos);
+
+    // Interação com blocos
+    this._interactBoxes(worldPos);
+  }
+
+  _analyzeGesture(lms, wpos){
+    const tips=[4,8,12,16,20], mcps=[2,5,9,13,17];
+    const curls=tips.map((t,i)=>{
+      const tip=lms[t], mcp=lms[mcps[i]];
+      if(i===0){const dx=tip.x-mcp.x,dy=tip.y-mcp.y;return 1-Math.min(1,Math.sqrt(dx*dx+dy*dy)*3.5)}
+      const pip=lms[mcps[i]+(i===0?1:1)];
+      return Math.max(0,Math.min(1,(tip.y-mcp.y)*4.5));
+    });
+    const [th,ix,mx,rx,px]=curls;
+    const th2=lms[4],idx=lms[8];
+    const pd=Math.sqrt((th2.x-idx.x)**2+(th2.y-idx.y)**2);
+    this.pinching=(pd<.065);
+    this.curls=curls;
+    const allOpen=ix<.32&&mx<.32&&rx<.32&&px<.32;
+    const allClose=ix>.55&&mx>.55&&rx>.55&&px>.55;
+    if(allClose)                           this.gesture='PUNHO';
+    else if(allOpen)                       this.gesture='ABERTA';
+    else if(ix<.28&&mx>.5&&rx>.5&&px>.5)  this.gesture='APONTANDO';
+    else if(ix<.28&&mx<.28&&rx>.5&&px>.5) this.gesture='PAZ';
+    else if(this.pinching)                 this.gesture='PINÇANDO';
+    else                                   this.gesture='MÃO';
+
+    let raised=0;
+    tips.forEach((t,i)=>{if(lms[t].y<lms[mcps[i]].y-.025)raised++});
+    this.raisedCount=raised;
+
+    // Cursor
+    const isGrab=this.gesture==='PUNHO'||this.pinching;
+    this.grabCursor.visible=isGrab;
+    this.grabCursor.position.copy(wpos[0]);
+    this.grabCursor.scale.setScalar(isGrab?1.8:1);
+
+    // Emissive baseado no gesto
+    const ei=isGrab?.35:.12;
+    this.palmMat.emissiveIntensity=ei;
+  }
+
+  _interactBoxes(wpos){
+    const isGrab=this.gesture==='PUNHO'||this.pinching;
+    const palmPos=wpos[0];
+
+    if(isGrab){
+      if(!this.heldBox){
+        let best=null,bestD=Infinity;
+        physBoxes.forEach(b=>{
+          if(b.held)return;
+          const d=b.mesh.position.distanceTo(palmPos);
+          if(d<.65&&d<bestD){bestD=d;best=b}
+        });
+        if(best){this.heldBox=best;best.held=true;best.heldBy=this;best.glow()}
+      }
+      if(this.heldBox){
+        this.heldBox.mesh.position.lerp(palmPos,.3);
+        this.heldBox.mesh.rotation.x+=this.vel.y*.4;
+        this.heldBox.mesh.rotation.y+=this.vel.x*.4;
+      }
+    } else {
+      if(this.heldBox) this.releaseBox(this.vel);
+    }
+
+    if(this.gesture==='APONTANDO'){
+      const tip=wpos[8];
+      physBoxes.forEach(b=>{
+        if(b.held)return;
+        const d=b.mesh.position.distanceTo(tip);
+        if(d<.8){
+          const nx=new THREE.Vector3().subVectors(b.mesh.position,tip).normalize();
+          const f=((.8-d)/.8)*.1;
+          b.vel.addScaledVector(nx,f);
+          b.vel.addScaledVector(this.vel,.25);
+          b.angVel.set((Math.random()-.5)*.08,(Math.random()-.5)*.08,(Math.random()-.5)*.08);
+          b.glow();
+        }
+      });
+    }
+  }
+
+  releaseBox(vel){
+    if(!this.heldBox)return;
+    const spd=vel.length();
+    this.heldBox.vel.copy(vel).multiplyScalar(1.8);
+    this.heldBox.vel.y=Math.max(this.heldBox.vel.y,.03);
+    this.heldBox.angVel.set((Math.random()-.5)*.2,(Math.random()-.5)*.2,(Math.random()-.5)*.2);
+    this.heldBox.held=false;this.heldBox.heldBy=null;this.heldBox.glow();
+    if(spd>.012){throwC++;document.getElementById('throw-c').textContent=throwC}
+    this.heldBox=null;
+  }
+}
+
+const handL=new RecRoomHand(0x00d4ff,'Left');
+const handR=new RecRoomHand(0xff2a8a,'Right');
+let throwC=0;
+
+// ══════════════════════════════════════════════════
+// FÍSICA BLOCOS 3D
+// ══════════════════════════════════════════════════
+const BOX_COLS=[0x00f5ff,0xff3cac,0x39ff14,0xffd60a,0xff6b35,0xbf5fff,0x00cfff,0xff4d4d,0x4dffa6,0xffaa00];
+const BOX_EMO=['💎','⚡','🔥','💥','🌊','🎯','🚀','⭐','🎲','🌀'];
+const physBoxes=[];
+const GRV=.013, DMP=.87, BNC=.42;
+
+class PhysBox{
+  constructor(x,y,z){
+    this.sx=.45+Math.random()*.4;this.sy=.38+Math.random()*.3;this.sz=.38+Math.random()*.3;
+    this.vel=new THREE.Vector3((Math.random()-.5)*2,Math.random()*2.5,(Math.random()-.5)*2);
+    this.angVel=new THREE.Vector3((Math.random()-.5)*.15,(Math.random()-.5)*.15,(Math.random()-.5)*.15);
+    this.held=false;this.heldBy=null;this.glowT=0;
+    const ci=physBoxes.length%BOX_COLS.length;
+    const col=BOX_COLS[ci];
+    this.col=new THREE.Color(col);
+
+    const geo=new THREE.BoxGeometry(this.sx,this.sy,this.sz);
+    const mat=new THREE.MeshStandardMaterial({color:col,roughness:.28,metalness:.6,emissive:col,emissiveIntensity:.1,transparent:true,opacity:.92});
+    this.mesh=new THREE.Mesh(geo,mat);
+    this.mesh.position.set(x,y,z);
+    this.mesh.castShadow=true;this.mesh.receiveShadow=true;
+    scene.add(this.mesh);
+
+    const eGeo=new THREE.EdgesGeometry(geo);
+    const eLine=new THREE.LineSegments(eGeo,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.65}));
+    this.mesh.add(eLine);
+
+    this.light=new THREE.PointLight(col,.7,1.2); this.mesh.add(this.light);
+  }
+  update(){
+    if(this.held)return;
+    this.vel.y-=GRV;this.vel.multiplyScalar(DMP);
+    this.mesh.position.add(this.vel);
+    const hy=this.sy/2;
+    if(this.mesh.position.y-hy<0){this.mesh.position.y=hy;this.vel.y*=-BNC;this.vel.x*=.8;this.vel.z*=.8;this.angVel.multiplyScalar(.65);if(Math.abs(this.vel.y)<.01)this.vel.y=0}
+    ['x','z'].forEach(ax=>{if(this.mesh.position[ax]>18){this.mesh.position[ax]=18;this.vel[ax]*=-BNC}if(this.mesh.position[ax]<-18){this.mesh.position[ax]=-18;this.vel[ax]*=-BNC}});
+    this.mesh.rotation.x+=this.angVel.x;this.mesh.rotation.y+=this.angVel.y;this.mesh.rotation.z+=this.angVel.z;
+    this.angVel.multiplyScalar(.97);
+    if(this.glowT>0){this.glowT--;this.mesh.material.emissiveIntensity=.1+this.glowT*.015;this.light.intensity=.7+this.glowT*.04}
+    else{this.mesh.material.emissiveIntensity=.1;this.light.intensity=.7}
+  }
+  glow(){this.glowT=50}
+}
+
+function spawnBoxes(n=10){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,r=2.5+Math.random()*4;
+    const px=camera.position.x+Math.cos(a)*r;
+    const pz=camera.position.z+Math.sin(a)*r;
+    physBoxes.push(new PhysBox(px,2.5+Math.random()*3,pz));
+  }
+}
+spawnBoxes(14);
+
+// ══════════════════════════════════════════════════
+// MEDIAPIPE HOLISTIC (pose + hands + face)
+// ══════════════════════════════════════════════════
+let holisticModel=null, mpStream=null, mpCamObj=null, showSkel=true;
+
+// Estabilização de mão — buffer de confiança para evitar swap
+const handConf={Left:{score:0,frames:0},Right:{score:0,frames:0}};
+
+function getStableSide(detectedSide, conf){
+  // Mantém lado por pelo menos 8 frames antes de trocar
+  if(detectedSide==='Left'){
+    handConf.Left.score=conf;handConf.Left.frames++;
+    if(handConf.Right.frames>0)handConf.Right.frames=Math.max(0,handConf.Right.frames-2);
+  } else {
+    handConf.Right.score=conf;handConf.Right.frames++;
+    if(handConf.Left.frames>0)handConf.Left.frames=Math.max(0,handConf.Left.frames-2);
+  }
+  return detectedSide;
+}
+
+async function startCam(){
+  document.getElementById('start-ov').style.display='none';
+  const ldEl=document.getElementById('loading');
+  ldEl.classList.add('show');
+  setLd('CÂMERA',10,'Acessando câmera...');
+  try{
+    mpStream=await navigator.mediaDevices.getUserMedia({
+      video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30},facingMode:'user'},audio:false
+    });
+    const vid=document.getElementById('video-el');
+    vid.srcObject=mpStream; vid.classList.add('on');
+    document.getElementById('cam-off').classList.add('h');
+    document.getElementById('btn-stop').style.display='';
+    setLd('HOLISTIC IA',35,'Carregando modelo full body...');
+    await initHolistic();
+    setLd('PRONTO',100,'Tracking ativo!');
+    setTimeout(()=>{ldEl.classList.remove('show');toast('✅ Full Body Tracking ativo! Mostre o corpo completo.','ok')},800);
+    resizeOv();
+  }catch(e){
+    ldEl.classList.remove('show');
+    toast('❌ Erro: '+e.message,'err');
+    document.getElementById('start-ov').style.display='flex';
+  }
+}
+
+function setLd(title,pct,sub){
+  document.getElementById('ld-txt').textContent=title;
+  document.getElementById('ld-bar').style.width=pct+'%';
+  document.getElementById('ld-sub').textContent=sub;
+}
+
+async function initHolistic(){
+  const vid=document.getElementById('video-el');
+  holisticModel=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+  holisticModel.setOptions({
+    modelComplexity:1,
+    smoothLandmarks:true,         // suavização nativa MP
+    enableSegmentation:false,
+    smoothSegmentation:false,
+    refineFaceLandmarks:false,
+    minDetectionConfidence:.55,
+    minTrackingConfidence:.5
+  });
+  holisticModel.onResults(onHolisticResults);
+  mpCamObj=new Camera(vid,{
+    onFrame:async()=>{await holisticModel.send({image:vid})},
+    width:1280,height:720
+  });
+  await mpCamObj.start();
+}
+
+// ── Resultado Holistic ────────────────────────────
+// Pose landmarks índices
+const POSE_IDX={
+  nose:0,leftEye:2,rightEye:5,
+  leftShoulder:11,rightShoulder:12,
+  leftElbow:13,rightElbow:14,
+  leftWrist:15,rightWrist:16,
+  leftHip:23,rightHip:24,
+  leftKnee:25,rightKnee:26,
+  leftAnkle:27,rightAnkle:28,
+  leftHeel:29,rightHeel:30,
+  leftFoot:31,rightFoot:32
+};
+
+// Para detecção de passos
+let stepState={leftUp:false,rightUp:false,stepCount:0};
+let leftAnkleBase=null,rightAnkleBase=null;
+let walkSpeed=0,walkDir=new THREE.Vector2();
+let headYaw=0,headPitch=0;
+
+function onHolisticResults(res){
+  resizeOv();
+  const cv=document.getElementById('ov-canvas');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+
+  const camPos=camera.position.clone();
+  const camQ=camera.quaternion.clone();
+
+  // ── MÃOS ─── com sistema anti-swap ───────────────
+  let foundL=false,foundR=false;
+
+  // Mão esquerda (MediaPipe: leftHandLandmarks)
+  if(res.leftHandLandmarks&&res.leftHandLandmarks.length>0){
+    foundL=true;
+    handL.update(res.leftHandLandmarks,camPos,camQ);
+    if(showSkel) draw2DSkel(ctx,cv,res.leftHandLandmarks,'#00d4ff');
+    updHandHUD('l',handL);
+    document.getElementById('ld').className='tdot on-c';
+    document.getElementById('lt').textContent='ESQ ✓';
+  }
+  // Mão direita
+  if(res.rightHandLandmarks&&res.rightHandLandmarks.length>0){
+    foundR=true;
+    handR.update(res.rightHandLandmarks,camPos,camQ);
+    if(showSkel) draw2DSkel(ctx,cv,res.rightHandLandmarks,'#ff2a8a');
+    updHandHUD('r',handR);
+    document.getElementById('rd').className='tdot on-m';
+    document.getElementById('rt').textContent='DIR ✓';
+  }
+
+  if(!foundL){handL.update(null,camPos,camQ);resetHandHUD('l');document.getElementById('ld').className='tdot';document.getElementById('lt').textContent='MÃO ESQ'}
+  if(!foundR){handR.update(null,camPos,camQ);resetHandHUD('r');document.getElementById('rd').className='tdot';document.getElementById('rt').textContent='MÃO DIR'}
+
+  // ── POSE ─────────────────────────────────────────
+  if(res.poseLandmarks&&res.poseLandmarks.length>0){
+    const lms=res.poseLandmarks;
+    if(showSkel) drawPoseSkel(ctx,cv,lms);
+
+    document.getElementById('pd').className='tdot on-g';
+    document.getElementById('pt').textContent='POSE ✓';
+
+    // HEAD TRACKING — nariz como referência de orientação da cabeça
+    const nose=lms[POSE_IDX.nose];
+    const lEye=lms[POSE_IDX.leftEye];
+    const rEye=lms[POSE_IDX.rightEye];
+    if(nose&&lEye&&rEye){
+      // Yaw: diferença horizontal dos olhos vs centro
+      const eyeMidX=(lEye.x+rEye.x)/2;
+      const eyeMidY=(lEye.y+rEye.y)/2;
+      // Quando vira p/ esquerda, olho esquerdo some (x sobe, pois espelhado)
+      const eyeSpan=(rEye.x-lEye.x); // positivo = olhando para frente
+      // Mapa: span .06=de lado (.06~0) → yaw offset
+      const rawYaw=-(eyeMidX-.5)*2.5; // -1.25 a 1.25
+      headYaw=headYaw*.88+rawYaw*.12; // suave
+
+      const rawPitch=(nose.y-.35)*2.0;
+      headPitch=headPitch*.88+rawPitch*.12;
+
+      document.getElementById('hd').className='tdot on-y';
+      document.getElementById('ht').textContent='CABEÇA ✓';
+      document.getElementById('h-y').textContent=(headYaw*57.3).toFixed(1)+'°';
+      document.getElementById('h-p').textContent=(headPitch*57.3).toFixed(1)+'°';
+    }
+
+    // FOOT TRACKING → LOCOMOTÃO
+    processFeet(lms);
+  } else {
+    document.getElementById('pd').className='tdot';
+    document.getElementById('pt').textContent='POSE';
+    document.getElementById('hd').className='tdot';
+    document.getElementById('ht').textContent='CABEÇA';
+    walkSpeed*=.9;
+  }
+}
+
+// ── Processar pés para locomoção ──────────────────
+let leftAnkleHistory=[], rightAnkleHistory=[];
+let lastStepTime=0;
+const STEP_THRESH=0.035; // sensibilidade de passo (menor = mais sensível)
+
+function processFeet(lms){
+  const lAnk=lms[POSE_IDX.leftAnkle];
+  const rAnk=lms[POSE_IDX.rightAnkle];
+  const lHip=lms[POSE_IDX.leftHip];
+  const rHip=lms[POSE_IDX.rightHip];
+
+  if(!lAnk||!rAnk||lAnk.visibility<.3||rAnk.visibility<.3){
+    walkSpeed*=.95;
+    document.getElementById('p-le').textContent='—';
+    document.getElementById('p-re').textContent='—';
+    return;
+  }
+
+  // Base: posição em repouso dos tornozelos (calibração automática)
+  if(!leftAnkleBase) leftAnkleBase=lAnk.y;
+  if(!rightAnkleBase) rightAnkleBase=rAnk.y;
+  // Atualiza base lentamente (posição neutra)
+  leftAnkleBase=leftAnkleBase*.998+lAnk.y*.002;
+  rightAnkleBase=rightAnkleBase*.998+rAnk.y*.002;
+
+  const lLift=leftAnkleBase-lAnk.y;  // positivo = pé levantado
+  const rLift=rightAnkleBase-rAnk.y;
+
+  const lUp=lLift>STEP_THRESH;
+  const rUp=rLift>STEP_THRESH;
+
+  // Detecta passo quando pé volta ao chão
+  const now=performance.now();
+  if(stepState.leftUp&&!lUp&&(now-lastStepTime)>200){
+    stepState.stepCount++;lastStepTime=now;
+    document.getElementById('p-s').textContent=stepState.stepCount;
+    generateStepImpulse();
+  }
+  if(stepState.rightUp&&!rUp&&(now-lastStepTime)>200){
+    stepState.stepCount++;lastStepTime=now;
+    document.getElementById('p-s').textContent=stepState.stepCount;
+    generateStepImpulse();
+  }
+  stepState.leftUp=lUp;
+  stepState.rightUp=rUp;
+
+  // Velocidade de marcha = intensidade dos levantamentos
+  const liftMag=Math.max(0,lLift)+Math.max(0,rLift);
+  const targetWalkSpeed=Math.min(liftMag*3.5, .14);
+  walkSpeed=walkSpeed*.85+targetWalkSpeed*.15;
+
+  // Direção: ombros
+  const lSh=lms[POSE_IDX.leftShoulder];
+  const rSh=lms[POSE_IDX.rightShoulder];
+  if(lSh&&rSh){
+    // Inclinação lateral dos ombros = strafe
+    const shTilt=(lSh.y-rSh.y)*2; // positivo = inclinado para direita
+    walkDir.set(shTilt*.4,1).normalize();
+  }
+
+  document.getElementById('p-le').textContent=lUp?'↑ LEVANTADO':'↓ BAIXO';
+  document.getElementById('p-re').textContent=rUp?'↑ LEVANTADO':'↓ BAIXO';
+
+  // Walk indicator
+  const spd=walkSpeed*60;
+  document.getElementById('wi-spd').textContent=spd.toFixed(1);
+  document.getElementById('walk-fill').style.width=Math.min(100,spd*100/8)+'%';
+}
+
+function generateStepImpulse(){
+  // Impulso sonoro visual
+  const fl=document.getElementById('walk-fill');
+  fl.style.background='#ffffff';
+  setTimeout(()=>fl.style.background='#39ff14',80);
+}
+
+// ── DESENHO 2D OVERLAY ────────────────────────────
+const POSE_CONNS=[
+  [11,12],[11,13],[13,15],[12,14],[14,16],
+  [11,23],[12,24],[23,24],
+  [23,25],[25,27],[27,29],[29,31],
+  [24,26],[26,28],[28,30],[30,32]
+];
+
+function draw2DSkel(ctx,cv,lms,col){
+  const W=cv.width,H=cv.height;
+  ctx.globalAlpha=.88;
+  HAND_CONNS.forEach(([a,b])=>{
+    ctx.strokeStyle=col+'99';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(lms[a].x*W,lms[a].y*H);ctx.lineTo(lms[b].x*W,lms[b].y*H);ctx.stroke();
+  });
+  lms.forEach((lm,i)=>{
+    const isTip=[4,8,12,16,20].includes(i);
+    ctx.beginPath();ctx.arc(lm.x*W,lm.y*H,isTip?6.5:3.5,0,Math.PI*2);
+    ctx.fillStyle=isTip?'#ffffff':col;ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+
+function drawPoseSkel(ctx,cv,lms){
+  const W=cv.width,H=cv.height;
+  ctx.globalAlpha=.7;
+  POSE_CONNS.forEach(([a,b])=>{
+    if(!lms[a]||!lms[b])return;
+    if(lms[a].visibility<.4||lms[b].visibility<.4)return;
+    ctx.strokeStyle='#39ff1488';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(lms[a].x*W,lms[a].y*H);ctx.lineTo(lms[b].x*W,lms[b].y*H);ctx.stroke();
+  });
+  // Pontos chave
+  [0,11,12,23,24,25,26,27,28,29,30,31,32].forEach(i=>{
+    if(!lms[i]||lms[i].visibility<.35)return;
+    const isJoint=[11,12,23,24].includes(i);
+    ctx.beginPath();ctx.arc(lms[i].x*W,lms[i].y*H,isJoint?6:4,0,Math.PI*2);
+    ctx.fillStyle=i===0?'#ffd60a':'#39ff14';ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+
+function updHandHUD(s,h){
+  document.getElementById(s+'-g').textContent=h.gesture||'—';
+  document.getElementById(s+'-f').textContent=(h.raisedCount||0)+' LEV.';
+  document.getElementById(s+'-a').textContent=h.heldBox?'✅ SEGURANDO':'❌';
+}
+function resetHandHUD(s){
+  document.getElementById(s+'-g').textContent='—';
+  document.getElementById(s+'-f').textContent='—';
+  document.getElementById(s+'-a').textContent='—';
+}
+
+function stopCam(){
+  if(mpStream){mpStream.getTracks().forEach(t=>t.stop());mpStream=null}
+  if(mpCamObj){try{mpCamObj.stop()}catch(e){}mpCamObj=null}
+  const vid=document.getElementById('video-el');
+  vid.srcObject=null;vid.classList.remove('on');
+  document.getElementById('cam-off').classList.remove('h');
+  document.getElementById('btn-stop').style.display='none';
+  handL.update(null,camera.position,camera.quaternion);
+  handR.update(null,camera.position,camera.quaternion);
+  walkSpeed=0;
+  ['l','r'].forEach(s=>{resetHandHUD(s)});
+  document.querySelectorAll('.tdot').forEach(d=>d.className='tdot');
+  toast('⏹ Câmera desligada');
+}
+function toggleSkel(){showSkel=!showSkel;if(!showSkel){const cv=document.getElementById('ov-canvas');cv.getContext('2d').clearRect(0,0,cv.width,cv.height)}}
+
+let camState=0;
+function toggleCam(){
+  camState=(camState+1)%3;
+  const w=document.getElementById('cam-wrap');
+  w.className='';
+  if(camState===1)w.classList.add('big');
+  else if(camState===2)w.classList.add('fullscreen');
+  setTimeout(resizeOv,380);
+}
+function resizeOv(){
+  const w=document.getElementById('cam-wrap');
+  const cv=document.getElementById('ov-canvas');
+  if(cv.width!==w.clientWidth||cv.height!==w.clientHeight){cv.width=w.clientWidth;cv.height=w.clientHeight}
+}
+
+// ══════════════════════════════════════════════════
+// MOVIMENTO DO JOGADOR
+// ══════════════════════════════════════════════════
+const keys={w:false,s:false,a:false,d:false,q:false,e:false,shift:false};
+let yaw=0,pitch=0;
+const WALK_SPEED=.05, RUN_SPEED=.11;
+
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')keys.w=true;
+  if(k==='s'||k==='arrowdown')keys.s=true;
+  if(k==='a')keys.a=true;
+  if(k==='d')keys.d=true;
+  if(k==='q'||k==='arrowleft')keys.q=true;
+  if(k==='e'||k==='arrowright')keys.e=true;
+  if(k==='shift')keys.shift=true;
+  if(k==='escape')stopCam();
+  if(k===' ')spawnBoxes(4);
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w'||k==='arrowup')keys.w=false;
+  if(k==='s'||k==='arrowdown')keys.s=false;
+  if(k==='a')keys.a=false;
+  if(k==='d')keys.d=false;
+  if(k==='q'||k==='arrowleft')keys.q=false;
+  if(k==='e'||k==='arrowright')keys.e=false;
+  if(k==='shift')keys.shift=false;
+});
+
+// Mouse look
+document.addEventListener('pointerlockchange',()=>{
+  if(document.pointerLockElement===cvEl){
+    document.addEventListener('mousemove',mouseLook);
+  } else {
+    document.removeEventListener('mousemove',mouseLook);
+  }
+});
+cvEl.addEventListener('click',()=>cvEl.requestPointerLock&&cvEl.requestPointerLock());
+function mouseLook(e){yaw-=e.movementX*.0018;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.0018))}
+
+let touchLook={active:false,lx:0,ly:0};
+cvEl.addEventListener('touchstart',e=>{if(e.touches.length===1){touchLook.active=true;touchLook.lx=e.touches[0].clientX;touchLook.ly=e.touches[0].clientY}});
+cvEl.addEventListener('touchmove',e=>{
+  if(!touchLook.active||e.touches.length!==1)return;
+  const dx=e.touches[0].clientX-touchLook.lx, dy=e.touches[0].clientY-touchLook.ly;
+  yaw-=dx*.0025;pitch=Math.max(-1.1,Math.min(1.1,pitch-dy*.0025));
+  touchLook.lx=e.touches[0].clientX;touchLook.ly=e.touches[0].clientY;
+});
+cvEl.addEventListener('touchend',()=>touchLook.active=false);
+
+function updatePlayer(){
+  const spd=keys.shift?RUN_SPEED:WALK_SPEED;
+  const p=camera.position;
+  const totalYaw=yaw+headYaw*.4;
+  const totalPitch=pitch+headPitch*.3;
+
+  // Movimento WASD
+  if(keys.w){p.x+=Math.sin(totalYaw)*spd;p.z+=Math.cos(totalYaw)*spd}
+  if(keys.s){p.x-=Math.sin(totalYaw)*spd;p.z-=Math.cos(totalYaw)*spd}
+  if(keys.q){yaw+=.025}
+  if(keys.e){yaw-=.025}
+  if(keys.a){p.x+=Math.cos(totalYaw)*spd;p.z-=Math.sin(totalYaw)*spd}
+  if(keys.d){p.x-=Math.cos(totalYaw)*spd;p.z+=Math.sin(totalYaw)*spd}
+
+  // Movimento por pés (body tracking)
+  if(walkSpeed>.005){
+    const fwdX=Math.sin(totalYaw);
+    const fwdZ=Math.cos(totalYaw);
+    const sideX=Math.cos(totalYaw)*walkDir.x;
+    const sideZ=-Math.sin(totalYaw)*walkDir.x;
+    p.x+=(fwdX+sideX)*walkSpeed*.55;
+    p.z+=(fwdZ+sideZ)*walkSpeed*.55;
+  }
+
+  p.x=Math.max(-19,Math.min(19,p.x));
+  p.z=Math.max(-19,Math.min(19,p.z));
+  p.y=1.7;
+
+  // Câmera: yaw+headYaw, pitch+headPitch
+  const qY=new THREE.Quaternion();qY.setFromAxisAngle(new THREE.Vector3(0,1,0),totalYaw);
+  const qX=new THREE.Quaternion();qX.setFromAxisAngle(new THREE.Vector3(1,0,0),totalPitch);
+  camera.quaternion.copy(qY).multiply(qX);
+}
+
+// ══════════════════════════════════════════════════
+// LOOP
+// ══════════════════════════════════════════════════
+let T=0;
+function loop(){
+  requestAnimationFrame(loop);
+  T+=.016;
+
+  updatePlayer();
+  physBoxes.forEach(b=>b.update());
+
+  // Colisão caixas
+  for(let i=0;i<physBoxes.length;i++){
+    for(let j=i+1;j<physBoxes.length;j++){
+      const a=physBoxes[i],b=physBoxes[j];
+      if(a.held||b.held)continue;
+      const d=a.mesh.position.distanceTo(b.mesh.position);
+      const minD=(a.sx+b.sx)*.5;
+      if(d<minD&&d>.001){
+        const n=new THREE.Vector3().subVectors(b.mesh.position,a.mesh.position).normalize();
+        const push=(minD-d)*.5;
+        a.mesh.position.addScaledVector(n,-push);b.mesh.position.addScaledVector(n,push);
+        const rv=new THREE.Vector3().subVectors(a.vel,b.vel);
+        const imp=rv.dot(n)*.3;
+        a.vel.addScaledVector(n,-imp);b.vel.addScaledVector(n,imp);
+        a.angVel.set((Math.random()-.5)*.05,(Math.random()-.5)*.05,(Math.random()-.5)*.05);
+        b.angVel.set((Math.random()-.5)*.05,(Math.random()-.5)*.05,(Math.random()-.5)*.05);
+        a.glow();b.glow();
+      }
+    }
+  }
+
+  // Anima env
+  stars.rotation.y+=.00015;
+  rim.intensity=3.5+Math.sin(T*1.8)*.8;
+  platR.material.color.setHSL(T*.04%1,.9,.55);
+
+  renderer.render(scene,camera);
+}
+loop();
+
+// ── TOAST ────────────────────────────────────────
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.borderColor=type==='ok'?'rgba(57,255,20,.3)':type==='err'?'rgba(255,60,172,.3)':'rgba(0,245,255,.25)';
+  el.style.color=type==='ok'?'#39ff14':type==='err'?'#ff3cac':'#e8f0ff';
+  el.classList.add('show');clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>

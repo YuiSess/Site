@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hand Track Studio — FreeGames</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;600;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- MediaPipe Hands via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #02040c;
+  --s1: #060d1c;
+  --s2: #0a1428;
+  --c: #00f5ff;
+  --g: #00e676;
+  --p: #d500f9;
+  --o: #ff6b00;
+  --r: #ff1744;
+  --y: #ffd740;
+  --mu: #3a5a7a;
+  --w: #e8f4ff;
+  --fm: 'Share Tech Mono', monospace;
+  --f: 'Exo 2', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--w); font-family: var(--f); }
+
+/* SCANLINES */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.07) 0px, rgba(0,0,0,.07) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* TOPBAR */
+#topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(2,4,12,.97);
+  border-bottom: 1px solid rgba(0,245,255,.15);
+  display: flex; align-items: center; gap: 14px; padding: 0 18px;
+  z-index: 500;
+  backdrop-filter: blur(20px);
+}
+.logo { font-family: var(--fm); font-size: 1.1rem; color: var(--c); letter-spacing: 3px; }
+.logo b { color: var(--o); }
+.mode-badge {
+  background: linear-gradient(135deg, rgba(0,245,255,.12), rgba(213,0,249,.08));
+  border: 1px solid rgba(0,245,255,.3);
+  color: var(--c);
+  padding: 4px 14px; border-radius: 20px;
+  font-family: var(--fm); font-size: .7rem; letter-spacing: 2px;
+}
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--fm); font-size: .7rem;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--mu);
+  transition: background .3s, box-shadow .3s;
+}
+.status-dot.active { background: var(--g); box-shadow: 0 0 8px var(--g); animation: pulse 1.5s infinite; }
+.status-dot.detecting { background: var(--y); box-shadow: 0 0 8px var(--y); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.tb-btn {
+  background: rgba(0,245,255,.07);
+  border: 1px solid rgba(0,245,255,.2);
+  color: var(--c);
+  padding: 5px 14px; border-radius: 6px;
+  font-family: var(--fm); font-size: .7rem; letter-spacing: 1px;
+  cursor: pointer; transition: all .2s;
+}
+.tb-btn:hover { background: rgba(0,245,255,.15); border-color: var(--c); }
+.tb-btn.danger { border-color: rgba(255,23,68,.3); color: var(--r); background: rgba(255,23,68,.06); }
+.tb-btn.danger:hover { background: rgba(255,23,68,.15); }
+
+/* MAIN LAYOUT */
+#main {
+  position: fixed;
+  top: 52px; left: 0; right: 0; bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+/* PAINEL CÂMERA */
+#cam-panel {
+  position: relative;
+  background: #000;
+  border-right: 1px solid rgba(0,245,255,.1);
+  overflow: hidden;
+}
+
+#cam-label {
+  position: absolute;
+  top: 12px; left: 12px;
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(0,245,255,.25);
+  color: var(--c);
+  font-family: var(--fm); font-size: .62rem; letter-spacing: 2px;
+  padding: 4px 10px; border-radius: 4px;
+  z-index: 10;
+}
+
+#video-el {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* espelha */
+  opacity: 0;
+  transition: opacity .5s;
+}
+#video-el.active { opacity: 1; }
+
+/* canvas do mediapipe sobreposto ao vídeo */
+#mp-canvas {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(-1);
+}
+
+/* PLACEHOLDER câmera desligada */
+#cam-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px;
+}
+#cam-placeholder.hidden { display: none; }
+.cam-icon { font-size: 4rem; opacity: .3; }
+.cam-hint { color: var(--mu); font-size: .85rem; text-align: center; line-height: 1.6; }
+
+/* HAND OVERLAY LANDMARKS */
+#landmark-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+
+/* HUD info câmera */
+#cam-hud {
+  position: absolute;
+  bottom: 12px; left: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+  z-index: 10;
+}
+.hud-chip {
+  background: rgba(0,0,0,.75);
+  border: 1px solid rgba(0,245,255,.15);
+  color: var(--c);
+  font-family: var(--fm); font-size: .6rem; letter-spacing: 1px;
+  padding: 3px 9px; border-radius: 3px;
+  min-width: 140px;
+}
+.hud-chip span { color: var(--w); }
+
+/* PAINEL 3D */
+#scene-panel {
+  position: relative;
+  background: #020408;
+  overflow: hidden;
+}
+
+#scene-label {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(213,0,249,.25);
+  color: var(--p);
+  font-family: var(--fm); font-size: .62rem; letter-spacing: 2px;
+  padding: 4px 10px; border-radius: 4px;
+  z-index: 10;
+}
+
+#three-canvas {
+  width: 100%; height: 100%; display: block;
+}
+
+/* BONE LABELS */
+#bone-hud {
+  position: absolute;
+  top: 12px; left: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  z-index: 10;
+}
+.bone-chip {
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(213,0,249,.2);
+  color: var(--p);
+  font-family: var(--fm); font-size: .58rem; padding: 3px 8px; border-radius: 3px;
+}
+.bone-chip span { color: var(--w); }
+
+/* GESTURE BADGE */
+#gesture-badge {
+  position: absolute;
+  bottom: 16px; right: 16px;
+  background: rgba(0,0,0,.8);
+  border: 1px solid rgba(0,245,255,.3);
+  border-radius: 12px;
+  padding: 10px 16px;
+  text-align: center;
+  z-index: 10;
+  transition: all .2s;
+  min-width: 120px;
+}
+.gesture-icon { font-size: 2.2rem; display: block; margin-bottom: 4px; }
+.gesture-name { font-family: var(--fm); font-size: .65rem; color: var(--c); letter-spacing: 2px; }
+
+/* DIVIDER animado */
+#divider {
+  position: fixed;
+  top: 52px; bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--c), transparent);
+  z-index: 100;
+  pointer-events: none;
+  opacity: .5;
+}
+
+/* START OVERLAY */
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,4,12,.97);
+  z-index: 600;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 22px;
+  animation: fadeIn .4s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
+
+.start-title {
+  font-family: var(--fm);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--c);
+  letter-spacing: 6px;
+  text-shadow: 0 0 40px rgba(0,245,255,.5), 0 0 80px rgba(0,245,255,.2);
+  text-align: center;
+}
+.start-sub {
+  color: var(--mu);
+  font-size: .9rem;
+  text-align: center;
+  line-height: 1.8;
+  max-width: 480px;
+}
+.start-btn {
+  background: linear-gradient(135deg, var(--c), #0090c0);
+  color: #000;
+  border: none; border-radius: 10px;
+  padding: 14px 36px;
+  font-family: var(--fm); font-size: .9rem; letter-spacing: 3px;
+  cursor: pointer;
+  transition: all .2s;
+  font-weight: 700;
+}
+.start-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,245,255,.4); }
+
+.feature-row {
+  display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+}
+.feat {
+  background: var(--s1);
+  border: 1px solid rgba(0,245,255,.12);
+  border-radius: 10px;
+  padding: 14px 18px;
+  width: 150px;
+  text-align: center;
+}
+.feat-icon { font-size: 1.8rem; margin-bottom: 6px; }
+.feat-name { font-family: var(--fm); font-size: .65rem; color: var(--c); letter-spacing: 1px; }
+.feat-desc { font-size: .72rem; color: var(--mu); margin-top: 4px; line-height: 1.4; }
+
+/* TOAST */
+#toast {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--s2);
+  border: 1px solid rgba(0,245,255,.25);
+  color: var(--w);
+  padding: 9px 20px; border-radius: 8px;
+  font-family: var(--fm); font-size: .78rem;
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+#toast.show { opacity: 1; }
+
+/* FINGER TIPS no canvas MediaPipe */
+.landmark-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%,-50%); }
+
+@media (max-width: 700px) {
+  #main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  #divider { display: none; }
+  .start-title { font-size: 1.4rem; }
+  .feature-row { gap: 10px; }
+  .feat { width: 130px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo">FREE<b>GAMES</b></div>
+  <div class="mode-badge">✋ HAND TRACK STUDIO</div>
+  <div class="status-pill">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-txt" style="color:var(--mu);font-family:var(--fm);font-size:.68rem">DESLIGADO</span>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="tb-btn" id="btn-mirror" onclick="toggleMirror()">🪞 Espelhar</button>
+    <button class="tb-btn" id="btn-skeleton" onclick="toggleSkeleton()">🦴 Esqueleto</button>
+    <button class="tb-btn danger" id="btn-stop" onclick="stopCamera()" style="display:none">⏹ Parar</button>
+    <button class="tb-btn" onclick="history.back()">← Voltar</button>
+  </div>
+</div>
+
+<!-- DIVISOR -->
+<div id="divider"></div>
+
+<!-- LAYOUT PRINCIPAL -->
+<div id="main">
+
+  <!-- PAINEL CÂMERA -->
+  <div id="cam-panel">
+    <div id="cam-label">📷 CÂMERA AO VIVO</div>
+
+    <div id="cam-placeholder">
+      <div class="cam-icon">📷</div>
+      <div class="cam-hint">Clique em <b style="color:var(--c)">Iniciar Câmera</b> abaixo<br>para ativar o rastreamento de mãos</div>
+    </div>
+
+    <video id="video-el" autoplay playsinline muted></video>
+    <canvas id="mp-canvas"></canvas>
+
+    <!-- HUD info -->
+    <div id="cam-hud">
+      <div class="hud-chip">MÃO: <span id="h-side">—</span></div>
+      <div class="hud-chip">DEDOS: <span id="h-fingers">—</span></div>
+      <div class="hud-chip">GESTO: <span id="h-gesture">—</span></div>
+      <div class="hud-chip">CONFIANÇA: <span id="h-conf">—</span></div>
+    </div>
+  </div>
+
+  <!-- PAINEL 3D -->
+  <div id="scene-panel">
+    <div id="scene-label">👾 PERSONAGEM 3D</div>
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Info ossos -->
+    <div id="bone-hud">
+      <div class="bone-chip">BRAÇO D: <span id="b-rarm">—</span></div>
+      <div class="bone-chip">BRAÇO E: <span id="b-larm">—</span></div>
+      <div class="bone-chip">PULSO: <span id="b-wrist">—</span></div>
+      <div class="bone-chip">DEDOS: <span id="b-fingers">—</span></div>
+    </div>
+
+    <!-- Gesto detectado -->
+    <div id="gesture-badge">
+      <span class="gesture-icon" id="g-icon">🤚</span>
+      <div class="gesture-name" id="g-name">AGUARDANDO</div>
+    </div>
+  </div>
+</div>
+
+<!-- START OVERLAY -->
+<div id="start-overlay">
+  <div class="start-title">✋ HAND TRACK<br><span style="color:var(--p)">STUDIO</span></div>
+  <p class="start-sub">
+    Ligue a câmera e veja seu boneco 3D espelhar<br>
+    os movimentos da sua mão em tempo real.<br>
+    Funciona no celular e no PC — sem headset VR!
+  </p>
+  <div class="feature-row">
+    <div class="feat">
+      <div class="feat-icon">📷</div>
+      <div class="feat-name">CÂMERA</div>
+      <div class="feat-desc">Vídeo ao vivo com landmarks sobrepostos</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">✋</div>
+      <div class="feat-name">21 PONTOS</div>
+      <div class="feat-desc">Rastreamento completo de dedos e pulso</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">👾</div>
+      <div class="feat-name">BONECO 3D</div>
+      <div class="feat-desc">Braços, mãos e dedos sincronizados</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🤙</div>
+      <div class="feat-name">GESTOS</div>
+      <div class="feat-desc">Punho, paz, aperto, apontando e mais</div>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startCamera()">▶ INICIAR CÂMERA</button>
+  <p style="font-family:var(--fm);font-size:.62rem;color:var(--mu);letter-spacing:1px">O vídeo NÃO é enviado a nenhum servidor — processamento 100% local</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════ CONFIG ═══════════════
+let cameraStream = null;
+let handsModel = null;
+let mpCamera = null;
+let mirrorMode = true;
+let showSkeleton = true;
+let lastHandData = null;
+let animRaf = null;
+
+// Three.js
+let renderer, scene, camera3d;
+let charGroup, headMesh;
+let torsoMesh;
+let rShoulderJoint, rElbowJoint, rWristJoint;
+let lShoulderJoint, lElbowJoint, lWristJoint;
+let rUpperArm, rLowerArm, rHandMesh;
+let lUpperArm, lLowerArm, lHandMesh;
+let rFingerBones = [], lFingerBones = [];
+let bgParticles;
+
+// Smooth targets
+let targetRot = { rShoulderX:0, rShoulderZ:-0.3, rElbowX:0.2, rWristX:0, rWristZ:0,
+                  lShoulderX:0, lShoulderZ:0.3, lElbowX:0.2, lWristX:0, lWristZ:0 };
+let currentRot = { ...targetRot };
+let fingerTargets = new Array(10).fill(0);
+let fingerCurrent = new Array(10).fill(0);
+
+// ═══════════════ TOAST ═══════════════
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = type==='ok' ? 'rgba(0,230,118,.3)' : type==='err' ? 'rgba(255,23,68,.3)' : 'rgba(0,245,255,.25)';
+  el.style.color = type==='ok' ? '#00e676' : type==='err' ? '#ff1744' : '#e8f4ff';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ═══════════════ CÂMERA ═══════════════
+async function startCamera() {
+  document.getElementById('start-overlay').style.display = 'none';
+  setStatus('Pedindo permissão...', 'detecting');
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false
+    });
+    const vid = document.getElementById('video-el');
+    vid.srcObject = cameraStream;
+    vid.classList.add('active');
+    document.getElementById('cam-placeholder').classList.add('hidden');
+    document.getElementById('btn-stop').style.display = '';
+
+    setStatus('Carregando IA...', 'detecting');
+    toast('📷 Câmera ligada! Carregando rastreamento...', '');
+    await initMediaPipe();
+    setStatus('RASTREANDO', 'active');
+    toast('✋ Hand tracking ativo! Mostre sua mão.', 'ok');
+  } catch(e) {
+    setStatus('ERRO', '');
+    console.error(e);
+    if (e.name === 'NotAllowedError') {
+      toast('❌ Permissão negada! Permita o acesso à câmera.', 'err');
+      document.getElementById('start-overlay').style.display = 'flex';
+    } else {
+      toast('❌ Erro ao acessar câmera: ' + e.message, 'err');
+      document.getElementById('start-overlay').style.display = 'flex';
+    }
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  if (mpCamera) { try { mpCamera.stop(); } catch(e){} mpCamera = null; }
+  const vid = document.getElementById('video-el');
+  vid.srcObject = null;
+  vid.classList.remove('active');
+  document.getElementById('cam-placeholder').classList.remove('hidden');
+  document.getElementById('btn-stop').style.display = 'none';
+  setStatus('DESLIGADO', '');
+  clearCanvas();
+  toast('⏹ Câmera desligada.', '');
+  // Reset personagem
+  resetCharPose();
+  updateGestureBadge('🤚', 'AGUARDANDO');
+}
+
+function setStatus(txt, type) {
+  document.getElementById('status-txt').textContent = txt;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot' + (type ? ' ' + type : '');
+}
+
+// ═══════════════ MEDIAPIPE HANDS ═══════════════
+async function initMediaPipe() {
+  const vid = document.getElementById('video-el');
+  const mpCv = document.getElementById('mp-canvas');
+
+  handsModel = new Hands({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+  });
+  handsModel.setOptions({
+    maxNumHands: 2,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.6
+  });
+  handsModel.onResults(onHandResults);
+
+  mpCamera = new Camera(vid, {
+    onFrame: async () => {
+      await handsModel.send({ image: vid });
+    },
+    width: 1280,
+    height: 720
+  });
+  await mpCamera.start();
+
+  // Ajusta canvas ao tamanho do painel
+  resizeMPCanvas();
+  window.addEventListener('resize', resizeMPCanvas);
+}
+
+function resizeMPCanvas() {
+  const panel = document.getElementById('cam-panel');
+  const cv = document.getElementById('mp-canvas');
+  cv.width = panel.clientWidth;
+  cv.height = panel.clientHeight;
+}
+
+// ── Resultados do MediaPipe ──────────────────────────────────
+function onHandResults(results) {
+  const cv = document.getElementById('mp-canvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+
+  if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    lastHandData = null;
+    updateHUD(null);
+    // Suaviza retorno para pose idle
+    return;
+  }
+
+  // Processa primeira mão encontrada (ou direita se disponível)
+  let landmarks = results.multiHandLandmarks[0];
+  let handedness = results.multiHandedness[0]?.label || 'Right';
+  let confidence = results.multiHandedness[0]?.score || 0;
+
+  // Se tiver 2 mãos, prioriza a direita
+  if (results.multiHandLandmarks.length > 1) {
+    for (let i = 0; i < results.multiHandedness.length; i++) {
+      if (results.multiHandedness[i].label === 'Right') {
+        landmarks = results.multiHandLandmarks[i];
+        handedness = 'Right';
+        confidence = results.multiHandedness[i].score;
+        break;
+      }
+    }
+  }
+
+  lastHandData = { landmarks, handedness, confidence };
+
+  // Desenha skeleton no canvas
+  if (showSkeleton) drawHandSkeleton(ctx, cv, landmarks);
+
+  // Processa dados para o 3D
+  processHandTo3D(landmarks, handedness, confidence);
+  updateHUD({ handedness, confidence, landmarks });
+}
+
+// ── Desenha skeleton no canvas sobreposto ────────────────────
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],       // polegar
+  [0,5],[5,6],[6,7],[7,8],       // indicador
+  [0,9],[9,10],[10,11],[11,12],  // médio
+  [0,13],[13,14],[14,15],[15,16],// anelar
+  [0,17],[17,18],[18,19],[19,20],// mínimo
+  [5,9],[9,13],[13,17]           // palma
+];
+const FINGER_COLORS = ['#ff1744','#ff6b00','#ffd740','#00e676','#00f5ff'];
+
+function drawHandSkeleton(ctx, cv, lms) {
+  const W = cv.width, H = cv.height;
+  // Linhas
+  ctx.lineWidth = 2.5;
+  HAND_CONNECTIONS.forEach(([a, b]) => {
+    const pa = lms[a], pb = lms[b];
+    const fingerIdx = Math.floor(a / 4);
+    ctx.strokeStyle = FINGER_COLORS[Math.min(fingerIdx, 4)] + 'aa';
+    ctx.beginPath();
+    ctx.moveTo(pa.x * W, pa.y * H);
+    ctx.lineTo(pb.x * W, pb.y * H);
+    ctx.stroke();
+  });
+  // Pontos
+  lms.forEach((lm, i) => {
+    const fi = Math.floor(i / 4);
+    const col = FINGER_COLORS[Math.min(fi, 4)];
+    const isTip = [4,8,12,16,20].includes(i);
+    ctx.beginPath();
+    ctx.arc(lm.x * W, lm.y * H, isTip ? 7 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = isTip ? '#fff' : col;
+    ctx.fill();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = isTip ? 2.5 : 1.5;
+    ctx.stroke();
+  });
+}
+
+// ═══════════════ PROCESSAR MÃO → 3D ═══════════════
+function processHandTo3D(lms, handedness, confidence) {
+  // Pontos chave
+  const wrist = lms[0];
+  const indexMCP = lms[5];   // base indicador
+  const pinkyMCP = lms[17];  // base mínimo
+  const middleTip = lms[12]; // ponta médio
+
+  // Calcular orientação da mão
+  const handX = (indexMCP.x + pinkyMCP.x) / 2 - wrist.x;
+  const handY = (indexMCP.y + pinkyMCP.y) / 2 - wrist.y;
+  const handZ = (indexMCP.z + pinkyMCP.z) / 2 - wrist.z;
+
+  // Normaliza posição do pulso para rotação do braço
+  // x: 0-1 → -1 a 1 (horizontal), y: 0-1 → 1 a -1 (vertical invertido)
+  const nX = (wrist.x - 0.5) * 2;   // -1 esquerda, +1 direita
+  const nY = -(wrist.y - 0.5) * 2;  // -1 baixo, +1 cima
+
+  // Ombro: baseado na posição horizontal da mão
+  targetRot.rShoulderZ = -0.3 + nX * 0.8;
+  targetRot.rShoulderX = nY * 0.5;
+
+  // Cotovelo: baseado na altura da mão
+  targetRot.rElbowX = Math.max(0, 0.4 + nY * 0.6);
+
+  // Pulso: orientação da mão
+  targetRot.rWristX = -handY * 1.5;
+  targetRot.rWristZ = handX * 2;
+
+  // Detectar dobramento de cada dedo (0=aberto, 1=fechado)
+  const FINGER_TIPS   = [4, 8, 12, 16, 20];
+  const FINGER_MCPS   = [2, 5, 9,  13, 17];
+  const FINGER_PIPS   = [3, 6, 10, 14, 18];
+
+  for (let f = 0; f < 5; f++) {
+    const tip = lms[FINGER_TIPS[f]];
+    const mcp = lms[FINGER_MCPS[f]];
+    const pip = f === 0 ? lms[3] : lms[FINGER_PIPS[f]];
+
+    let curl;
+    if (f === 0) {
+      // Polegar: distância entre tip e base
+      const dx = tip.x - mcp.x, dy = tip.y - mcp.y;
+      curl = 1 - Math.min(1, Math.sqrt(dx*dx + dy*dy) * 4);
+    } else {
+      // Outros dedos: y do tip vs mcp (baixo = fechado)
+      curl = Math.max(0, Math.min(1, (tip.y - mcp.y) / (pip.y - mcp.y + 0.001)));
+      curl = curl * 1.2;
+    }
+    fingerTargets[f] = Math.max(0, Math.min(1, curl));
+  }
+
+  // Detectar gesto
+  const gesture = detectGesture(lms, fingerTargets);
+  updateGestureBadge(gesture.icon, gesture.name);
+  document.getElementById('h-gesture').textContent = gesture.name;
+  document.getElementById('h-side').textContent = handedness === 'Right' ? 'DIREITA' : 'ESQUERDA';
+  document.getElementById('h-conf').textContent = (confidence * 100).toFixed(0) + '%';
+}
+
+// ─── Detecta gesto ───────────────────────────────────────────
+function detectGesture(lms, curls) {
+  const [thumb, index, middle, ring, pinky] = curls;
+  const allOpen = index < 0.4 && middle < 0.4 && ring < 0.4 && pinky < 0.4;
+  const allClosed = index > 0.6 && middle > 0.6 && ring > 0.6 && pinky > 0.6;
+  const indexOpen = index < 0.35;
+  const middleOpen = middle < 0.35;
+
+  if (allClosed && thumb > 0.5)           return { icon:'✊', name:'PUNHO' };
+  if (allClosed && thumb < 0.4)           return { icon:'🤛', name:'PUNHO FECHADO' };
+  if (allOpen)                             return { icon:'🖐', name:'MÃO ABERTA' };
+  if (indexOpen && middleOpen && !ring && !pinky) return { icon:'✌️', name:'VITÓRIA / PAZ' };
+  if (indexOpen && !middleOpen && !ring && !pinky) return { icon:'☝️', name:'APONTANDO' };
+  if (!indexOpen && !middleOpen && !ring && pinky < 0.4) return { icon:'🤙', name:'SINAL' };
+  if (thumb < 0.4 && !index && !middle && !ring && !pinky) return { icon:'👍', name:'JOINHA' };
+  if (index < 0.35 && middle < 0.35 && ring < 0.35 && pinky < 0.35 && thumb > 0.5) return { icon:'🤘', name:'ROCK' };
+  return { icon:'🤚', name:'MÃO' };
+}
+
+function updateGestureBadge(icon, name) {
+  document.getElementById('g-icon').textContent = icon;
+  document.getElementById('g-name').textContent = name;
+  document.getElementById('b-fingers').textContent = name;
+}
+
+function updateHUD(data) {
+  if (!data) {
+    document.getElementById('h-side').textContent = '—';
+    document.getElementById('h-fingers').textContent = '—';
+    document.getElementById('h-gesture').textContent = '—';
+    document.getElementById('h-conf').textContent = '—';
+    return;
+  }
+  // Contar dedos levantados
+  const tips = [4,8,12,16,20];
+  const mcps = [2,5,9,13,17];
+  let raised = 0;
+  tips.forEach((t,i) => {
+    if (data.landmarks[t].y < data.landmarks[mcps[i]].y - 0.04) raised++;
+  });
+  document.getElementById('h-fingers').textContent = raised + ' LEVANTADOS';
+}
+
+// ─── Toggle funções ───────────────────────────────────────────
+function toggleMirror() {
+  mirrorMode = !mirrorMode;
+  const vid = document.getElementById('video-el');
+  const mp = document.getElementById('mp-canvas');
+  vid.style.transform = mirrorMode ? 'scaleX(-1)' : '';
+  mp.style.transform = mirrorMode ? 'scaleX(-1)' : '';
+  document.getElementById('btn-mirror').textContent = mirrorMode ? '🪞 Espelhar' : '🪞 Normal';
+}
+
+function toggleSkeleton() {
+  showSkeleton = !showSkeleton;
+  document.getElementById('btn-skeleton').textContent = showSkeleton ? '🦴 Esqueleto' : '🦴 Ocultar';
+  if (!showSkeleton) clearCanvas();
+}
+
+function clearCanvas() {
+  const cv = document.getElementById('mp-canvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+}
+
+// ═══════════════ THREE.JS — PERSONAGEM 3D ═══════════════
+function initThreeJS() {
+  const cv = document.getElementById('three-canvas');
+  const panel = document.getElementById('scene-panel');
+
+  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(panel.clientWidth, panel.clientHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x020408, 1);
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x020408, 15, 40);
+
+  camera3d = new THREE.PerspectiveCamera(55, panel.clientWidth / panel.clientHeight, 0.1, 100);
+  camera3d.position.set(0, 1.8, 5.5);
+  camera3d.lookAt(0, 1.2, 0);
+
+  // Resize
+  window.addEventListener('resize', () => {
+    renderer.setSize(panel.clientWidth, panel.clientHeight);
+    camera3d.aspect = panel.clientWidth / panel.clientHeight;
+    camera3d.updateProjectionMatrix();
+  });
+
+  // ── Luzes ─────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0x112233, 0.8));
+  const keyLight = new THREE.DirectionalLight(0x00f5ff, 1.5);
+  keyLight.position.set(-3, 6, 4); keyLight.castShadow = true; scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0xd500f9, 0.7);
+  fillLight.position.set(4, 3, -2); scene.add(fillLight);
+  const rimLight = new THREE.PointLight(0x00e676, 2, 8);
+  rimLight.position.set(0, 4, -3); scene.add(rimLight);
+
+  // Pulsing bottom light
+  const botLight = new THREE.PointLight(0x0033ff, 3, 6);
+  botLight.position.set(0, -0.5, 1); scene.add(botLight);
+  scene.userData.botLight = botLight;
+
+  // ── Chão ──────────────────────────────────────────────────
+  const floorGeo = new THREE.PlaneGeometry(10, 10, 20, 20);
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: 0x000815, roughness: 0.9,
+    wireframe: false
+  });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+  // Grid neon
+  const gridH = new THREE.GridHelper(10, 20, 0x002244, 0x001133);
+  gridH.material.transparent = true; gridH.material.opacity = 0.4;
+  scene.add(gridH);
+
+  // ── Partículas de fundo ────────────────────────────────────
+  const ptGeo = new THREE.BufferGeometry();
+  const ptPos = new Float32Array(300 * 3);
+  for (let i = 0; i < 300 * 3; i++) ptPos[i] = (Math.random() - 0.5) * 20;
+  ptGeo.setAttribute('position', new THREE.BufferAttribute(ptPos, 3));
+  bgParticles = new THREE.Points(ptGeo, new THREE.PointsMaterial({
+    color: 0x004488, size: 0.04, transparent: true, opacity: 0.6
+  }));
+  scene.add(bgParticles);
+
+  // ── Plataforma ────────────────────────────────────────────
+  const platMat = new THREE.MeshStandardMaterial({ color: 0x0a1428, roughness: 0.5, metalness: 0.4 });
+  const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 0.12, 24), platMat);
+  plat.position.set(0, 0, 0); plat.castShadow = true; plat.receiveShadow = true; scene.add(plat);
+  // Borda neon
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.12, 0.03, 8, 32),
+    new THREE.MeshBasicMaterial({ color: 0x00f5ff })
+  );
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.06; scene.add(ring);
+
+  // ── Construir personagem ───────────────────────────────────
+  buildCharacter();
+
+  // ── Render loop ────────────────────────────────────────────
+  renderLoop();
+}
+
+// ─── Materiais do personagem ──────────────────────────────────
+const MAT_BODY   = new THREE.MeshStandardMaterial({ color: 0x0a1e3a, roughness: 0.5, metalness: 0.4 });
+const MAT_SKIN   = new THREE.MeshStandardMaterial({ color: 0xffaa88, roughness: 0.6 });
+const MAT_JOINT  = new THREE.MeshStandardMaterial({ color: 0x00f5ff, roughness: 0.2, metalness: 0.8, emissive: 0x003344, emissiveIntensity: 0.5 });
+const MAT_FINGER = new THREE.MeshStandardMaterial({ color: 0xffbb99, roughness: 0.7 });
+const MAT_FINGER_TIP = new THREE.MeshStandardMaterial({ color: 0xff9977, roughness: 0.5, emissive: 0x110000, emissiveIntensity: 0.3 });
+const MAT_VISOR  = new THREE.MeshStandardMaterial({ color: 0x00f5ff, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.7, emissive: 0x004455, emissiveIntensity: 0.8 });
+
+function buildCharacter() {
+  charGroup = new THREE.Group();
+  charGroup.position.set(0, 0.06, 0);
+  scene.add(charGroup);
+
+  // ── CORPO ─────────────────────────────────────────────────
+  torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.28), MAT_BODY);
+  torsoMesh.position.set(0, 1.35, 0); torsoMesh.castShadow = true; charGroup.add(torsoMesh);
+
+  // Detalhes no torso
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.1),
+    new THREE.MeshStandardMaterial({ color: 0x00f5ff, emissive: 0x004455, emissiveIntensity: 1 }));
+  chest.position.set(0, 1.5, 0.16); charGroup.add(chest);
+
+  // Cintura
+  const waist = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.14, 0.25),
+    new THREE.MeshStandardMaterial({ color: 0x0a2244, roughness: 0.6 }));
+  waist.position.set(0, 0.97, 0); charGroup.add(waist);
+
+  // ── CABEÇA ────────────────────────────────────────────────
+  headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.35, 0.28), MAT_BODY);
+  headMesh.position.set(0, 1.9, 0); headMesh.castShadow = true; charGroup.add(headMesh);
+  // Visor
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.09, 0.06), MAT_VISOR);
+  visor.position.set(0, 1.92, 0.16); charGroup.add(visor);
+  const visorGlow = new THREE.PointLight(0x00f5ff, 1.5, 0.6);
+  visorGlow.position.set(0, 1.92, 0.18); charGroup.add(visorGlow);
+  // Antena
+  const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.2, 4), MAT_JOINT);
+  ant.position.set(0.1, 2.12, 0); charGroup.add(ant);
+  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6),
+    new THREE.MeshBasicMaterial({ color: 0xff1744 }));
+  antTip.position.set(0.1, 2.23, 0); charGroup.add(antTip);
+
+  // ── PERNAS ────────────────────────────────────────────────
+  [-0.14, 0.14].forEach((x, i) => {
+    const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.09, 0.42, 8), MAT_BODY);
+    thigh.position.set(x, 0.67, 0); charGroup.add(thigh);
+    const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.4, 8), MAT_BODY);
+    shin.position.set(x, 0.26, 0); charGroup.add(shin);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0x060e1a, roughness: 0.5 }));
+    foot.position.set(x, 0.04, 0.05); charGroup.add(foot);
+  });
+
+  // ── BRAÇO DIREITO ─────────────────────────────────────────
+  rShoulderJoint = new THREE.Group();
+  rShoulderJoint.position.set(-0.345, 1.66, 0);
+  charGroup.add(rShoulderJoint);
+
+  rUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.38, 8), MAT_BODY);
+  rUpperArm.position.set(0, -0.19, 0);
+  rShoulderJoint.add(rUpperArm);
+
+  // Ombro ball
+  const rShBall = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), MAT_JOINT);
+  rShoulderJoint.add(rShBall);
+
+  rElbowJoint = new THREE.Group();
+  rElbowJoint.position.set(0, -0.38, 0);
+  rShoulderJoint.add(rElbowJoint);
+
+  const rElBall = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 6), MAT_JOINT);
+  rElbowJoint.add(rElBall);
+
+  rLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.35, 8), MAT_BODY);
+  rLowerArm.position.set(0, -0.175, 0);
+  rElbowJoint.add(rLowerArm);
+
+  rWristJoint = new THREE.Group();
+  rWristJoint.position.set(0, -0.35, 0);
+  rElbowJoint.add(rWristJoint);
+
+  // Mão direita
+  rHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.14), MAT_SKIN);
+  rHandMesh.position.set(0, -0.03, 0);
+  rWristJoint.add(rHandMesh);
+
+  const rWrBall = new THREE.Mesh(new THREE.SphereGeometry(0.048, 8, 6), MAT_JOINT);
+  rWristJoint.add(rWrBall);
+
+  // Dedos da mão direita
+  buildFingers(rWristJoint, rFingerBones, 1);
+
+  // ── BRAÇO ESQUERDO ────────────────────────────────────────
+  lShoulderJoint = new THREE.Group();
+  lShoulderJoint.position.set(0.345, 1.66, 0);
+  charGroup.add(lShoulderJoint);
+
+  lUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.38, 8), MAT_BODY);
+  lUpperArm.position.set(0, -0.19, 0);
+  lShoulderJoint.add(lUpperArm);
+
+  const lShBall = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), MAT_JOINT);
+  lShoulderJoint.add(lShBall);
+
+  lElbowJoint = new THREE.Group();
+  lElbowJoint.position.set(0, -0.38, 0);
+  lShoulderJoint.add(lElbowJoint);
+
+  const lElBall = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 6), MAT_JOINT);
+  lElbowJoint.add(lElBall);
+
+  lLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.35, 8), MAT_BODY);
+  lLowerArm.position.set(0, -0.175, 0);
+  lElbowJoint.add(lLowerArm);
+
+  lWristJoint = new THREE.Group();
+  lWristJoint.position.set(0, -0.35, 0);
+  lElbowJoint.add(lWristJoint);
+
+  lHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.14), MAT_SKIN);
+  lHandMesh.position.set(0, -0.03, 0);
+  lWristJoint.add(lHandMesh);
+
+  const lWrBall = new THREE.Mesh(new THREE.SphereGeometry(0.048, 8, 6), MAT_JOINT);
+  lWristJoint.add(lWrBall);
+
+  buildFingers(lWristJoint, lFingerBones, -1);
+
+  // Pose idle inicial
+  resetCharPose();
+}
+
+// ─── Constrói dedos ──────────────────────────────────────────
+const FINGER_OFFSETS = [-0.04, -0.02, 0, 0.02, 0.04]; // X
+const FINGER_LENGTHS = [0.055, 0.068, 0.072, 0.065, 0.055]; // phalanx length
+
+function buildFingers(wristGroup, bonesArr, side) {
+  for (let f = 0; f < 5; f++) {
+    const fGroup = new THREE.Group();
+    fGroup.position.set(FINGER_OFFSETS[f] * side, -0.07, 0.04 + f * 0.005);
+    wristGroup.add(fGroup);
+
+    const pGroup = new THREE.Group(); // proximal
+    pGroup.position.set(0, 0, 0);
+    fGroup.add(pGroup);
+
+    const prox = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.013, FINGER_LENGTHS[f], 6),
+      MAT_FINGER
+    );
+    prox.position.set(0, -FINGER_LENGTHS[f] / 2, 0);
+    pGroup.add(prox);
+
+    const mGroup = new THREE.Group(); // middle
+    mGroup.position.set(0, -FINGER_LENGTHS[f], 0);
+    pGroup.add(mGroup);
+
+    const mid = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.011, FINGER_LENGTHS[f] * 0.85, 6),
+      MAT_FINGER
+    );
+    mid.position.set(0, -(FINGER_LENGTHS[f] * 0.85) / 2, 0);
+    mGroup.add(mid);
+
+    const dGroup = new THREE.Group(); // distal (tip)
+    dGroup.position.set(0, -FINGER_LENGTHS[f] * 0.85, 0);
+    mGroup.add(dGroup);
+
+    const tip = new THREE.Mesh(
+      new THREE.CapsuleGeometry ? new THREE.CapsuleGeometry(0.01, FINGER_LENGTHS[f] * 0.7, 4, 6) :
+      new THREE.CylinderGeometry(0.01, 0.009, FINGER_LENGTHS[f] * 0.7, 6),
+      MAT_FINGER_TIP
+    );
+    tip.position.set(0, -(FINGER_LENGTHS[f] * 0.7) / 2, 0);
+    dGroup.add(tip);
+
+    bonesArr.push({ base: pGroup, mid: mGroup, tip: dGroup });
+  }
+}
+
+// ─── Pose idle ───────────────────────────────────────────────
+function resetCharPose() {
+  if (!rShoulderJoint) return;
+  // Braço direito — levemente caído
+  rShoulderJoint.rotation.set(0, 0, -0.3);
+  rElbowJoint.rotation.set(0.2, 0, 0);
+  rWristJoint.rotation.set(0, 0, 0);
+  // Braço esquerdo — espelhado
+  lShoulderJoint.rotation.set(0, 0, 0.3);
+  lElbowJoint.rotation.set(0.2, 0, 0);
+  lWristJoint.rotation.set(0, 0, 0);
+  // Dedos abertos
+  for (let i = 0; i < 5; i++) {
+    fingerTargets[i] = 0;
+    if (rFingerBones[i]) {
+      rFingerBones[i].base.rotation.set(0,0,0);
+      rFingerBones[i].mid.rotation.set(0,0,0);
+      rFingerBones[i].tip.rotation.set(0,0,0);
+    }
+  }
+}
+
+// ─── Interpola rotações suavemente ───────────────────────────
+const LERP = 0.10; // suavidade — maior = mais rápido
+const FINGER_LERP = 0.12;
+
+function updateCharacter(t) {
+  if (!rShoulderJoint) return;
+
+  // Se não tem mão detectada, suaviza para idle
+  if (!lastHandData) {
+    targetRot.rShoulderZ = -0.3;
+    targetRot.rShoulderX = 0;
+    targetRot.rElbowX = 0.2;
+    targetRot.rWristX = 0;
+    targetRot.rWristZ = 0;
+    for (let i = 0; i < 5; i++) fingerTargets[i] = 0;
+  }
+
+  // Interpola rotações
+  for (const k in currentRot) {
+    currentRot[k] += (targetRot[k] - currentRot[k]) * LERP;
+  }
+
+  // Aplica ao braço DIREITO
+  rShoulderJoint.rotation.z = currentRot.rShoulderZ;
+  rShoulderJoint.rotation.x = currentRot.rShoulderX;
+  rElbowJoint.rotation.x = currentRot.rElbowX;
+  rWristJoint.rotation.x = currentRot.rWristX;
+  rWristJoint.rotation.z = currentRot.rWristZ;
+
+  // Braço ESQUERDO — idle animado
+  lShoulderJoint.rotation.z = 0.3 + Math.sin(t * 0.8) * 0.04;
+  lShoulderJoint.rotation.x = Math.sin(t * 1.1) * 0.03;
+  lElbowJoint.rotation.x = 0.18;
+
+  // Interpola dedos
+  for (let i = 0; i < 5; i++) {
+    fingerCurrent[i] += (fingerTargets[i] - fingerCurrent[i]) * FINGER_LERP;
+    const curl = fingerCurrent[i];
+    const curAngle = curl * 1.5;
+    if (rFingerBones[i]) {
+      rFingerBones[i].base.rotation.x = curAngle * 0.7;
+      rFingerBones[i].mid.rotation.x  = curAngle * 0.9;
+      rFingerBones[i].tip.rotation.x  = curAngle * 0.6;
+    }
+  }
+
+  // HUD ossos
+  document.getElementById('b-rarm').textContent = (currentRot.rShoulderZ * 57.3).toFixed(1) + '°';
+  document.getElementById('b-larm').textContent = '(idle)';
+  document.getElementById('b-wrist').textContent = (currentRot.rWristX * 57.3).toFixed(1) + '°';
+
+  // Balanço sutil do corpo
+  charGroup.rotation.y = Math.sin(t * 0.4) * 0.025;
+  torsoMesh.rotation.z = Math.sin(t * 0.6) * 0.015;
+  headMesh.rotation.y = Math.sin(t * 0.5) * 0.04;
+}
+
+// ─── Render loop ─────────────────────────────────────────────
+let lastT = 0;
+function renderLoop() {
+  animRaf = requestAnimationFrame(renderLoop);
+  const t = performance.now() * 0.001;
+  const dt = t - lastT; lastT = t;
+
+  updateCharacter(t);
+
+  // Anima partículas
+  if (bgParticles) bgParticles.rotation.y += 0.0008;
+
+  // Luz pulsante
+  const bl = scene.userData.botLight;
+  if (bl) bl.intensity = 2 + Math.sin(t * 2.5) * 1;
+
+  // Girar câmera suavemente ao redor
+  const camR = 5.5;
+  camera3d.position.x = Math.sin(t * 0.15) * 0.5;
+  camera3d.position.z = camR + Math.cos(t * 0.15) * 0.3;
+  camera3d.lookAt(0, 1.3, 0);
+
+  renderer.render(scene, camera3d);
+}
+
+// ═══════════════ INIT ═══════════════
+initThreeJS();
+
+// Teclado: ESC fecha
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') stopCamera();
+});
+</script>
+</body>
+</html>

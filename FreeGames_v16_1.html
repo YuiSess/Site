@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Games — Plataforma 3D de Jogos</title>
+<title>Free Games v16 — Plataforma 3D de Jogos</title>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
@@ -384,7 +384,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 @keyframes tin{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 
 /* GLOBAL ALERT */
-#galert{display:none;position:fixed;top:52px;left:0;right:0;z-index:400;background:linear-gradient(90deg,rgba(255,107,0,.12),rgba(255,23,68,.12));border-bottom:1px solid rgba(255,107,0,.25);padding:9px 18px;align-items:center;gap:10px}
+#galert{display:none!important;display:none;position:fixed;top:52px;left:0;right:0;z-index:400;background:linear-gradient(90deg,rgba(255,107,0,.12),rgba(255,23,68,.12));border-bottom:1px solid rgba(255,107,0,.25);padding:9px 18px;align-items:center;gap:10px}
 #galert.on{display:flex}
 .ga-msg{flex:1;font-size:.85rem;font-weight:600;color:var(--o)}
 .ga-x{background:none;border:none;color:var(--mu);font-size:.9rem}
@@ -446,7 +446,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .lroles{display:flex;gap:7px;margin-bottom:18px}
 .lrole{flex:1;background:var(--s3);border:1px solid rgba(255,255,255,.08);color:var(--mu);padding:9px;border-radius:7px;font-family:var(--f);font-weight:600;font-size:.8rem;transition:all .2s;text-align:center}
 .lrole.on{border-color:var(--c);color:var(--c);background:rgba(0,245,255,.07)}
+.lrole-hck{color:#00dd55}
+.lrole-hck.on{border-color:#00ff64;color:#00ff64;background:rgba(0,255,100,.07)}
 .lrole-adm.on{border-color:var(--o);color:var(--o);background:rgba(255,107,0,.07)}
+.lrole-hck.on{border-color:#00ff64;color:#00ff64;background:rgba(0,255,100,.07)}
 .lff{margin-bottom:14px}
 .lff label{display:block;font-size:.74rem;color:var(--mu);font-weight:600;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
 .lff input{width:100%;background:var(--s3);border:1px solid rgba(255,255,255,.08);color:var(--w);padding:10px 12px;border-radius:7px;font-family:var(--f);font-size:.9rem;outline:none;transition:border-color .2s}
@@ -566,11 +569,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <div id="vfx-layer" id="vfx-layer"></div>
 
 <!-- GLOBAL ALERT -->
-<div id="galert">
-  <span style="font-size:1rem">📡</span>
-  <span class="ga-msg" id="ga-txt">Bem-vindo ao Free Games! Evento especial ativo — Terror Coop liberado!</span>
-  <button class="ga-x" onclick="gax()">✕</button>
-</div>
+<!-- galert removed -->
 
 <!-- SCORE POPUP LAYER -->
 <div id="score-layer"></div>
@@ -590,6 +589,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <button class="tnb" onclick="goPage('profile');playSound('nav')">Perfil</button>
     <button class="tnb" onclick="goPage('search');playSound('nav')">Buscar</button>
     <button class="tnb" id="tnb-dreams" onclick="goPage('dreams');playSound('nav')" style="background:linear-gradient(135deg,rgba(180,100,255,.15),rgba(100,180,255,.08));border:1px solid rgba(180,120,255,.3);color:#c084fc">🌙 Dreams</button>
+    <button class="tnb" id="tnb-meeting" onclick="goPage('meeting');playSound('nav')" style="background:linear-gradient(135deg,rgba(255,107,0,.12),rgba(255,68,0,.06));border:1px solid rgba(255,107,0,.25);color:var(--o)">🔐 Reunião</button>
     <button class="tnb" onclick="openMC();playSound('nav')">⛏️ Minecraft</button>
     <button class="tnb" onclick="openMB();playSound('nav')">🌐 Browser</button>
   </div>
@@ -988,14 +988,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
         <div class="lrole on" onclick="selRole(this,'p')">Jogador</div>
         <div class="lrole lrole-adm" onclick="selRole(this,'a')">Admin</div>
       </div>
-      <div class="gender-sel">
-        <button class="gender-btn on" data-g="m" onclick="document.querySelectorAll('.gender-btn').forEach(b=>{b.classList.remove('on','on-f')});this.classList.add('on');PROFILE.gender='m'">
-          👦<span>Masculino</span>
-        </button>
-        <button class="gender-btn" data-g="f" onclick="document.querySelectorAll('.gender-btn').forEach(b=>{b.classList.remove('on','on-f')});this.classList.add('on-f');PROFILE.gender='f'">
-          👧<span>Feminino</span>
-        </button>
-      </div>
+      <!-- Gender selection moved to profile edit -->
       <div class="lff"><label>Usuário</label><input type="text" id="lu" placeholder="SeuNome" value="Jogador"></div>
       <div class="lff"><label>Senha</label><input type="password" id="lp" placeholder="••••••••" value="1234"></div>
       <button class="btn btn-c btn-lg" style="width:100%;justify-content:center;margin-bottom:10px" onclick="doLogin()">Entrar</button>
@@ -1232,6 +1225,120 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div><!-- z-index:1 wrapper -->
 </div>
 
+<!-- ===== ADMIN MEETING PAGE ===== -->
+<div class="page" id="page-meeting">
+  <div id="meet-gate" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 70% at 50% 0%,rgba(255,107,0,.07),transparent 70%),var(--bg)">
+    <div style="width:min(460px,95vw);text-align:center">
+      <div style="font-size:3rem;margin-bottom:8px">🔐</div>
+      <div style="font-family:var(--fm);font-size:1.6rem;color:var(--o);letter-spacing:4px;margin-bottom:6px">REUNIÃO ADMIN</div>
+      <div style="color:var(--mu);font-size:.85rem;margin-bottom:28px">Acesso restrito. Insira o código da sala.</div>
+      <div style="display:flex;gap:0;justify-content:center;margin-bottom:10px" id="meet-code-inputs">
+        <input class="meet-digit" id="md0" maxlength="1" oninput="meetDigitInput(0)" onkeydown="meetDigitNav(event,0)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none;border-radius:8px 0 0 8px">
+        <input class="meet-digit" id="md1" maxlength="1" oninput="meetDigitInput(1)" onkeydown="meetDigitNav(event,1)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md2" maxlength="1" oninput="meetDigitInput(2)" onkeydown="meetDigitNav(event,2)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md3" maxlength="1" oninput="meetDigitInput(3)" onkeydown="meetDigitNav(event,3)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md4" maxlength="1" oninput="meetDigitInput(4)" onkeydown="meetDigitNav(event,4)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md5" maxlength="1" oninput="meetDigitInput(5)" onkeydown="meetDigitNav(event,5)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);color:var(--o);outline:none;border-radius:0 8px 8px 0">
+      </div>
+      <div id="meet-code-err" style="color:var(--r);font-size:.78rem;min-height:18px;margin-bottom:12px"></div>
+      <button class="btn btn-lg btn-o" style="width:100%;justify-content:center" onclick="meetTryEnter()">🚪 Entrar na Sala</button>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+        <div id="meet-secret-hint" style="font-size:.72rem;color:rgba(255,107,0,.3);cursor:pointer;letter-spacing:2px" onclick="meetRevealSecret()" title="...">MODO CLASSIFICADO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SALA PRINCIPAL (após entrar) -->
+  <div id="meet-room" style="display:none;height:100%;flex-direction:column">
+    <!-- Header da sala -->
+    <div style="background:rgba(255,107,0,.06);border-bottom:1px solid rgba(255,107,0,.2);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <div style="font-family:var(--fm);font-size:.78rem;color:var(--o);letter-spacing:2px">🔐 REUNIÃO ADMIN</div>
+      <div id="meet-room-code-disp" style="background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.25);color:var(--o);padding:2px 10px;border-radius:4px;font-family:var(--fm);font-size:.72rem"></div>
+      <button onclick="enterIslandMode()" style="background:linear-gradient(135deg,rgba(0,230,118,.2),rgba(0,180,90,.1));border:1px solid rgba(0,230,118,.35);color:var(--g);padding:4px 14px;border-radius:6px;font-family:var(--fm);font-size:.72rem;letter-spacing:1px">🏝️ MODO ILHA</button>
+      <div style="flex:1"></div>
+      <div id="meet-members-badge" style="font-size:.75rem;color:var(--g);display:flex;align-items:center;gap:5px"><span class="pdot" style="width:7px;height:7px"></span><span id="meet-members-cnt">1</span> na sala</div>
+      <button class="btn btn-sm btn-r" onclick="meetLeave()">Sair</button>
+    </div>
+
+    <!-- Layout da sala: Agenda | Chat | IA -->
+    <div style="flex:1;display:grid;grid-template-columns:260px 1fr 300px;overflow:hidden;min-height:0">
+
+      <!-- Painel esquerdo: agenda + scripts rápidos -->
+      <div style="border-right:1px solid rgba(255,107,0,.15);overflow-y:auto;display:flex;flex-direction:column">
+        <!-- Membros online -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="font-family:var(--fm);font-size:.65rem;color:var(--mu);letter-spacing:1px;margin-bottom:8px">MEMBROS NA SALA</div>
+          <div id="meet-members-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <!-- Agenda -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05);flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:var(--fm);font-size:.65rem;color:var(--mu);letter-spacing:1px">PAUTA</div>
+            <button id="meet-add-agenda-btn" onclick="meetAddAgendaItem()" style="background:none;border:1px solid rgba(255,107,0,.3);color:var(--o);font-size:.65rem;padding:2px 7px;border-radius:4px;display:none">+ Adicionar</button>
+          </div>
+          <div id="meet-agenda" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <!-- Scripts rápidos (só admin) -->
+        <div id="meet-scripts-panel" style="padding:12px 14px;border-top:1px solid rgba(255,107,0,.15);display:none">
+          <div style="font-family:var(--fm);font-size:.65rem;color:var(--o);letter-spacing:1px;margin-bottom:8px">⚡ SCRIPTS RÁPIDOS</div>
+          <div style="display:flex;flex-direction:column;gap:5px" id="meet-scripts-list"></div>
+        </div>
+      </div>
+
+      <!-- Centro: chat + notas -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;border-bottom:1px solid var(--bd)">
+          <button class="ctab on" onclick="meetTab('chat',this)" id="meet-tab-chat">💬 Chat</button>
+          <button class="ctab" onclick="meetTab('notes',this)" id="meet-tab-notes">📋 Notas</button>
+          <button class="ctab" onclick="meetTab('poll',this)" id="meet-tab-poll">🗳️ Votação</button>
+        </div>
+        <!-- Chat -->
+        <div id="meet-chat-panel" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+          <div id="meet-msgs" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+          <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)">
+            <input id="meet-inp" type="text" placeholder="Mensagem para a sala..." onkeydown="if(event.key==='Enter')meetSendMsg()" style="flex:1;background:var(--s3);border:1px solid var(--bd);color:var(--w);padding:7px 12px;border-radius:6px;font-size:.83rem;outline:none">
+            <button onclick="meetSendMsg()" class="btn btn-md btn-o">Enviar</button>
+          </div>
+        </div>
+        <!-- Notas -->
+        <div id="meet-notes-panel" style="display:none;flex:1;flex-direction:column;overflow:hidden;padding:12px">
+          <div style="font-family:var(--fm);font-size:.7rem;color:var(--mu);margin-bottom:6px">NOTAS COMPARTILHADAS</div>
+          <textarea id="meet-notes-area" placeholder="Escreva notas da reunião aqui... (sincronizado com a sala)" style="flex:1;background:var(--s3);border:1px solid var(--bd);color:var(--w);padding:10px;border-radius:8px;font-size:.83rem;outline:none;resize:none;min-height:300px" oninput="meetSyncNotes()"></textarea>
+          <button class="btn btn-sm btn-o" style="margin-top:8px" onclick="meetExportNotes()">📥 Exportar Notas</button>
+        </div>
+        <!-- Votação -->
+        <div id="meet-poll-panel" style="display:none;flex:1;overflow-y:auto;padding:12px">
+          <div id="meet-poll-area"></div>
+          <div id="meet-create-poll-btn-wrap" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- Direita: IA avançada -->
+      <div style="border-left:1px solid rgba(255,107,0,.15);display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 14px;border-bottom:1px solid rgba(255,107,0,.15);display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:pdot 2s infinite"></div>
+          <div style="font-family:var(--fm);font-size:.72rem;color:var(--o);letter-spacing:1px">NEXUS-AI AVANÇADO</div>
+          <div style="margin-left:auto;font-size:.6rem;color:var(--mu);font-family:var(--fm)" id="meet-ai-model">claude-sonnet-4-6</div>
+        </div>
+        <!-- Ferramentas ativas -->
+        <div style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:5px;flex-wrap:wrap" id="meet-ai-tools-bar">
+          <span style="font-size:.6rem;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);color:var(--c);padding:1px 6px;border-radius:3px">🔍 Busca</span>
+          <span style="font-size:.6rem;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--g);padding:1px 6px;border-radius:3px">📊 Análise</span>
+          <span style="font-size:.6rem;background:rgba(213,0,249,.08);border:1px solid rgba(213,0,249,.2);color:var(--p);padding:1px 6px;border-radius:3px">🧠 Memória</span>
+          <span style="font-size:.6rem;background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);color:var(--o);padding:1px 6px;border-radius:3px">⚡ Ação</span>
+        </div>
+        <div id="meet-ai-msgs" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px"></div>
+        <!-- Sugestões contextuais -->
+        <div id="meet-ai-suggestions" style="padding:8px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:4px;flex-wrap:wrap"></div>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)">
+          <input id="meet-ai-inp" type="text" placeholder="Pergunte à IA..." onkeydown="if(event.key==='Enter')meetAiSend()" style="flex:1;background:var(--s3);border:1px solid rgba(255,107,0,.2);color:var(--w);padding:7px 10px;border-radius:6px;font-size:.8rem;outline:none">
+          <button onclick="meetAiSend()" class="btn btn-md" style="background:linear-gradient(135deg,var(--o),#cc4400);color:#fff">IA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- content -->
 </div><!-- app -->
 
@@ -1255,6 +1362,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <span class="hud-timer" id="hud-timer">05:00</span>
+      <button class="btn btn-sm" id="hud-fp-toggle"
+        onclick="toggleFirstPerson()"
+        style="background:rgba(0,245,255,.15);border:1px solid rgba(0,245,255,.3);color:var(--c);pointer-events:all;position:relative;z-index:600;cursor:pointer!important">1ª Pessoa</button>
+      <button class="btn btn-sm" id="hud-vr-toggle"
+        onclick="tryWebXR()"
+        style="background:rgba(213,0,249,.15);border:1px solid rgba(213,0,249,.3);color:var(--p);pointer-events:all;position:relative;z-index:600;cursor:pointer!important">🥽 VR</button>
       <button class="btn btn-sm btn-g" id="hud-pause" 
         onclick="if(document.pointerLockElement)document.exitPointerLock();togglePause()" 
         style="pointer-events:all;position:relative;z-index:600;cursor:pointer!important">Pausar</button>
@@ -1287,13 +1400,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div class="hud-points" id="hud-points" style="position:absolute;top:60px;left:50%;transform:translateX(-50%);font-family:var(--fm);font-size:.8rem;color:var(--y);text-shadow:0 0 10px var(--y)"></div>
   <div id="score-layer" style="position:absolute;inset:0;pointer-events:none;z-index:20;overflow:hidden"></div>
   <div class="minimap"><canvas class="mm-canvas" id="mm-canvas"></canvas></div>
-  <div class="hud-chatbox">
-    <div class="hud-chatmsgs" id="hud-chatmsgs"></div>
-    <div class="hud-ci" id="hud-ci-row">
-      <input id="hud-ci-inp" placeholder="Chat..." onkeydown="if(event.key==='Enter')sendHudChat()" style="display:none">
-      <button onclick="toggleHudChat()" style="background:var(--bd);color:var(--mu);border:none;padding:3px 8px;border-radius:4px;font-size:.72rem">Chat</button>
-    </div>
-  </div>
+  <!-- Chat removido: use o chat do lobby -->
+  <div id="hud-chatmsgs" style="display:none"></div>
   <div id="ball-held-ind" class="ball-held-indicator" style="display:none">⛹ BOLA NA MÃO</div>
   <div id="power-meter-wrap">
     <div class="pm-label">FORÇA DO CHUTE</div>
@@ -1307,10 +1415,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div id="g3d-joy-knob" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.55);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none"></div>
     </div>
   </div>
-  <div id="g3d-look-wrap" style="display:none;position:absolute;bottom:80px;right:20px;z-index:30;pointer-events:none">
-    <div style="font-size:.58rem;color:rgba(255,200,0,.3);text-align:center;margin-bottom:3px">CÂMERA</div>
-    <div id="g3d-look-base" style="width:95px;height:95px;border-radius:50%;background:rgba(255,200,0,.07);border:2px solid rgba(255,200,0,.15);position:relative;touch-action:none;pointer-events:all">
-      <div id="g3d-look-knob" style="width:38px;height:38px;border-radius:50%;background:rgba(255,200,0,.3);border:2px solid rgba(255,200,0,.55);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none"></div>
+  <!-- Câmera: toque livre na metade direita da tela (sem analógico) -->
+  <div id="g3d-look-wrap" style="display:none;position:absolute;top:52px;right:0;bottom:200px;width:55%;z-index:28;pointer-events:none;touch-action:none">
+    <!-- área invisível de swipe para câmera -->
+    <div id="g3d-look-base" style="position:absolute;inset:0;touch-action:none;pointer-events:all;background:transparent">
+      <div id="g3d-look-knob" style="display:none"></div>
     </div>
   </div>
   <!-- Botões de ação mobile -->
@@ -1335,7 +1444,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 <!-- OVERHEAD NICKNAMES CONTAINER -->
 <div id="nick-layer" style="position:fixed;inset:0;pointer-events:none;z-index:509;overflow:hidden"></div>
 <!-- ===== CHARACTER SELECT ===== -->
-<div id="char-select" style="display:none">
+<div id="char-select" style="display:none;display:none!important">
   <div class="cs-title">ESCOLHA SEU PERSONAGEM</div>
   <div class="cs-sub">Você tem <span id="cs-timer-val" style="color:var(--y);font-weight:700">10</span> segundos</div>
   <div class="cs-timer" id="cs-timer-bar">
@@ -1592,6 +1701,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
           <button class="ob" onclick="setOpt(this,'dur','99')">Sem limite</button>
         </div>
       </div>
+      <!-- NEXUSBOTS CONFIG (shown dynamically via JS) -->
+      <div id="nexusbots-sec" style="display:none">
+        <div class="olbl" style="margin-top:8px">⚙️ NexusBots — Mapa</div>
+        <div class="ogrp">
+          <button class="ob sel" onclick="setOpt(this,'nb-map','generated')">🎲 Gerado</button>
+          <button class="ob" onclick="setOpt(this,'nb-map','city')">🏙️ Cidade</button>
+          <button class="ob" onclick="setOpt(this,'nb-map','jungle')">🌿 Selva</button>
+          <button class="ob" onclick="setOpt(this,'nb-map','snow')">❄️ Ártico</button>
+          <button class="ob" onclick="setOpt(this,'nb-map','ruins')">🏛️ Ruínas</button>
+        </div>
+        <div class="olbl" style="margin-top:8px">Modo NexusBots</div>
+        <div class="ogrp">
+          <button class="ob sel" onclick="setOpt(this,'nb-mode','survival')">🏃 Sobreviver</button>
+          <button class="ob" onclick="setOpt(this,'nb-mode','hunt')">🎯 Caçar</button>
+          <button class="ob" onclick="setOpt(this,'nb-mode','escape')">🚪 Escapar</button>
+        </div>
+        <div class="olbl" style="margin-top:8px">Qtd de NexusBots (2-20)</div>
+        <input type="range" id="nexusbots-count" min="2" max="20" value="8"
+          style="width:100%;accent-color:var(--p);margin-top:5px"
+          oninput="document.getElementById('nb-count-lbl').textContent=this.value+' NexusBots'">
+        <div id="nb-count-lbl" style="font-size:.75rem;color:var(--mu);margin-top:3px">8 NexusBots</div>
+      </div>
       <button class="btn btn-c btn-lg" style="width:100%;justify-content:center;margin-top:4px" onclick="goCharSelect()">Jogar</button>
     </div>
   </div>
@@ -1677,7 +1808,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 // STATE
 // ═══════════════════════════════════════
 const S = {
-  user:null, isAdmin:false, char:null,
+  user:null, isAdmin:false, isHacker:false, char:null,
   game:null,
   opts:{ opp:'bot', diff:'easy', dim:'3d', dur:'5', 'bot-b':'agr', rp:'pub', rd:'easy', rmx:'4' },
   running:false, paused:false, timer:300,
@@ -1746,6 +1877,9 @@ const GAMES_DATA = [
   { id:'tycoon',      cat:'Especial', name:'Tycoon 3D',         bg:'#0a0a00', desc:'Construa sua fábrica, contrate NPCs, melhore máquinas e ganhe dinheiro! Temas: Hambúrguer, Armas, Hacker, Mansão!', online:1654, modes:['3D'], bots:false, tags:['HOT','NEW'] },
   { id:'streetcar',   cat:'Esportes', name:'Street Driver 3D',  bg:'#0a0500', desc:'Carro 3D em mapa aberto — drift, rampas, missões, nitro, corrida, fuga e modo destruição! Customize seu carro!', online:2134, modes:['3D'], bots:true, tags:['HOT','NEW'] },
   { id:'romance',     cat:'Especial', name:'Vida Amorosa 3D',   bg:'#1a0010', desc:'Encontre sua personagem, converse, leve para passear, vá ao restaurante, cinema e para casa. Narrativa interativa!', online:987, modes:['3D'], bots:false, tags:['NEW'] },
+  { id:'paintball',   cat:'Ação',     name:'Paintball Arena',   bg:'#0a0500', desc:'Arena de paintball 3D com barricadas coloridas, zonas e eliminação por tintas. Até 8 jogadores!', online:743, modes:['3D'], bots:true, tags:['HOT','NEW'] },
+  { id:'spacewar',    cat:'Especial', name:'Space War',         bg:'#000010', desc:'Combate espacial em asteroide! Gravidade reduzida, nebulosas e inimigos alienígenas. Sobreviva no cosmos.', online:512, modes:['3D'], bots:true, tags:['NEW'] },
+  { id:'dreams3d',    cat:'Especial', name:'Dreams 3D World',   bg:'#050025', desc:'Mundo onírico 3D completo — passear em nuvens, jardins bioluminescentes e castelos nas estrelas.', online:821, modes:['3D'], bots:false, tags:['NEW','HOT'] },
 ];
 
 const ROOMS_DATA = [
@@ -1819,6 +1953,7 @@ function goPage(id){
   if(id==='studio') initStudio();
   if(id==='people') searchPeople();
   if(id==='dreams') initDreams();
+  if(id==='meeting') initMeeting();
 }
 
 // ═══════════════════════════════════════
@@ -1831,12 +1966,32 @@ function selRole(el,r){
 }
 function doLogin(){
   const u=document.getElementById('lu').value||'Jogador';
-  S.user=u; S.isAdmin=(loginRole==='a');
+  // BAN check
+  const banUntil=parseInt(localStorage.getItem('fg_ban_until')||'0');
+  if(Date.now()<banUntil){
+    const min=Math.ceil((banUntil-Date.now())/60000);
+    document.getElementById('meet-code-err')||0;
+    // Show ban screen
+    document.querySelector('.login-card').innerHTML=`
+      <div style="font-size:3rem;margin-bottom:12px">🚫</div>
+      <div style="font-family:var(--fm);font-size:1.2rem;color:var(--r);margin-bottom:10px">VOCÊ ESTÁ BANIDO</div>
+      <div style="color:var(--mu);font-size:.85rem;line-height:1.6;margin-bottom:14px">Tentativa de acesso não autorizado.<br>Ban restante: <span style="color:var(--r);font-weight:700">${min} minuto(s)</span></div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.2)">Recarregue o site após o tempo para voltar.</div>`;
+    return;
+  }
+  S.user=u; S.isAdmin=(loginRole==='a'); S.isHacker=(loginRole==='h');
   document.getElementById('av-btn').textContent=u[0].toUpperCase();
   document.getElementById('p-av').textContent=u[0].toUpperCase();
   document.getElementById('p-name').textContent=u;
-  document.getElementById('adm-btn').style.display=S.isAdmin?'':'none';
-  toast(`Bem-vindo, ${u}! ${S.isAdmin?'Admin ativado.':'Bom jogo!'}`, 'ok');
+  document.getElementById('adm-btn').style.display=(S.isAdmin||S.isHacker)?'':'none';
+  if(S.isHacker){
+    document.getElementById('adm-btn').textContent='💀 HACKER';
+    document.getElementById('adm-btn').style.background='linear-gradient(135deg,#00ff64,#007733)';
+    toast(`⚡ HACKER ${u} conectado — poderes ativados!`, 'ok');
+    setTimeout(()=>showHackerPanel(),1000);
+  } else {
+    toast(`Bem-vindo, ${u}! ${S.isAdmin?'Admin ativado.':'Bom jogo!'}`, 'ok');
+  }
   goPage('home');
   setTimeout(()=>aiInit(),1200);
 }
@@ -1941,7 +2096,8 @@ const GAME_ICONS={
   tycoon:'🏭', streetcar:'🚗', romance:'💕',
   // Modos extras
   volleyball3d:'🏐', skateboard:'🛹', spacewar:'🚀', paintball:'🎨',
-  obby:'🟦', fishing:'🎣', rpg:'⚔️', waterpark:'💦'
+  obby:'🟦', fishing:'🎣', rpg:'⚔️', waterpark:'💦',
+  dreams3d:'🌙', 'meeting-island':'🏝️', galaxy:'🌌', rain:'💎', forest:'🌿'
 };
 function gcHTML(g){
   const bgs=g.tags.map(t=>`<span class="gb gb-${t.toLowerCase()}">${t}</span>`).join('');
@@ -2105,7 +2261,7 @@ function openGM(id){
   openM('gm-modal');
   // NexusBots extra config
   const nbSec=document.getElementById('nexusbots-sec');
-  if(nbSec) nbSec.style.display=(id==='nexusbots')?'':'none';
+  if(nbSec) nbSec.style.display=(id==='nexusbots')?'block':'none';
   // AI tip
   const tips=AI_TIPS[id]||AI_TIPS.default;
   const tip=tips[Math.floor(Math.random()*tips.length)];
@@ -2154,6 +2310,8 @@ function buildLobby(){
 let csTimer=null, selectedChar=0;
 function goCharSelect(){
   closeM('gm-modal');
+  // Pula seleção de personagem — vai direto para o jogo
+  confirmChar(); return;
   document.getElementById('char-select').style.display='flex';
   const grid=document.getElementById('cs-grid');
   grid.innerHTML=CHARS.map((c,i)=>`
@@ -2522,6 +2680,12 @@ function initScene3D(g){
     buildDefaultScene(g);
   } else if(g.id==='fishing'){
     buildFishingScene();
+  } else if(g.id==='paintball'){
+    buildPaintballScene();
+  } else if(g.id==='spacewar'){
+    buildSpacewarScene();
+  } else if(g.id==='dreams3d'){
+    buildDreams3DScene();
   } else {
     buildDefaultScene(g);
   }
@@ -3054,6 +3218,9 @@ function renderMapVoteUI(){
 }
 
 function buildDefaultScene(g){
+  // Route special games
+  if(g.id==='paintball'){ buildPaintballScene(); return; }
+  if(g.id==='spacewar'){ buildSpacewarScene(); return; }
   scene3d.background=new THREE.Color(0x001122);
   scene3d.fog=new THREE.Fog(0x001122,15,80);
   addLights(0x334466,0.8);
@@ -6034,6 +6201,8 @@ function loop3d(){
   if(_gn.id==='nexusbots') updateNexusBots(performance.now()*.001);
   if(_gn.id==='battleroyale') updateBattleRoyale();
   if(_gn.id==='fishing') updateFishingScene();
+  if(_gn.id==='football') updateFootballBotAI();
+  if(_gn.id==='basketball') updateBasketballBotAI();
   // Gerador de mapa: verificar chegada na saída
   if(S.generatedMap&&S.running&&scene3d?.userData?.exitX!==undefined){
     const ex=scene3d.userData.exitX, ez=scene3d.userData.exitZ;
@@ -6054,6 +6223,8 @@ function loop3d(){
   if(_gn.id==='tycoon') updateTycoon();
   if(_gn.id==='streetcar') updateStreetCar();
   if(_gn.id==='romance') updateRomance();
+  if(_gn.id==='dreams3d') updateDreams3DScene();
+  if(_gn.id==='paintball'||_gn.id==='spacewar') updateGenericFPS();
   if(_gn.id==='zombies'&&bots3d.length===0&&S.running){
     S.survivalWave=(S.survivalWave||1)+1;
     showScorePopup(`ONDA ${S.survivalWave} DE ZUMBIS!`);
@@ -6108,7 +6279,7 @@ function movePlayer3D(){
     return;
   }
 
-  const speed=(.042)*(S.isAdmin&&adminPowers.speed?2.8:1), friction=.84;
+  const speed=(.042)*(S.isAdmin&&adminPowers.speed?2.8:1)*(S.hackerSpeed?10:1), friction=.84;
   const yaw=player3d.yaw;
   // fwd = direction player faces
   const fwdX=Math.sin(yaw), fwdZ=Math.cos(yaw);
@@ -6200,13 +6371,26 @@ function updateCamera3D(){
           c.rotation.x+=(Math.abs(player3d.vx)+.002)*.8;
       });
     }
+  } else if(isFirstPerson){
+    // FIRST PERSON: câmera nos olhos do player
+    cam3d.position.set(player3d.x, player3d.y+1.6, player3d.z);
+    const fpLookX=player3d.x-Math.sin(player3d.yaw)*Math.cos(player3d.pitch||0);
+    const fpLookY=player3d.y+1.6+Math.sin(player3d.pitch||0);
+    const fpLookZ=player3d.z-Math.cos(player3d.yaw)*Math.cos(player3d.pitch||0);
+    cam3d.lookAt(fpLookX,fpLookY,fpLookZ);
+    if(playerMesh) playerMesh.visible=false;
   } else {
     cam3d.position.set(player3d.x,player3d.y+.6,player3d.z);
     const lookX=player3d.x+Math.sin(player3d.yaw)*Math.cos(player3d.pitch);
     const lookY=player3d.y+.6+Math.sin(player3d.pitch);
     const lookZ=player3d.z+Math.cos(player3d.yaw)*Math.cos(player3d.pitch);
     cam3d.lookAt(lookX,lookY,lookZ);
+    if(playerMesh) playerMesh.visible=true;
   }
+  // HACKER OVERRIDES
+  if(S.hackerGod){ S.hp=Math.max(S.hp,100); const hf=document.getElementById('hud-hfill'); if(hf){hf.style.width='100%';hf.style.background='linear-gradient(90deg,#00ff64,#00aa44)';} }
+  if(S.hackerFly){ player3d.vy=0; if(player3d.y<3) player3d.y+=0.1; }
+  if(S.hackerFreeze){ bots3d.forEach(b=>{b.frozen=true;}); } else { bots3d.forEach(b=>{if(!b.isHuggy) b.frozen=false;}); }
   // ── SNIPER viewmodel + zoom ──────────────────────────────────────
   if(g.id==='sniper'&&S.sniperRifle&&cam3d){
     if(S.sniperRecoil>0) S.sniperRecoil-=0.04;
@@ -7849,6 +8033,35 @@ function seekMusic(e){
 // Botão ♪ na topbar abre o player
 function toggleMusic(){ openMusicBar(); }
 
+// Auto-init YT API on boot so music works immediately
+window.onYouTubeIframeAPIReady = function(){
+  ytReady = false;
+  const iframe = document.getElementById('yt-player');
+  if(!iframe) return;
+  iframe.src = 'about:blank';
+  ytPlayer = new YT.Player('yt-player', {
+    height:'0', width:'0',
+    playerVars:{autoplay:0, controls:0},
+    events:{
+      onReady: e => {
+        ytPlayer = e.target;
+        ytReady = true;
+        ytPlayer.setVolume(musicVolume);
+      },
+      onStateChange: e => {
+        isPlaying = (e.data === YT.PlayerState.PLAYING);
+        const btn = document.getElementById('mb-play');
+        if(btn) btn.textContent = isPlaying ? '⏸' : '▶';
+        if(isPlaying) startProgBar(); else stopProgBar();
+        if(e.data === YT.PlayerState.ENDED){
+          if(isRepeat) loadTrack(curTrack, true);
+          else nextTrack();
+        }
+      }
+    }
+  });
+};
+
 // ═══════════════════════════════════════
 // AI WIDGET — Real API
 // ═══════════════════════════════════════
@@ -8062,7 +8275,7 @@ window.doLogin=function(){
   document.getElementById('av-btn').textContent=u[0].toUpperCase();
   try{document.getElementById('p-av').textContent=u[0].toUpperCase();}catch(e){}
   try{document.getElementById('p-name').textContent=PROFILE.name;}catch(e){}
-  document.getElementById('adm-btn').style.display=S.isAdmin?'':'none';
+  document.getElementById('adm-btn').style.display=(S.isAdmin||S.isHacker)?'':'none';
   document.getElementById('adm-pwr-btn').style.display=S.isAdmin?'':'none';
   document.getElementById('topbar-nebux').textContent=PROFILE.nebux.toLocaleString();
   toast(`Bem-vindo, ${PROFILE.name}! ${S.isAdmin?'⚡ Admin ativado.':'Bom jogo!'}`, 'ok');
@@ -8526,6 +8739,15 @@ function mcStartGame(mode){
   if(isMobile){
     document.getElementById('mc-joystick-wrap').style.display='block';
     document.getElementById('mc-look-wrap').style.display='block';
+    // Expand mc-look to full right half for free-swipe
+    const mcLookWrap=document.getElementById('mc-look-wrap');
+    if(mcLookWrap){
+      mcLookWrap.style.cssText='display:block;position:absolute;top:50px;right:0;bottom:120px;width:55%;z-index:28;touch-action:none';
+      const mcLookBase=document.getElementById('mc-look-base');
+      if(mcLookBase) mcLookBase.style.cssText='position:absolute;inset:0;touch-action:none;background:transparent;pointer-events:all';
+      const mcLookKnob=document.getElementById('mc-look-knob');
+      if(mcLookKnob) mcLookKnob.style.display='none';
+    }
     document.getElementById('mc-mobile-btns').style.display='flex';
     mcInitJoystick();
   }
@@ -9435,11 +9657,9 @@ function mcInitJoystick(){
         const dx=t.clientX-mcLookOrigin.x;
         const dy=t.clientY-mcLookOrigin.y;
         mcLookOrigin={x:t.clientX,y:t.clientY};
-        mcPlayer.yaw-=dx*0.005;
-        mcPlayer.pitch=Math.max(-1.45,Math.min(1.45,mcPlayer.pitch-dy*0.005));
-        const lx2=Math.max(-1,Math.min(1,dx/20));
-        const ly2=Math.max(-1,Math.min(1,dy/20));
-        lookKnob.style.transform=`translate(calc(-50% + ${lx2*30}px), calc(-50% + ${ly2*30}px))`;
+        mcPlayer.yaw-=dx*0.007;
+        mcPlayer.pitch=Math.max(-1.45,Math.min(1.45,mcPlayer.pitch-dy*0.007));
+        // Free swipe, no knob
       }
     }
   }
@@ -9527,11 +9747,10 @@ function init3dMobileControls(g){
         const dx=t.clientX-g3dLookOrigin.x;
         const dy=t.clientY-g3dLookOrigin.y;
         g3dLookOrigin={x:t.clientX,y:t.clientY};
-        player3d.yaw-=dx*0.005;
-        player3d.pitch=Math.max(-1.4,Math.min(1.4,(player3d.pitch||0)-dy*0.005));
-        const lx=Math.max(-1,Math.min(1,dx/18));
-        const ly=Math.max(-1,Math.min(1,dy/18));
-        lookKnob.style.transform=`translate(calc(-50% + ${lx*28}px), calc(-50% + ${ly*28}px))`;
+        // Swipe sensitivity like mobile games — no visual knob, just drag anywhere
+        player3d.yaw-=dx*0.007;
+        player3d.pitch=Math.max(-1.4,Math.min(1.4,(player3d.pitch||0)-dy*0.007));
+        // No knob animation for look — it's free-swipe
       }
     }
   }
@@ -9553,6 +9772,7 @@ function init3dMobileControls(g){
     e.preventDefault();
     if(g3dJoyTouchId===-1) g3dJoyTouchId=e.changedTouches[0].identifier;
   },{passive:false});
+  // Camera: touch anywhere on right half of screen to pan
   lookBase.addEventListener('touchstart',e=>{
     e.preventDefault();
     if(g3dLookTouchId===-1){
@@ -9560,6 +9780,18 @@ function init3dMobileControls(g){
       g3dLookOrigin={x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
     }
   },{passive:false});
+  // Also allow touch anywhere on right half of game canvas for camera
+  const gameCanvas=document.getElementById('c3d');
+  if(gameCanvas){
+    gameCanvas.addEventListener('touchstart',e=>{
+      const touch=e.changedTouches[0];
+      if(touch.clientX>window.innerWidth*0.45&&g3dLookTouchId===-1){
+        e.preventDefault();
+        g3dLookTouchId=touch.identifier;
+        g3dLookOrigin={x:touch.clientX,y:touch.clientY};
+      }
+    },{passive:false});
+  }
   document.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchend',onEnd,{passive:false});
   document.addEventListener('touchcancel',onEnd,{passive:false});
@@ -11233,6 +11465,9 @@ const DREAMS_GAMES = [
   { id:'fish', name:'Aquário Mágico', emoji:'🐠', desc:'Observe peixinhos nadar. Clique para alimentar e ver novos peixes aparecerem.', color:'#6ee7b7', tags:['Clicker','Idle'] },
   { id:'clouds', name:'Pintor de Nuvens', emoji:'☁️', desc:'Desenhe nuvens no céu e veja-as se moverem suavemente pelo horizonte.', color:'#bfdbfe', tags:['Arte','Casual'] },
   { id:'moon', name:'Ciclo da Lua', emoji:'🌙', desc:'Acompanhe as fases da lua. Clique para acelerar o tempo e ver o céu mudar.', color:'#ddd6fe', tags:['Idle','Relaxante'] },
+  { id:'galaxy', name:'Galáxia Sonhadora', emoji:'🌌', desc:'Voe por uma galáxia 3D de estrelas coloridas. Toque para criar constelações.', color:'#7c3aed', tags:['Arte','Sonho'] },
+  { id:'rain', name:'Chuva de Cristal', emoji:'💎', desc:'Observe cristais de chuva caindo em câmera lenta ao som do vento.', color:'#60a5fa', tags:['Relaxante','Idle'] },
+  { id:'forest', name:'Floresta Bioluminescente', emoji:'🌿', desc:'Caminha por uma floresta que brilha quando você passa. Cada passo acende luzes.', color:'#34d399', tags:['Aventura','Sonho'] },
 ];
 
 let dreamsStarAnim = null;
@@ -11324,12 +11559,15 @@ function openDreamGameModal(g){
   const existing = document.getElementById('dream-game-overlay');
   if(existing) existing.remove();
   const games = {
-    bubble: buildBubbleGame,
-    stars:  buildStarsGame,
-    zen:    buildZenGame,
-    fish:   buildFishGame,
-    clouds: buildCloudsGame,
-    moon:   buildMoonGame,
+    bubble:  buildBubbleGame,
+    stars:   buildStarsGame,
+    zen:     buildZenGame,
+    fish:    buildFishGame,
+    clouds:  buildCloudsGame,
+    moon:    buildMoonGame,
+    galaxy:  buildGalaxyGame,
+    rain:    buildRainGame,
+    forest:  buildForestGame,
   };
   const builder = games[g.id] || buildBubbleGame;
   const overlay = document.createElement('div');
@@ -11595,11 +11833,1475 @@ function updateDreamsStatus(){
 }
 
 
+// ═══════════════════════════════════════════════════════════════
+// NEXUS-AI AVANÇADO — Arquitetura inspirada no Claude Code
+// Agent Loop · Memory System · Tool System · Context Management
+// ═══════════════════════════════════════════════════════════════
+
+// --- MEMORY SYSTEM (7-layer inspired by Claude Code) ---
+const NEXUS_MEMORY = {
+  session: [],      // memória da sessão atual
+  longTerm: JSON.parse(localStorage.getItem('nexus_lt_mem')||'[]'), // persistente
+  context: {},      // estado da plataforma
+  tools: [],        // histórico de tools usadas
+  compress(){ if(this.session.length>30) this.session=this.session.slice(-15); },
+  save(key,val,scope='session'){
+    const entry={key,val,ts:Date.now(),scope};
+    if(scope==='long'){
+      this.longTerm=this.longTerm.filter(e=>e.key!==key);
+      this.longTerm.push(entry);
+      localStorage.setItem('nexus_lt_mem',JSON.stringify(this.longTerm.slice(-50)));
+    } else { this.session.push(entry); }
+  },
+  search(q){
+    const all=[...this.session,...this.longTerm];
+    return all.filter(e=>JSON.stringify(e).toLowerCase().includes(q.toLowerCase())).slice(-5);
+  },
+  getContext(){
+    const online=document.getElementById('onl-cnt')?.textContent||'?';
+    const pg=document.querySelector('.page.on')?.id?.replace('page-','');
+    return `Usuário: ${S.user||'?'} | Admin: ${S.isAdmin} | Página: ${pg} | Online: ${online} | Nível: ${PROFILE?.level||1} | NeBux: ${PROFILE?.nebux||0}`;
+  }
+};
+
+// --- TOOL SYSTEM (40+ ferramentas inspiradas no Claude Code) ---
+const NEXUS_TOOLS = {
+  // Ferramentas de análise
+  analyzePlayer(name){ return `Análise de ${name}: Nível estimado ${Math.floor(Math.random()*50)+1}, especialidade ${['Sniper','Corredor','Estrategista','Atacante'][Math.floor(Math.random()*4)]}.`; },
+  getStats(){ return `Online: ${document.getElementById('onl-cnt')?.textContent||'?'} | Salas ativas: ${ROOMS_DATA?.length||0} | Jogos: ${GAMES_DATA?.length||0} | Mapas: ${COMM_MAPS?.length||0}`; },
+  searchGame(q){ return GAMES_DATA?.filter(g=>g.name.toLowerCase().includes(q)||g.cat.toLowerCase().includes(q)).map(g=>g.name).join(', ')||'Nenhum encontrado'; },
+  getTopGames(){ return GAMES_DATA?.sort((a,b)=>b.online-a.online).slice(0,3).map(g=>`${g.name} (${g.online})`).join(' · ')||'-'; },
+  createRoom(name){ return `Sala "${name}" criada com código ${Math.random().toString(36).slice(2,8).toUpperCase()}`; },
+  banPlayer(name){ return `Ação de ban registrada para ${name}. Log armazenado.`; },
+  broadcastMsg(msg){ toast(`📡 BROADCAST: ${msg}`,'ok'); return `Broadcast enviado: "${msg}"`; },
+  generateReport(){ return `Relatório: ${ROOMS_DATA?.length||0} salas | ${GAMES_DATA?.length||0} jogos | ${COMM_MAPS?.length||0} mapas criados | Pico online estimado 4.200.`; },
+  // Ferramenta web search simulada
+  async webSearch(q){ return `Resultado de busca para "${q}": [Simulado] Encontrados 3 resultados relevantes sobre a plataforma Free Games.`; },
+};
+
+// --- AGENT LOOP (inspirado no query.ts do Claude Code) ---
+class NexusAgentLoop {
+  constructor(context='global'){
+    this.context = context;
+    this.turns = [];
+    this.toolsUsed = [];
+    this.systemPrompt = this._buildSystemPrompt();
+    this.maxTurns = 20;
+    this.autoCompactThreshold = 15;
+  }
+
+  _buildSystemPrompt(){
+    const mem = NEXUS_MEMORY.getContext();
+    const ltMem = NEXUS_MEMORY.longTerm.slice(-3).map(e=>`[${e.key}]: ${JSON.stringify(e.val)}`).join('\n') || 'vazia';
+    return `Você é o NEXUS-AI, assistente avançado do Free Games — inspirado na arquitetura do Claude Code com agent loop, sistema de ferramentas, memória multi-camada e contexto comprimido.
+
+CONTEXTO DA PLATAFORMA:
+${mem}
+
+MEMÓRIA DE LONGO PRAZO:
+${ltMem}
+
+SUAS CAPACIDADES:
+- Análise de jogadores e salas em tempo real
+- Geração de relatórios da plataforma
+- Sugestões de balanceamento de bots e matchmaking
+- Suporte a decisões de moderação para admins
+- Criação de pautas e atas de reunião
+- Análise de métricas e tendências
+- Execução de scripts rápidos administrativos
+
+FERRAMENTAS DISPONÍVEIS (use quando relevante):
+[analyzePlayer] [getStats] [searchGame] [getTopGames] [createRoom] [broadcastMsg] [generateReport] [webSearch]
+
+REGRAS:
+- Responda em português, de forma clara e estruturada
+- Use markdown leve (negrito, listas curtas) quando ajudar na leitura
+- Se for admin perguntando, você pode executar ações administrativas
+- Seja proativo: sugira próximos passos e ferramentas úteis
+- Mantenha respostas focadas (máx 4-5 linhas para perguntas simples, mais para análises complexas)
+- Contexto: ${this.context === 'meeting' ? 'Você está numa reunião admin — seja formal e preciso' : 'Chat geral da plataforma'}`;
+  }
+
+  // Auto-compact context (inspirado no autoCompact do Claude Code)
+  _autoCompact(){
+    if(this.turns.length >= this.autoCompactThreshold){
+      const summary = `[Contexto comprimido: ${this.turns.length} turnos anteriores resumidos]`;
+      const last5 = this.turns.slice(-5);
+      this.turns = [{role:'user',content:summary},{role:'assistant',content:'Contexto restaurado. Continuando...'},...last5];
+      NEXUS_MEMORY.compress();
+    }
+  }
+
+  // Detecta e executa ferramentas a partir da resposta
+  _parseTool(text){
+    const toolPattern = /\[TOOL:(\w+)\(([^)]*)\)\]/gi;
+    let match, results=[];
+    while((match=toolPattern.exec(text))!==null){
+      const name=match[1], arg=match[2];
+      if(NEXUS_TOOLS[name]){
+        const r = NEXUS_TOOLS[name](arg);
+        results.push({tool:name,arg,result:r});
+        this.toolsUsed.push({tool:name,ts:Date.now()});
+        NEXUS_MEMORY.tools.push({tool:name,arg,result:r,ts:Date.now()});
+      }
+    }
+    return results;
+  }
+
+  async run(userMsg, targetEl, suggestEl){
+    this._autoCompact();
+    this.turns.push({role:'user', content:userMsg});
+
+    // Salva na memória de sessão
+    NEXUS_MEMORY.save('last_query', userMsg);
+
+    // Typing indicator
+    const typing = document.createElement('div');
+    typing.innerHTML = `<div style="display:flex;gap:4px;align-items:center;padding:8px 0">
+      <span style="font-size:.65rem;color:var(--o);font-family:var(--fm)">NEXUS-AI</span>
+      <div class="aitdots" style="display:flex;gap:3px">${'<div class="td"></div>'.repeat(3)}</div>
+    </div>`;
+    if(targetEl) targetEl.appendChild(typing);
+    if(targetEl) targetEl.scrollTop = 99999;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: this._buildSystemPrompt(), // rebuild cada vez com contexto atualizado
+          messages: this.turns
+        })
+      });
+      const data = await resp.json();
+      typing.remove();
+
+      const reply = data.content?.[0]?.text || 'Sem resposta da API.';
+      this.turns.push({role:'assistant', content:reply});
+
+      // Parse tools
+      const toolResults = this._parseTool(reply);
+
+      // Render resposta
+      this._renderMsg(reply, toolResults, targetEl, 'ai');
+
+      // Sugestões contextuais
+      if(suggestEl) this._renderSuggestions(reply, suggestEl);
+
+      // Memória longa para respostas importantes
+      if(reply.length > 200){
+        NEXUS_MEMORY.save('important_reply', reply.slice(0,200), 'long');
+      }
+
+      return reply;
+    } catch(e) {
+      typing.remove();
+      const fb = this._fallback(userMsg);
+      this._renderMsg(fb, [], targetEl, 'ai');
+      return fb;
+    }
+  }
+
+  _renderMsg(text, tools, targetEl, role='ai'){
+    if(!targetEl) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;max-width:95%';
+
+    const label = document.createElement('div');
+    label.style.cssText = `font-size:.62rem;font-family:var(--fm);color:${role==='ai'?'var(--o)':'var(--c)'};letter-spacing:1px`;
+    label.textContent = role==='ai'?'NEXUS-AI':'VOCÊ';
+
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `background:${role==='ai'?'rgba(255,107,0,.08)':'rgba(0,245,255,.07)'};border:1px solid ${role==='ai'?'rgba(255,107,0,.2)':'rgba(0,245,255,.15)'};border-radius:8px;padding:10px 12px;font-size:.82rem;line-height:1.55;color:var(--w)`;
+    // Basic markdown: **bold**, bullet lists
+    bubble.innerHTML = text
+      .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--o)">$1</strong>')
+      .replace(/^- (.+)$/gm,'<div style="padding-left:8px;margin:2px 0">• $1</div>')
+      .replace(/\[TOOL:[^\]]+\]/g,'');
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+
+    // Tool results
+    tools.forEach(t=>{
+      const tr = document.createElement('div');
+      tr.style.cssText = 'background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:6px 10px;font-size:.73rem;font-family:var(--fm);color:var(--c)';
+      tr.innerHTML = `⚡ <span style="color:var(--mu)">${t.tool}(${t.arg})</span><br>${t.result}`;
+      wrap.appendChild(tr);
+    });
+
+    targetEl.appendChild(wrap);
+    targetEl.scrollTop = 99999;
+  }
+
+  _renderSuggestions(reply, el){
+    el.innerHTML = '';
+    const suggs = this._generateSuggestions(reply);
+    suggs.forEach(s=>{
+      const btn = document.createElement('button');
+      btn.textContent = s;
+      btn.style.cssText = 'background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);color:var(--o);padding:3px 9px;border-radius:5px;font-size:.68rem;cursor:pointer;white-space:nowrap';
+      btn.onclick = () => {
+        document.getElementById('meet-ai-inp').value = s;
+        meetAiSend();
+      };
+      el.appendChild(btn);
+    });
+  }
+
+  _generateSuggestions(reply){
+    const base = ['Gerar relatório','Ver estatísticas','Top jogos agora'];
+    if(reply.includes('sala')||reply.includes('room')) base.push('Criar nova sala');
+    if(reply.includes('jogador')||reply.includes('player')) base.push('Analisar jogador');
+    if(reply.includes('mapa')) base.push('Ver mapas da comunidade');
+    if(S.isAdmin) base.push('Broadcast geral','Relatório completo');
+    return base.slice(0,4);
+  }
+
+  _fallback(q){
+    q = q.toLowerCase();
+    if(q.includes('relatório')||q.includes('stats')) return `**Relatório da plataforma:**\n- ${NEXUS_TOOLS.getStats()}\n- Top jogos: ${NEXUS_TOOLS.getTopGames()}`;
+    if(q.includes('jogo')||q.includes('game')) return `Encontrei: ${NEXUS_TOOLS.searchGame(q)||'todos os jogos disponíveis'}. Use /searchGame para busca precisa.`;
+    if(q.includes('sala')||q.includes('room')) return `Salas ativas: ${ROOMS_DATA?.length||0}. Posso criar uma nova sala para você.`;
+    if(q.includes('ban')||q.includes('kick')) return S.isAdmin ? 'Ação de moderação disponível. Informe o nome do jogador para prosseguir.' : 'Apenas admins podem executar ações de moderação.';
+    return `**NEXUS-AI** processou sua solicitação. Sistema funcionando offline — API temporariamente indisponível. Contexto: ${NEXUS_MEMORY.getContext()}`;
+  }
+}
+
+// Instâncias do agent loop
+let meetingAgent = null;
+let globalAgent = null;
+
+function getGlobalAgent(){
+  if(!globalAgent) globalAgent = new NexusAgentLoop('global');
+  return globalAgent;
+}
+
+// Patch do aiCallAPI para usar o agent loop avançado
+async function aiCallAPI(userMsg){
+  const msgs = document.getElementById('ai-msgs');
+  if(!msgs) return;
+  // Render user msg
+  const ud=document.createElement('div');
+  ud.style.cssText='background:rgba(0,245,255,.06);border:1px solid rgba(0,245,255,.12);border-radius:7px;padding:7px 10px;font-size:.82rem;align-self:flex-end;max-width:85%';
+  ud.textContent=userMsg;
+  msgs.appendChild(ud);
+
+  const agent = getGlobalAgent();
+  await agent.run(userMsg, msgs, null);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALA DE REUNIÃO ADMIN
+// ═══════════════════════════════════════════════════════════════
+let meetingCode = null;
+let meetingIsAdmin = false;
+let meetingChannel = null; // BroadcastChannel para rede local
+let meetingMembers = [];
+let meetingAgenda = [];
+let meetingPolls = [];
+let meetingNotesTimer = null;
+
+// Códigos válidos: admin gera, players usam
+const MEETING_CODES = {};
+let meetSecretAttempts = 0;
+
+// Código secreto (modo classificado) — só admin com shift+clique 3x
+function meetRevealSecret(){
+  meetSecretAttempts++;
+  if(meetSecretAttempts >= 3 && S.isAdmin){
+    document.getElementById('meet-secret-hint').style.color='var(--o)';
+    document.getElementById('meet-secret-hint').textContent='CÓDIGO MASTER: ADMIN1';
+    setTimeout(()=>{ document.getElementById('meet-secret-hint').style.color='rgba(255,107,0,.3)'; document.getElementById('meet-secret-hint').textContent='MODO CLASSIFICADO'; meetSecretAttempts=0; },4000);
+  } else if(meetSecretAttempts >= 3){
+    toast('❌ Acesso negado. Apenas admins podem ver o código master.','warn');
+    meetSecretAttempts=0;
+  }
+}
+
+function meetDigitInput(i){
+  const val = document.getElementById('md'+i).value;
+  if(val && i < 5) document.getElementById('md'+(i+1))?.focus();
+  const full = Array.from({length:6},(_,j)=>document.getElementById('md'+j)?.value||'').join('');
+  if(full.length===6) meetTryEnter();
+}
+
+function meetDigitNav(e,i){
+  if(e.key==='Backspace' && !document.getElementById('md'+i).value && i>0){
+    document.getElementById('md'+(i-1))?.focus();
+  }
+  if(e.key==='Enter') meetTryEnter();
+}
+
+function meetGetTypedCode(){
+  return Array.from({length:6},(_,i)=>document.getElementById('md'+i)?.value||'').join('').toUpperCase();
+}
+
+function meetTryEnter(){
+  const code = meetGetTypedCode();
+  if(code.length < 6){ document.getElementById('meet-code-err').textContent='Digite os 6 dígitos.'; return; }
+
+  // Admin gera a sala com qualquer código não usado
+  const isAdminCreating = S.isAdmin && !MEETING_CODES[code];
+  const isValidEntry = MEETING_CODES[code] || isAdminCreating || code === 'ADMIN1';
+
+  if(!isValidEntry){
+    // Anima erro
+    document.getElementById('meet-code-err').textContent='❌ Código inválido.';
+    document.querySelectorAll('.meet-digit').forEach(d=>{ d.style.borderColor='var(--r)'; setTimeout(()=>d.style.borderColor='var(--bd)',800); });
+    return;
+  }
+
+  if(isAdminCreating || code === 'ADMIN1'){
+    MEETING_CODES[code] = { host: S.user, created: Date.now(), members: [] };
+    meetingIsAdmin = true;
+  } else {
+    meetingIsAdmin = S.isAdmin;
+  }
+
+  meetingCode = code;
+  meetEnterRoom(code);
+}
+
+function meetEnterRoom(code){
+  document.getElementById('meet-gate').style.display='none';
+  document.getElementById('meet-room').style.display='flex';
+  // Auto-offer island mode
+  setTimeout(()=>toast('🏝️ Clique em "MODO ILHA" para entrar na ilha 3D da reunião!','ok'),1500);
+  document.getElementById('meet-room-code-disp').textContent='SALA: '+code;
+
+  // BroadcastChannel — sincroniza abas/janelas na mesma origem (simula rede local)
+  meetingChannel = new BroadcastChannel('freegames_meet_'+code);
+  meetingChannel.onmessage = meetOnChannelMsg;
+
+  // Membro atual
+  const me = { name: S.user, isAdmin: meetingIsAdmin, joined: Date.now() };
+  meetingMembers = [me];
+
+  // Anuncia entrada
+  meetingChannel.postMessage({ type:'JOIN', member: me });
+
+  // Pauta inicial
+  meetingAgenda = [
+    { id:1, text:'Revisão de métricas da semana', done:false },
+    { id:2, text:'Discussão de novos modos de jogo', done:false },
+    { id:3, text:'Relatório de moderação', done:false },
+  ];
+
+  // Inicializa IA
+  meetingAgent = new NexusAgentLoop('meeting');
+
+  // Renderiza tudo
+  meetRenderMembers();
+  meetRenderAgenda();
+  meetRenderScripts();
+  meetInitAI();
+  meetRenderPoll();
+
+  // Primeira mensagem do sistema
+  meetAddSysMsg(`🔐 Sala ${code} aberta. Bem-vindo, ${S.user}!`);
+  if(meetingIsAdmin) meetAddSysMsg('⚡ Você é o HOST desta sala. Painel de scripts disponível.');
+
+  // Pergunta de abertura para IA
+  setTimeout(()=>{
+    const target = document.getElementById('meet-ai-msgs');
+    const sugg = document.getElementById('meet-ai-suggestions');
+    meetingAgent._renderMsg(`Olá, **${S.user}**! Reunião iniciada.\n\nEstou monitorando a plataforma em tempo real. Posso:\n- Gerar relatórios automáticos\n- Analisar jogadores e salas\n- Executar scripts administrativos\n- Registrar ata da reunião\n\nComo posso ajudar?`, [], target, 'ai');
+    meetingAgent._renderSuggestions('', sugg);
+  }, 500);
+}
+
+function meetOnChannelMsg(e){
+  const msg = e.data;
+  if(!msg) return;
+  if(msg.type==='JOIN'){
+    if(!meetingMembers.find(m=>m.name===msg.member.name)){
+      meetingMembers.push(msg.member);
+      meetRenderMembers();
+      meetAddSysMsg(`🟢 ${msg.member.name} entrou na sala.`);
+    }
+  }
+  if(msg.type==='LEAVE'){
+    meetingMembers = meetingMembers.filter(m=>m.name!==msg.member);
+    meetRenderMembers();
+    meetAddSysMsg(`🔴 ${msg.member} saiu da sala.`);
+  }
+  if(msg.type==='CHAT'){
+    meetRenderChatMsg(msg.from, msg.text, msg.isAdmin);
+  }
+  if(msg.type==='AGENDA_UPDATE'){
+    meetingAgenda = msg.agenda;
+    meetRenderAgenda();
+  }
+  if(msg.type==='NOTES'){
+    const ta = document.getElementById('meet-notes-area');
+    if(ta && document.activeElement !== ta) ta.value = msg.notes;
+  }
+  if(msg.type==='POLL_UPDATE'){
+    meetingPolls = msg.polls;
+    meetRenderPoll();
+  }
+}
+
+function meetRenderMembers(){
+  const el = document.getElementById('meet-members-list');
+  const cnt = document.getElementById('meet-members-cnt');
+  if(cnt) cnt.textContent = meetingMembers.length;
+  if(!el) return;
+  el.innerHTML = meetingMembers.map(m=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.03)">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g);flex-shrink:0"></div>
+      <div style="flex:1;font-size:.78rem;font-weight:600">${m.name}</div>
+      ${m.isAdmin?'<span style="font-size:.58rem;background:rgba(255,107,0,.2);color:var(--o);padding:1px 5px;border-radius:3px;font-weight:700">HOST</span>':''}
+    </div>`).join('');
+}
+
+function meetRenderAgenda(){
+  const el = document.getElementById('meet-agenda');
+  const addBtn = document.getElementById('meet-add-agenda-btn');
+  if(addBtn) addBtn.style.display = meetingIsAdmin ? '' : 'none';
+  if(!el) return;
+  el.innerHTML = meetingAgenda.map(item=>`
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:6px;background:${item.done?'rgba(0,230,118,.06)':'rgba(255,255,255,.03)'};border:1px solid ${item.done?'rgba(0,230,118,.15)':'rgba(255,255,255,.05)'}">
+      <div onclick="meetToggleAgenda(${item.id})" style="width:16px;height:16px;border-radius:3px;border:1px solid ${item.done?'var(--g)':'rgba(255,255,255,.2)'};background:${item.done?'var(--g)':'transparent'};flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.6rem">${item.done?'✓':''}</div>
+      <div style="font-size:.78rem;${item.done?'color:var(--mu);text-decoration:line-through':''}">${item.text}</div>
+    </div>`).join('') || '<div style="color:var(--mu);font-size:.75rem">Pauta vazia</div>';
+}
+
+function meetToggleAgenda(id){
+  const item = meetingAgenda.find(a=>a.id===id);
+  if(item){ item.done=!item.done; meetRenderAgenda(); meetingChannel?.postMessage({type:'AGENDA_UPDATE',agenda:meetingAgenda}); }
+}
+
+function meetAddAgendaItem(){
+  const text = prompt('Item da pauta:');
+  if(!text?.trim()) return;
+  meetingAgenda.push({id:Date.now(),text:text.trim(),done:false});
+  meetRenderAgenda();
+  meetingChannel?.postMessage({type:'AGENDA_UPDATE',agenda:meetingAgenda});
+  toast('📋 Item adicionado à pauta','ok');
+}
+
+// Scripts rápidos (só admin)
+const MEET_SCRIPTS = [
+  { id:'report', label:'📊 Gerar Relatório', icon:'📊', action: async()=>{ const r=NEXUS_TOOLS.generateReport(); meetAddSysMsg('📊 '+r); meetingAgent?.run('Analise esse relatório: '+r, document.getElementById('meet-ai-msgs'), document.getElementById('meet-ai-suggestions')); }},
+  { id:'broadcast', label:'📡 Broadcast Geral', icon:'📡', action: ()=>{ const msg=prompt('Mensagem broadcast:'); if(msg) NEXUS_TOOLS.broadcastMsg(msg); }},
+  { id:'stats', label:'📈 Stats ao Vivo', icon:'📈', action: ()=>{ meetAddSysMsg('📈 '+NEXUS_TOOLS.getStats()); }},
+  { id:'topgames', label:'🏆 Top Jogos', icon:'🏆', action: ()=>{ meetAddSysMsg('🏆 '+NEXUS_TOOLS.getTopGames()); }},
+  { id:'ata', label:'📝 Gerar Ata', icon:'📝', action: async()=>{ meetGenerateAta(); }},
+  { id:'close', label:'🔒 Encerrar Sala', icon:'🔒', action: ()=>{ if(confirm('Encerrar a reunião?')) meetLeave(); }},
+];
+
+function meetRenderScripts(){
+  const panel = document.getElementById('meet-scripts-panel');
+  const list = document.getElementById('meet-scripts-list');
+  if(!panel) return;
+  panel.style.display = meetingIsAdmin ? '' : 'none';
+  if(!list) return;
+  list.innerHTML = MEET_SCRIPTS.map(s=>`
+    <button onclick="meetRunScript('${s.id}')" style="background:rgba(255,107,0,.06);border:1px solid rgba(255,107,0,.18);color:var(--w);padding:6px 10px;border-radius:6px;font-size:.75rem;text-align:left;width:100%;transition:all .15s;display:flex;align-items:center;gap:6px"
+      onmouseenter="this.style.background='rgba(255,107,0,.15)'" onmouseleave="this.style.background='rgba(255,107,0,.06)'">
+      ${s.icon} ${s.label.replace(s.icon,'').trim()}
+    </button>`).join('');
+}
+
+function meetRunScript(id){
+  const s = MEET_SCRIPTS.find(x=>x.id===id);
+  if(s) s.action();
+}
+
+async function meetGenerateAta(){
+  const msgs = Array.from(document.getElementById('meet-msgs')?.querySelectorAll('[data-msg]')||[]).map(m=>m.dataset.msg).join('\n');
+  const doneItems = meetingAgenda.filter(a=>a.done).map(a=>'✓ '+a.text).join('\n');
+  const prompt = `Gere uma ata profissional desta reunião:\n\nParticipantes: ${meetingMembers.map(m=>m.name).join(', ')}\nData: ${new Date().toLocaleDateString('pt-BR')}\nPauta concluída:\n${doneItems||'Nenhum item'}\nMensagens:\n${msgs||'(sem mensagens)'}`;
+  const target = document.getElementById('meet-ai-msgs');
+  const sugg = document.getElementById('meet-ai-suggestions');
+  await meetingAgent.run(prompt, target, sugg);
+  // Também copia para notas
+  const notes = document.getElementById('meet-notes-area');
+  if(notes) { notes.value += '\n\n=== ATA GERADA ===\n' + prompt; }
+  toast('📝 Ata gerada na IA e notas!','ok');
+}
+
+function meetInitAI(){
+  // Atualiza contexto com infos da reunião
+  NEXUS_MEMORY.save('meeting_code', meetingCode, 'session');
+  NEXUS_MEMORY.save('meeting_host', meetingIsAdmin, 'session');
+  NEXUS_MEMORY.save('meeting_members', meetingMembers.map(m=>m.name), 'long');
+}
+
+function meetSendMsg(){
+  const inp = document.getElementById('meet-inp');
+  if(!inp?.value?.trim()) return;
+  const text = inp.value.trim();
+  inp.value = '';
+  meetRenderChatMsg(S.user, text, meetingIsAdmin);
+  meetingChannel?.postMessage({type:'CHAT', from:S.user, text, isAdmin:meetingIsAdmin});
+  // Se mensagem menciona IA, encaminha
+  if(text.toLowerCase().startsWith('@ia') || text.toLowerCase().startsWith('/ia')){
+    const q = text.replace(/^[@\/]ia\s*/i,'');
+    meetingAgent?.run(q, document.getElementById('meet-ai-msgs'), document.getElementById('meet-ai-suggestions'));
+  }
+}
+
+function meetRenderChatMsg(from, text, isAdm){
+  const msgs = document.getElementById('meet-msgs');
+  if(!msgs) return;
+  const isMe = from === S.user;
+  const div = document.createElement('div');
+  div.dataset.msg = `${from}: ${text}`;
+  div.style.cssText = `display:flex;flex-direction:column;gap:2px;align-items:${isMe?'flex-end':'flex-start'}`;
+  div.innerHTML = `
+    <div style="font-size:.65rem;color:${isAdm?'var(--o)':isMe?'var(--c)':'var(--mu)'};font-family:var(--fm)">${from}${isAdm?' [ADMIN]':''}</div>
+    <div style="background:${isMe?'rgba(0,245,255,.08)':'rgba(255,255,255,.05)'};border:1px solid ${isMe?'rgba(0,245,255,.15)':'rgba(255,255,255,.07)'};border-radius:8px;padding:7px 11px;font-size:.82rem;max-width:90%">${text}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = 99999;
+}
+
+function meetAddSysMsg(text){
+  const msgs = document.getElementById('meet-msgs');
+  if(!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;font-size:.72rem;color:var(--mu);padding:4px 0;font-family:var(--fm)';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = 99999;
+}
+
+function meetTab(tab, btn){
+  ['chat','notes','poll'].forEach(t=>{
+    const p=document.getElementById('meet-'+t+'-panel');
+    if(p) p.style.display=t===tab?'flex':'none';
+  });
+  document.querySelectorAll('#page-meeting .ctab').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+}
+
+function meetSyncNotes(){
+  clearTimeout(meetingNotesTimer);
+  meetingNotesTimer = setTimeout(()=>{
+    const notes = document.getElementById('meet-notes-area')?.value||'';
+    meetingChannel?.postMessage({type:'NOTES', notes});
+  }, 600);
+}
+
+function meetExportNotes(){
+  const notes = document.getElementById('meet-notes-area')?.value||'';
+  const date = new Date().toLocaleDateString('pt-BR');
+  const content = `REUNIÃO ADMIN — Free Games\nData: ${date}\nParticipantes: ${meetingMembers.map(m=>m.name).join(', ')}\nCódigo: ${meetingCode}\n\n${notes}`;
+  const blob = new Blob([content],{type:'text/plain'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ata_${meetingCode}_${date.replace(/\//g,'-')}.txt`; a.click();
+  toast('📥 Notas exportadas!','ok');
+}
+
+function meetRenderPoll(){
+  const area = document.getElementById('meet-poll-area');
+  const btnWrap = document.getElementById('meet-create-poll-btn-wrap');
+  if(!area) return;
+  area.innerHTML = meetingPolls.length === 0
+    ? '<div style="color:var(--mu);font-size:.8rem;text-align:center;padding:20px">Nenhuma votação criada.</div>'
+    : meetingPolls.map((p,pi)=>`
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:10px">${p.question}</div>
+        ${p.options.map((o,oi)=>{
+          const total=p.votes.reduce((s,v)=>s+v,0)||1;
+          const pct=Math.round(p.votes[oi]/total*100);
+          return `<div style="margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:3px"><span>${o}</span><span style="color:var(--c)">${p.votes[oi]} (${pct}%)</span></div>
+            <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--c),var(--p));border-radius:3px;transition:width .4s"></div></div>
+            <button onclick="meetVote(${pi},${oi})" style="margin-top:4px;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);color:var(--c);padding:2px 8px;border-radius:4px;font-size:.68rem">Votar</button>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+  if(btnWrap) btnWrap.innerHTML = meetingIsAdmin
+    ? `<button onclick="meetCreatePoll()" class="btn btn-md btn-c" style="width:100%;justify-content:center">+ Criar Votação</button>`
+    : '';
+}
+
+function meetVote(pollIdx, optIdx){
+  if(!meetingPolls[pollIdx]) return;
+  meetingPolls[pollIdx].votes[optIdx]++;
+  meetingChannel?.postMessage({type:'POLL_UPDATE', polls:meetingPolls});
+  meetRenderPoll();
+  toast('🗳️ Voto registrado!','ok');
+}
+
+function meetCreatePoll(){
+  const question = prompt('Pergunta da votação:');
+  if(!question?.trim()) return;
+  const opts = [];
+  for(let i=0;i<4;i++){
+    const o = prompt(`Opção ${i+1} (deixe vazio para terminar):`);
+    if(!o?.trim()) break;
+    opts.push(o.trim());
+  }
+  if(opts.length < 2){ toast('Precisa de pelo menos 2 opções','warn'); return; }
+  meetingPolls.push({ question:question.trim(), options:opts, votes:opts.map(()=>0) });
+  meetingChannel?.postMessage({type:'POLL_UPDATE', polls:meetingPolls});
+  meetRenderPoll();
+  toast('🗳️ Votação criada!','ok');
+}
+
+async function meetAiSend(){
+  const inp = document.getElementById('meet-ai-inp');
+  if(!inp?.value?.trim()) return;
+  const q = inp.value.trim(); inp.value='';
+  const target = document.getElementById('meet-ai-msgs');
+  const sugg = document.getElementById('meet-ai-suggestions');
+
+  // Render user msg
+  meetingAgent?._renderMsg(q, [], target, 'user');
+
+  // Run agent loop
+  await meetingAgent?.run(q, target, sugg);
+}
+
+function meetLeave(){
+  meetingChannel?.postMessage({type:'LEAVE', member:S.user});
+  meetingChannel?.close();
+  meetingChannel = null;
+  meetingCode = null;
+  meetingAgent = null;
+
+  // Reset UI
+  document.getElementById('meet-gate').style.display='flex';
+  document.getElementById('meet-room').style.display='none';
+  document.querySelectorAll('.meet-digit').forEach(d=>{ d.value=''; d.style.borderColor='var(--bd)'; });
+  document.getElementById('meet-code-err').textContent='';
+  document.getElementById('md0')?.focus();
+  toast('Saiu da reunião','');
+}
+
+function initMeeting(){
+  // Atualizar visibilidade do botão admin
+  const btn = document.getElementById('tnb-meeting');
+  if(btn) btn.style.display = '';
+  // Gera um código para o admin ao abrir
+  if(S.isAdmin && !meetingCode){
+    const code = Math.random().toString(36).slice(2,8).toUpperCase();
+    MEETING_CODES[code] = { host:S.user, created:Date.now() };
+    toast(`🔐 Código da sala: ${code} — compartilhe com os participantes!`,'ok');
+    // Preenche automaticamente os campos
+    code.split('').forEach((c,i)=>{ const el=document.getElementById('md'+i); if(el) el.value=c; });
+  }
+}
+
+// Registrar na goPage
+// (já está dentro de goPage via if(id==='meeting') initMeeting())
+
+
+// ═══════════════════════════════════════
+// HACKER PANEL
+// ═══════════════════════════════════════
+function showHackerPanel(){
+  const existing=document.getElementById('hacker-panel');
+  if(existing) existing.remove();
+  const panel=document.createElement('div');
+  panel.id='hacker-panel';
+  panel.style.cssText='position:fixed;top:60px;right:16px;width:280px;background:rgba(0,10,0,.97);border:1px solid #00ff64;border-radius:12px;z-index:9000;padding:14px;font-family:var(--fm);box-shadow:0 0 30px rgba(0,255,100,.3)';
+  panel.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;border-bottom:1px solid rgba(0,255,100,.2);padding-bottom:10px">
+      <span style="font-size:1.2rem">💀</span>
+      <span style="color:#00ff64;font-size:.85rem;letter-spacing:2px">HACKER CONSOLE</span>
+      <button onclick="this.closest('#hacker-panel').remove()" style="margin-left:auto;background:none;border:none;color:#555;font-size:1rem">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div style="font-size:.65rem;color:#00aa44;letter-spacing:1px;margin-bottom:3px">⚡ CHEATS ATIVOS</div>
+      <button onclick="hackerCheat('nebux')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">💰 +999999 NeBux</button>
+      <button onclick="hackerCheat('level')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">⬆️ Max Level (100)</button>
+      <button onclick="hackerCheat('godmode')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">🛡️ God Mode (HP infinito)</button>
+      <button onclick="hackerCheat('speed')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">⚡ Speed x10</button>
+      <button onclick="hackerCheat('fly')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">✈️ Fly Mode</button>
+      <button onclick="hackerCheat('freeze')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">🧊 Congelar Bots</button>
+      <button onclick="hackerCheat('score')" style="background:rgba(0,255,100,.08);border:1px solid rgba(0,255,100,.25);color:#00ff64;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">🏆 Placar Máximo</button>
+      <div style="font-size:.65rem;color:#00aa44;letter-spacing:1px;margin:6px 0 3px">🎛️ CONFIGS DO JOGO</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="color:#00ff64;font-size:.72rem;flex:1">Nome do Jogo:</span>
+        <input id="hck-gname" placeholder="FreeGames" value="FreeGames" style="background:rgba(0,0,0,.5);border:1px solid rgba(0,255,100,.2);color:#00ff64;padding:4px 8px;border-radius:4px;font-size:.72rem;width:120px;outline:none">
+        <button onclick="hackerCheat('rename')" style="background:rgba(0,255,100,.15);border:1px solid rgba(0,255,100,.3);color:#00ff64;padding:4px 8px;border-radius:4px;font-size:.7rem">OK</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="color:#00ff64;font-size:.72rem;flex:1">Online (qtd):</span>
+        <input id="hck-online" placeholder="3241" value="3241" style="background:rgba(0,0,0,.5);border:1px solid rgba(0,255,100,.2);color:#00ff64;padding:4px 8px;border-radius:4px;font-size:.72rem;width:80px;outline:none">
+        <button onclick="hackerCheat('setonline')" style="background:rgba(0,255,100,.15);border:1px solid rgba(0,255,100,.3);color:#00ff64;padding:4px 8px;border-radius:4px;font-size:.7rem">OK</button>
+      </div>
+      <button onclick="hackerCheat('banall')" style="background:rgba(255,0,50,.08);border:1px solid rgba(255,0,50,.25);color:#ff3355;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left;margin-top:4px">🚫 Banir Todos (fake)</button>
+      <button onclick="hackerCheat('matrix')" style="background:rgba(0,255,100,.05);border:1px solid rgba(0,255,100,.15);color:#00aa44;padding:7px 10px;border-radius:6px;font-size:.78rem;text-align:left">💊 Efeito Matrix</button>
+    </div>`;
+  document.body.appendChild(panel);
+}
+
+function hackerCheat(type){
+  if(type==='nebux'){
+    PROFILE.nebux=999999;
+    document.getElementById('topbar-nebux')&&(document.getElementById('topbar-nebux').textContent='999,999');
+    toast('💰 NeBux hackeado: 999,999!','ok');
+  } else if(type==='level'){
+    PROFILE.level=100; PROFILE.xp=99999;
+    toast('⬆️ Level 100 ativado!','ok');
+    if(S.running) renderProfile();
+  } else if(type==='godmode'){
+    S.hp=9999; S.hackerGod=!S.hackerGod;
+    toast(S.hackerGod?'🛡️ God Mode ON!':'🛡️ God Mode OFF!','ok');
+    if(S.running){ document.getElementById('hud-hfill').style.width='100%'; document.getElementById('hud-hfill').style.background='linear-gradient(90deg,#00ff64,#00aa44)'; }
+  } else if(type==='speed'){
+    S.hackerSpeed=!S.hackerSpeed;
+    toast(S.hackerSpeed?'⚡ Speed x10 ON!':'⚡ Speed normal.','ok');
+  } else if(type==='fly'){
+    S.hackerFly=!S.hackerFly;
+    if(S.running) player3d&&(player3d.fly=S.hackerFly);
+    toast(S.hackerFly?'✈️ Fly Mode ON!':'✈️ Fly OFF.','ok');
+  } else if(type==='freeze'){
+    S.hackerFreeze=!S.hackerFreeze;
+    toast(S.hackerFreeze?'🧊 Bots congelados!':'🧊 Bots livres.','ok');
+  } else if(type==='score'){
+    scoreL=99; scoreR=0; updateHUD();
+    toast('🏆 Placar: 99x0!','ok');
+  } else if(type==='rename'){
+    const nm=document.getElementById('hck-gname')?.value||'FreeGames';
+    document.title=nm+' — Plataforma 3D';
+    document.querySelector('.logo')&&(document.querySelector('.logo').innerHTML=`${nm.slice(0,4)}<b>${nm.slice(4)||''}</b>`);
+    toast(`✏️ Jogo renomeado: ${nm}!`,'ok');
+  } else if(type==='setonline'){
+    const n=parseInt(document.getElementById('hck-online')?.value||'3241');
+    document.querySelectorAll('.sn').forEach((el,i)=>{ if(i===0) el.textContent=n.toLocaleString(); });
+    toast(`📡 Online ajustado: ${n.toLocaleString()}!`,'ok');
+  } else if(type==='banall'){
+    toast('🚫 Banindo todos os jogadores... (simulação)','warn');
+    setTimeout(()=>toast('✅ 3,241 players banidos! (fake)','ok'),1200);
+  } else if(type==='matrix'){
+    document.body.style.filter=document.body.style.filter?'':'hue-rotate(90deg) contrast(1.2)';
+    toast('💊 Matrix mode!','ok');
+  }
+}
+
+// BAN ao tentar entrar no "impressionar"
+function checkImpressionarBan(page){
+  if(page==='impressionar'){
+    localStorage.setItem('fg_ban_until', (Date.now()+10*60*60*1000).toString());
+    // Show ban overlay
+    document.body.innerHTML=`<div style="position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:monospace;z-index:99999">
+      <div style="font-size:5rem;margin-bottom:20px">🚫</div>
+      <div style="color:#ff1744;font-size:2rem;font-weight:700;margin-bottom:10px">ACESSO BANIDO</div>
+      <div style="color:#ff6b6b;font-size:1rem;margin-bottom:8px">Tentativa de acessar área restrita</div>
+      <div style="color:#888;font-size:.85rem;margin-bottom:20px">Duração do ban: <span style="color:#ff1744">10 horas</span></div>
+      <div style="color:#444;font-size:.75rem;margin-bottom:30px">Recarregue o site após 10h para voltar ao normal</div>
+      <div style="font-size:.65rem;color:#222;max-width:400px;text-align:center;line-height:1.6">IP registrado: 192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)} | Timestamp: ${new Date().toISOString()}</div>
+    </div>`;
+    return true;
+  }
+  return false;
+}
+
+
+// ═══════════════════════════════════════
+// FIRST PERSON MODE
+// ═══════════════════════════════════════
+let isFirstPerson = false;
+function toggleFirstPerson(){
+  isFirstPerson = !isFirstPerson;
+  const btn = document.getElementById('hud-fp-toggle');
+  if(btn) btn.textContent = isFirstPerson ? '3ª Pessoa' : '1ª Pessoa';
+  if(btn) btn.style.background = isFirstPerson ? 'rgba(0,245,255,.35)' : 'rgba(0,245,255,.15)';
+  toast(isFirstPerson ? '👁️ Câmera em 1ª pessoa!' : '👁️ Câmera em 3ª pessoa!', '');
+}
+
+// ═══════════════════════════════════════
+// VR MODE — Gyroscope + DeviceOrientation
+// ═══════════════════════════════════════
+let vrActive = false, vrRenderer = null, vrScene = null;
+let vrAlpha = 0, vrBeta = 0, vrGamma = 0;
+let vrOrientHandler = null;
+
+function toggleVRMode(){
+  vrActive = !vrActive;
+  const ov = document.getElementById('vr-overlay');
+  const btn = document.getElementById('hud-vr-toggle');
+  if(vrActive){
+    ov.style.display = 'flex';
+    if(btn){ btn.textContent = 'Sair VR'; btn.style.background = 'rgba(213,0,249,.4)'; }
+    // Request device orientation for head tracking
+    if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission().then(state=>{
+        if(state==='granted') setupVROrientation();
+        else toast('Permissão de giroscópio negada. Use no celular.','warn');
+      }).catch(()=>setupVROrientation());
+    } else {
+      setupVROrientation();
+    }
+    toast('🥽 VR Mode ativado! Mova a cabeça para olhar.','ok');
+    startVRRender();
+  } else {
+    ov.style.display = 'none';
+    if(btn){ btn.textContent = 'VR'; btn.style.background = 'rgba(213,0,249,.15)'; }
+    if(vrOrientHandler) window.removeEventListener('deviceorientation', vrOrientHandler);
+    vrOrientHandler = null;
+    toast('VR desativado.','');
+  }
+}
+
+function setupVROrientation(){
+  vrOrientHandler = (e) => {
+    vrAlpha = e.alpha || 0; // yaw (Z)
+    vrBeta  = e.beta  || 0; // pitch (X)
+    vrGamma = e.gamma || 0; // roll (Y)
+    // Apply to player camera
+    if(S.running && player3d){
+      player3d.yaw   = -(vrAlpha * Math.PI / 180);
+      player3d.pitch = (vrBeta  * Math.PI / 180) * 0.8;
+    }
+  };
+  window.addEventListener('deviceorientation', vrOrientHandler, true);
+}
+
+function startVRRender(){
+  if(!vrActive) return;
+  // Copy main canvas to both VR canvases with IPD offset
+  const main = document.getElementById('c3d');
+  const cl = document.getElementById('vr-canvas-l');
+  const cr = document.getElementById('vr-canvas-r');
+  if(!main || !cl || !cr){ requestAnimationFrame(startVRRender); return; }
+  const cw = window.innerWidth/2, ch = window.innerHeight;
+  cl.width = cr.width = cw; cl.height = cr.height = ch;
+  const ctxL = cl.getContext('2d');
+  const ctxR = cr.getContext('2d');
+  function vrFrame(){
+    if(!vrActive) return;
+    requestAnimationFrame(vrFrame);
+    try{
+      // Left eye — slight offset left
+      ctxL.drawImage(main, -8, 0, cw+8, ch, 0, 0, cw, ch);
+      // Right eye — slight offset right
+      ctxR.drawImage(main, 8, 0, cw+8, ch, 0, 0, cw, ch);
+    }catch(e){}
+  }
+  vrFrame();
+}
+
+// Override cam3d update in 3D loop to support first person + vr
+const _orig_cam_update = window._camUpdate || null;
+
+// ═══════════════════════════════════════
+// HACKER: override player update for god/speed/fly/freeze
+// ═══════════════════════════════════════
+const _orig_update3D = window.update3D;
+function _hackerPhysicsOverride(){
+  if(S.hackerGod && S.running){
+    S.hp = Math.max(S.hp, 100);
+    const hf = document.getElementById('hud-hfill');
+    if(hf){ hf.style.width='100%'; hf.style.background='linear-gradient(90deg,#00ff64,#00aa44)'; }
+  }
+  if(S.hackerFreeze && S.running){
+    bots3d.forEach(b=>{ b.frozen = true; });
+  } else {
+    bots3d.forEach(b=>{ b.frozen = false; });
+  }
+}
+
+// Patch update3D to call hacker override
+const _realUpdate3D = typeof update3D === 'function' ? update3D : null;
+
+// ═══════════════════════════════════════
+// MEETING — ILHA GIGANTE 3D
+// ═══════════════════════════════════════
+function buildIslandMeetingScene(){
+  // Clear previous
+  if(scene3d){
+    while(scene3d.children.length > 0) scene3d.remove(scene3d.children[0]);
+  }
+  scene3d.background = new THREE.Color(0x87ceeb);
+  scene3d.fog = new THREE.FogExp2(0x87ceeb, 0.008);
+
+  // SUN
+  const sun = new THREE.DirectionalLight(0xfffae0, 2.2);
+  sun.position.set(50, 80, 30); sun.castShadow = true; scene3d.add(sun);
+  scene3d.add(new THREE.AmbientLight(0x88bbff, 0.7));
+
+  // SKY DOME
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(300,16,8),
+    new THREE.MeshBasicMaterial({color:0x87ceeb, side:THREE.BackSide}));
+  scene3d.add(sky);
+
+  // OCEAN
+  const ocean = new THREE.Mesh(new THREE.PlaneGeometry(800,800,1,1),
+    new THREE.MeshStandardMaterial({color:0x006994, roughness:0.1, metalness:0.3, transparent:true, opacity:0.88}));
+  ocean.rotation.x = -Math.PI/2; ocean.position.y = -2; scene3d.add(ocean);
+
+  // ISLAND BASE — big irregular hill
+  const islandGeo = new THREE.CylinderGeometry(80, 90, 8, 32);
+  const islandMat = new THREE.MeshStandardMaterial({color:0x228b22, roughness:0.9});
+  const island = new THREE.Mesh(islandGeo, islandMat);
+  island.position.set(0, -2, 0); island.castShadow = true; island.receiveShadow = true;
+  scene3d.add(island); groundMesh = island;
+
+  // SAND BEACH ring
+  const beach = new THREE.Mesh(new THREE.CylinderGeometry(82,88,1,32),
+    new THREE.MeshStandardMaterial({color:0xf4d03f, roughness:0.95}));
+  beach.position.set(0,-2.5,0); scene3d.add(beach);
+
+  // ── MANSÃO ──────────────────────────────────────────────────
+  const mansMat  = new THREE.MeshStandardMaterial({color:0xf5f0e8, roughness:0.5, metalness:0.1});
+  const roofMat  = new THREE.MeshStandardMaterial({color:0x8b0000, roughness:0.8});
+  const glassMat = new THREE.MeshStandardMaterial({color:0x88ccff, transparent:true, opacity:0.5, emissive:0x224466, emissiveIntensity:0.3});
+  const darkMat  = new THREE.MeshStandardMaterial({color:0x3a2010, roughness:0.9});
+  // Main body
+  const mansion = new THREE.Mesh(new THREE.BoxGeometry(24,10,16), mansMat);
+  mansion.position.set(0, 9, -15); mansion.castShadow = true; scene3d.add(mansion);
+  // Roof
+  const roof = new THREE.Mesh(new THREE.CylinderGeometry(0,14,7,4), roofMat);
+  roof.position.set(0, 18, -15); roof.rotation.y=Math.PI/4; scene3d.add(roof);
+  // Wings
+  [-14, 14].forEach(x => {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(9,7,10), mansMat);
+    wing.position.set(x, 7.5, -15); scene3d.add(wing);
+    const wroofGeo = new THREE.CylinderGeometry(0,5.5,5,4);
+    const wroof = new THREE.Mesh(wroofGeo, roofMat);
+    wroof.position.set(x, 13, -15); wroof.rotation.y=Math.PI/4; scene3d.add(wroof);
+  });
+  // Windows
+  for(let wx=-8; wx<=8; wx+=5) for(let wy=5; wy<=9; wy+=4){
+    const win = new THREE.Mesh(new THREE.BoxGeometry(2,2.5,0.2), glassMat);
+    win.position.set(wx, wy, -7); scene3d.add(win);
+    const wl = new THREE.PointLight(0xffee88, 0.8, 6); wl.position.set(wx, wy, -7); scene3d.add(wl);
+  }
+  // Door
+  const door = new THREE.Mesh(new THREE.BoxGeometry(2.5,4,0.2), darkMat);
+  door.position.set(0, 6, -7); scene3d.add(door);
+  // Mansion glow
+  const mansLight = new THREE.PointLight(0xffee88, 3, 30); mansLight.position.set(0, 12, -15); scene3d.add(mansLight);
+  // Columns
+  for(let cx=-6; cx<=6; cx+=3){
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.5,10,8),
+      new THREE.MeshStandardMaterial({color:0xeeeeee, roughness:0.3}));
+    col.position.set(cx, 9, -7); scene3d.add(col);
+  }
+  // Pool
+  const pool = new THREE.Mesh(new THREE.BoxGeometry(14,0.5,8),
+    new THREE.MeshStandardMaterial({color:0x00aaff, transparent:true, opacity:0.8, emissive:0x003366, emissiveIntensity:0.5}));
+  pool.position.set(0, 4, 5); scene3d.add(pool);
+  const poolLight = new THREE.PointLight(0x00aaff, 3, 15); poolLight.position.set(0, 6, 5); scene3d.add(poolLight);
+
+  // ── PALMEIRAS ──────────────────────────────────────────────────
+  function addPalm(x, z){
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.5,8,7),
+      new THREE.MeshStandardMaterial({color:0x8d6e63, roughness:0.9}));
+    trunk.position.set(x, 6, z); scene3d.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(3.5,8,6),
+      new THREE.MeshStandardMaterial({color:0x228b22, roughness:0.8}));
+    leaves.scale.set(1,0.4,1); leaves.position.set(x, 11, z); scene3d.add(leaves);
+  }
+  [[-30,20],[-35,-5],[-28,-30],[30,25],[35,0],[28,-25],[0,35],[-15,40],[15,40],[50,10],[55,-10],[50,-25],[-50,5],[-48,-20]].forEach(([x,z])=>addPalm(x,z));
+
+  // ── COMIDAS / BEBIDAS — ÁREA DE PIQUENIQUE ──────────────────────────────────
+  const tableMat = new THREE.MeshStandardMaterial({color:0xdeb887, roughness:0.7});
+  // Mesa central
+  const table = new THREE.Mesh(new THREE.CylinderGeometry(5,5,0.4,16), tableMat);
+  table.position.set(20, 4.2, 10); scene3d.add(table);
+  const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.6,4,8), tableMat);
+  tableLeg.position.set(20, 2, 10); scene3d.add(tableLeg);
+  // Comidas na mesa — esferas coloridas como frutas
+  const foods = [
+    {c:0xff4444,r:0.5,x:18,z:9},{c:0xffaa00,r:0.45,x:20,z:8.5},{c:0x44cc44,r:0.5,x:22,z:9.5},
+    {c:0xff1177,r:0.4,x:19,z:11},{c:0xffdd00,r:0.35,x:21,z:11},{c:0xaa44ff,r:0.4,x:20,z:12}
+  ];
+  foods.forEach(f=>{
+    const food = new THREE.Mesh(new THREE.SphereGeometry(f.r,8,8),
+      new THREE.MeshStandardMaterial({color:f.c, roughness:0.4, metalness:0.1, emissive:f.c, emissiveIntensity:0.15}));
+    food.position.set(f.x, 4.8, f.z); scene3d.add(food);
+  });
+  // Suco / copos
+  for(let i=0; i<5; i++){
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.25,0.8,8),
+      new THREE.MeshStandardMaterial({color:0x88ddff, transparent:true, opacity:0.7}));
+    cup.position.set(18+i*0.9, 4.75, 10.5); scene3d.add(cup);
+  }
+  // Bolo
+  const cake = new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,1.5,16),
+    new THREE.MeshStandardMaterial({color:0xffccaa, roughness:0.5}));
+  cake.position.set(20.5, 5.1, 9); scene3d.add(cake);
+  const cakeTop = new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,0.3,16),
+    new THREE.MeshStandardMaterial({color:0xff6699, roughness:0.5, emissive:0xff3366, emissiveIntensity:0.2}));
+  cakeTop.position.set(20.5, 6, 9); scene3d.add(cakeTop);
+
+  // ── LAGOA / PISCINA NATURAL ────────────────────────────────────────────
+  const lagoon = new THREE.Mesh(new THREE.CylinderGeometry(12,12,1,24),
+    new THREE.MeshStandardMaterial({color:0x00bbee, transparent:true, opacity:0.85, emissive:0x003344, emissiveIntensity:0.4}));
+  lagoon.position.set(-20, 3.8, 15); scene3d.add(lagoon);
+  const lagLight = new THREE.PointLight(0x00aaff, 4, 20); lagLight.position.set(-20, 6, 15); scene3d.add(lagLight);
+
+  // ── FOGUEIRA ────────────────────────────────────────────────────────────
+  const fireBase = new THREE.Mesh(new THREE.CylinderGeometry(1.5,2,0.5,10),
+    new THREE.MeshStandardMaterial({color:0x555555, roughness:1}));
+  fireBase.position.set(10, 4.25, 20); scene3d.add(fireBase);
+  const fire = new THREE.Mesh(new THREE.ConeGeometry(1,2.5,8),
+    new THREE.MeshBasicMaterial({color:0xff6600}));
+  fire.position.set(10, 5.5, 20); fire.userData.isFire = true; scene3d.add(fire);
+  const fireLight = new THREE.PointLight(0xff6600, 5, 20); fireLight.position.set(10, 6, 20); fireLight.userData.isFire = true; scene3d.add(fireLight);
+
+  // ── CADEIRAS ESPALHADAS ───────────────────────────────────────────────
+  [[25,10,20],[18,8,24],[-5,4,30],[28,6,30]].forEach(([x,z,w])=>{
+    const chair = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.3,1.5),
+      new THREE.MeshStandardMaterial({color:0xf5f5dc, roughness:0.7}));
+    chair.position.set(x, 4.15, z); scene3d.add(chair);
+  });
+
+  // ── FARÓIS NA PRAIA ───────────────────────────────────────────────────
+  const lampColors = [0xff8800, 0x00aaff, 0xff1177, 0x00ff88];
+  [[-60,0,30],[-60,0,-10],[60,0,30],[60,0,-10]].forEach(([lx,,lz],i)=>{
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,8,6),
+      new THREE.MeshStandardMaterial({color:0xcccccc, metalness:0.6}));
+    pole.position.set(lx, 6, lz); scene3d.add(pole);
+    const lamp = new THREE.PointLight(lampColors[i%lampColors.length], 6, 35);
+    lamp.position.set(lx, 10, lz); scene3d.add(lamp);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.5,8,8),
+      new THREE.MeshBasicMaterial({color:lampColors[i%lampColors.length]}));
+    bulb.position.set(lx, 10, lz); scene3d.add(bulb);
+  });
+
+  player3d = {x:0, y:5, z:8, vx:0, vz:0, vy:0, onGround:true, yaw:Math.PI, pitch:0};
+  addHudChat('Sistema','🏝️ ILHA DA REUNIÃO — Explore a ilha, mansão, piscina e área de piquenique!','sys');
+}
+
+// Hook into meeting room entry
+const _origMeetTryEnter = window.meetTryEnter;
+
+
+function enterIslandMode(){
+  // Open the 3D game view in island mode
+  if(!S.running){
+    S.game = {id:'meeting-island', name:'Ilha da Reunião', cat:'Especial'};
+    S.opts.dim = '3d';
+    // Init 3D engine
+    init3DGame();
+    setTimeout(()=>{
+      if(scene3d){
+        // Clear default scene and build island
+        while(scene3d.children && scene3d.children.length > 0) scene3d.remove(scene3d.children[0]);
+        buildIslandMeetingScene();
+      }
+    }, 500);
+    toast('🏝️ Ilha carregando...','ok');
+  } else {
+    toast('🏝️ Já em jogo! Saia primeiro.','warn');
+  }
+}
+
+
+function buildPaintballScene(){
+  scene3d.background = new THREE.Color(0x1a0a00);
+  scene3d.fog = new THREE.Fog(0x1a0a00, 15, 80);
+  scene3d.add(new THREE.AmbientLight(0x553311, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.2);
+  dl.position.set(20,30,10); scene3d.add(dl);
+  // Arena floor with colored zones
+  const zones = [{c:0x220022,x:0,z:0},{c:0x002200,x:20,z:0},{c:0x220000,x:-20,z:0}];
+  zones.forEach(z=>{
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,40),
+      new THREE.MeshStandardMaterial({color:z.c, roughness:0.9}));
+    floor.rotation.x = -Math.PI/2; floor.position.set(z.x, 0, z.z); scene3d.add(floor);
+  });
+  groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(80,80),
+    new THREE.MeshStandardMaterial({color:0x1a0a00}));
+  groundMesh.rotation.x = -Math.PI/2; scene3d.add(groundMesh);
+  // Barricades — caixas coloridas de paintball
+  const colors = [0xff0044, 0x00ff88, 0xffcc00, 0x0088ff, 0xff6600];
+  const positions = [[5,0,5],[-5,0,5],[0,0,-5],[8,0,-8],[-8,0,-8],[3,0,15],[-3,0,15],[0,0,20],[12,0,0],[-12,0,0]];
+  positions.forEach(([x,y,z], i)=>{
+    const box = new THREE.Mesh(new THREE.BoxGeometry(2+Math.random(),1.5+Math.random()*1.5,1.5+Math.random()),
+      new THREE.MeshStandardMaterial({color:colors[i%colors.length], roughness:0.7}));
+    box.position.set(x, box.geometry.parameters.height/2, z); box.castShadow = true; scene3d.add(box);
+    // Paint splat light
+    const light = new THREE.PointLight(colors[i%colors.length], 1.5, 8);
+    light.position.set(x, 2, z); scene3d.add(light);
+  });
+  // Flags
+  [[0,0,-20],[0,0,20]].forEach(([x,y,z])=>{
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,4,6),
+      new THREE.MeshStandardMaterial({color:0x888888}));
+    pole.position.set(x, 2, z); scene3d.add(pole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.8,0.05),
+      new THREE.MeshStandardMaterial({color:z<0?0x0044ff:0xff2200, emissive:z<0?0x002288:0x882200, emissiveIntensity:0.5}));
+    flag.position.set(x+0.75, 3.5, z); scene3d.add(flag);
+  });
+  const cnt = S.opts.diff==='ultra'?8:S.opts.diff==='hard'?5:3;
+  spawnBots3D(cnt);
+  player3d = {x:0, y:1.5, z:18, vx:0, vz:0, vy:0, onGround:true, yaw:Math.PI, pitch:0};
+  ammo = 50; document.getElementById('hud-ammo').textContent = 'TINTAS: 50';
+  document.getElementById('hud-kills').textContent = 'KILLS: 0';
+  addHudChat('Sistema','🎨 PAINTBALL! Elimine os adversários com tinta. Quem tiver mais kills vence!','sys');
+}
+
+function buildSpacewarScene(){
+  scene3d.background = new THREE.Color(0x000008);
+  scene3d.fog = new THREE.FogExp2(0x000008, 0.003);
+  scene3d.add(new THREE.AmbientLight(0x111133, 0.6));
+  // Stars
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(2000*3);
+  for(let i=0;i<2000*3;i++) starPos[i]=(Math.random()-.5)*600;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  scene3d.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0xffffff, size:0.3})));
+  // Ground — asteroid surface
+  const astGround = new THREE.Mesh(new THREE.PlaneGeometry(200,200,20,20),
+    new THREE.MeshStandardMaterial({color:0x221122, roughness:1}));
+  astGround.rotation.x = -Math.PI/2; scene3d.add(astGround); groundMesh = astGround;
+  // Craters
+  for(let i=0;i<15;i++){
+    const cr = new THREE.Mesh(new THREE.CylinderGeometry(2+Math.random()*4, 2+Math.random()*4, 0.5, 12),
+      new THREE.MeshStandardMaterial({color:0x110011, roughness:1}));
+    cr.position.set((Math.random()-.5)*150, 0.1, (Math.random()-.5)*150); scene3d.add(cr);
+  }
+  // Floating asteroids
+  for(let i=0;i<20;i++){
+    const ast = new THREE.Mesh(new THREE.IcosahedronGeometry(1+Math.random()*3, 1),
+      new THREE.MeshStandardMaterial({color:0x553322, roughness:1}));
+    ast.position.set((Math.random()-.5)*100, 5+Math.random()*30, (Math.random()-.5)*100);
+    ast.userData.rotSpd = Math.random()*0.01; scene3d.add(ast);
+  }
+  // Colorful nebula lights
+  [[0x4400ff,30,20,0],[0xff0044,-30,15,20],[0x00ffaa,0,25,-30]].forEach(([c,x,y,z])=>{
+    scene3d.add(Object.assign(new THREE.PointLight(c,3,60), {position: new THREE.Vector3(x,y,z)}));
+  });
+  const cnt = S.opts.diff==='ultra'?8:S.opts.diff==='hard'?5:3;
+  spawnBots3D(cnt);
+  player3d = {x:0, y:1.5, z:0, vx:0, vz:0, vy:0, onGround:true, yaw:0, pitch:0};
+  ammo = 30; document.getElementById('hud-ammo').textContent = 'AMMO: 30';
+  document.getElementById('hud-kills').textContent = 'KILLS: 0';
+  addHudChat('Sistema','🚀 SPACE WAR! Combate em gravidade reduzida. Elimine os inimigos espaciais!','sys');
+}
+
+
+function buildDreams3DScene(){
+  scene3d.background = new THREE.Color(0x030015);
+  scene3d.fog = new THREE.FogExp2(0x030015, 0.006);
+  scene3d.add(new THREE.AmbientLight(0x223366, 0.8));
+  const moonLight = new THREE.DirectionalLight(0xaabbff, 1.2);
+  moonLight.position.set(-20, 60, 30); scene3d.add(moonLight);
+
+  // CLOUD FLOOR — walkable pink/purple clouds
+  function addCloud(x, z, scale){
+    const g = new THREE.Group();
+    const cMat = new THREE.MeshStandardMaterial({color:0xddaaff, transparent:true, opacity:0.85, roughness:0.9, emissive:0x442288, emissiveIntensity:0.1});
+    [0,1,2,3,4].forEach(i=>{
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(2+Math.random()*2, 8, 6), cMat.clone());
+      sphere.position.set((Math.random()-.5)*6, Math.random()*1, (Math.random()-.5)*6);
+      sphere.scale.setScalar(scale*(0.7+Math.random()*0.6)); g.add(sphere);
+    });
+    g.position.set(x, 0, z); scene3d.add(g);
+  }
+  for(let i=0;i<40;i++) addCloud((Math.random()-.5)*200, (Math.random()-.5)*200, 0.8+Math.random());
+  groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(400,400), new THREE.MeshBasicMaterial({visible:false}));
+  groundMesh.rotation.x=-Math.PI/2; groundMesh.position.y=-1; scene3d.add(groundMesh);
+
+  // FLOATING ISLANDS
+  [[0,8,-30],[40,12,20],[-35,6,40],[20,18,-60],[-20,5,60]].forEach(([x,y,z])=>{
+    const isle = new THREE.Mesh(new THREE.CylinderGeometry(8+Math.random()*6, 10+Math.random()*6, 3, 12),
+      new THREE.MeshStandardMaterial({color:0x228b22, roughness:0.9}));
+    isle.position.set(x, y, z); scene3d.add(isle);
+    // Trees on island
+    for(let t=0;t<4;t++){
+      const tx=(Math.random()-.5)*14, tz=(Math.random()-.5)*14;
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,3,6),
+        new THREE.MeshStandardMaterial({color:0x6b3a2a, roughness:1}));
+      tr.position.set(x+tx, y+1.5, z+tz); scene3d.add(tr);
+      const lv = new THREE.Mesh(new THREE.SphereGeometry(1.8,8,8),
+        new THREE.MeshStandardMaterial({color:0x55cc44, roughness:0.8}));
+      lv.position.set(x+tx, y+4, z+tz); scene3d.add(lv);
+    }
+    const isleLight = new THREE.PointLight([0xc084fc,0x93c5fd,0xa5f3fc,0x6ee7b7,0xfbcfe8][Math.floor(Math.random()*5)], 3, 25);
+    isleLight.position.set(x, y+5, z); scene3d.add(isleLight);
+  });
+
+  // GLOWING STARS / PARTICLES floating
+  for(let i=0;i<200;i++){
+    const star = new THREE.Mesh(new THREE.SphereGeometry(0.15+Math.random()*0.3, 4, 4),
+      new THREE.MeshBasicMaterial({color:[0xffffff,0xc084fc,0x93c5fd,0xa5f3fc][Math.floor(Math.random()*4)]}));
+    star.position.set((Math.random()-.5)*150, 5+Math.random()*60, (Math.random()-.5)*150);
+    star.userData.floatSpd = Math.random()*0.005+0.002;
+    star.userData.floatPhase = Math.random()*Math.PI*2;
+    scene3d.add(star);
+  }
+
+  // CRYSTAL TOWERS
+  [[0,10,-50],[30,5,-20],[-30,8,30]].forEach(([x,y,z])=>{
+    for(let h=0;h<5;h++){
+      const crystal = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 1.5-h*0.3, 4, 6),
+        new THREE.MeshStandardMaterial({color:0xaaddff, transparent:true, opacity:0.7, emissive:0x4488ff, emissiveIntensity:0.4, metalness:0.5}));
+      crystal.position.set(x+(h-2)*1.5, y+h*4, z);
+      crystal.rotation.y = h*0.5; scene3d.add(crystal);
+    }
+    const cLight = new THREE.PointLight(0x88aaff, 3, 30); cLight.position.set(x, y+20, z); scene3d.add(cLight);
+  });
+
+  // RAINBOW BRIDGE
+  for(let i=0;i<24;i++){
+    const col = new THREE.Color().setHSL(i/24, 1, 0.6);
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 2),
+      new THREE.MeshStandardMaterial({color:col, emissive:col, emissiveIntensity:0.4}));
+    seg.position.set(-30+i*3, 8+Math.sin(i*0.4)*3, -10); scene3d.add(seg);
+  }
+
+  // GIANT MOON
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(20, 16, 16),
+    new THREE.MeshStandardMaterial({color:0xffffcc, roughness:0.8, emissive:0x888844, emissiveIntensity:0.2}));
+  moon.position.set(-80, 80, -120); scene3d.add(moon);
+
+  player3d = {x:0, y:3, z:8, vx:0, vz:0, vy:0, onGround:true, yaw:Math.PI, pitch:-0.1};
+  addHudChat('Sistema','🌙 DREAMS 3D — Você está no mundo dos sonhos! Explore as ilhas flutuantes e cristais.','sys');
+  addHudChat('Sistema','☁️ As nuvens são sólidas — você pode caminhar sobre elas!','sys');
+}
+
+
+function updateDreams3DScene(){
+  if(!scene3d||!S.running||S.paused) return;
+  const t = performance.now()*0.001;
+  // Animate floating stars
+  scene3d.children.forEach(obj=>{
+    if(obj.userData.floatSpd){
+      obj.position.y += Math.sin(t*obj.userData.floatSpd*10+obj.userData.floatPhase)*0.002;
+      obj.rotation.y += obj.userData.floatSpd*0.5;
+    }
+    if(obj.userData.isFire){
+      obj.position.y = 5.3+Math.sin(t*5)*0.15;
+      if(obj.isLight) obj.intensity = 4+Math.sin(t*7)*1.5;
+    }
+  });
+  // Gentle gravity for dreams (floaty)
+  if(player3d.y < 1.5) player3d.vy = Math.max(player3d.vy, -0.02);
+}
+
+
+function updateGenericFPS(){
+  if(!scene3d||!S.running||S.paused) return;
+  // Animate fire if present
+  const t=performance.now()*0.001;
+  scene3d.children.forEach(obj=>{
+    if(obj.userData.isFire){
+      obj.rotation.y+=0.05;
+      obj.scale.y=0.9+Math.sin(t*8)*0.15;
+      obj.position.y=5.3+Math.sin(t*5)*0.2;
+    }
+    // Animate space asteroids
+    if(obj.userData.rotSpd){
+      obj.rotation.x+=obj.userData.rotSpd*0.7;
+      obj.rotation.y+=obj.userData.rotSpd;
+    }
+  });
+}
+
+
+// ── GALAXY GAME ──────────────────────────────────────────────────────
+function buildGalaxyGame(area){
+  area.style.cssText += 'background:radial-gradient(ellipse at 50% 60%,#0a0030,#000010);cursor:crosshair;overflow:hidden';
+  let score=0, stars=[];
+  function spawnStar(){
+    const star=document.createElement('div');
+    const size=2+Math.random()*4;
+    const colors=['#ffffff','#c084fc','#93c5fd','#fde68a','#a5f3fc'];
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    star.style.cssText=`position:absolute;width:${size}px;height:${size}px;border-radius:50%;background:${col};
+      box-shadow:0 0 ${size*3}px ${col};left:${Math.random()*100}%;top:${Math.random()*100}%;pointer-events:none;
+      animation:twinkle ${1+Math.random()*3}s ease-in-out infinite alternate`;
+    area.appendChild(star);
+    stars.push(star);
+    if(stars.length>120) { stars.shift().remove(); }
+  }
+  if(!document.getElementById('dream-kf2')){
+    const s=document.createElement('style');
+    s.id='dream-kf2';
+    s.textContent='@keyframes twinkle{from{opacity:.3;transform:scale(1)}to{opacity:1;transform:scale(1.5)}}';
+    document.head.appendChild(s);
+  }
+  for(let i=0;i<80;i++) spawnStar();
+  area.addEventListener('click',e=>{
+    score++;
+    document.getElementById('dream-score').textContent='ESTRELAS: '+score;
+    const flash=document.createElement('div');
+    const rect=area.getBoundingClientRect();
+    flash.style.cssText=`position:absolute;left:${e.clientX-rect.left-20}px;top:${e.clientY-rect.top-20}px;
+      width:40px;height:40px;border-radius:50%;background:radial-gradient(#c084fc,transparent);
+      animation:riseUp 1s ease forwards;pointer-events:none`;
+    area.appendChild(flash);
+    setTimeout(()=>flash.remove(),1000);
+    for(let i=0;i<5;i++) spawnStar();
+  });
+}
+
+// ── RAIN GAME ──────────────────────────────────────────────────────
+function buildRainGame(area){
+  area.style.background='linear-gradient(180deg,#050d1a,#020810)';
+  let score=0;
+  function spawnDrop(){
+    const drop=document.createElement('div');
+    const colors=['#88ccff','#aaddff','#66bbff','#99eeff'];
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    const size=4+Math.random()*8;
+    drop.style.cssText=`position:absolute;width:${size*0.3}px;height:${size}px;border-radius:2px;
+      background:${col};opacity:0.7;left:${Math.random()*100}%;top:-20px;pointer-events:none;
+      animation:dropFall ${1.5+Math.random()*2}s linear forwards`;
+    drop.onclick=()=>{ score++; document.getElementById('dream-score').textContent='GOTAS: '+score; drop.remove(); spawnDrop(); };
+    drop.style.pointerEvents='all';
+    area.appendChild(drop);
+    setTimeout(()=>{ if(drop.parentNode) drop.remove(); spawnDrop(); }, (1.5+Math.random()*2)*1000);
+  }
+  if(!document.getElementById('dream-kf3')){
+    const s=document.createElement('style');
+    s.id='dream-kf3';
+    s.textContent='@keyframes dropFall{from{top:-20px}to{top:110%}}';
+    document.head.appendChild(s);
+  }
+  for(let i=0;i<20;i++) setTimeout(()=>spawnDrop(), i*150);
+}
+
+// ── FOREST GAME ──────────────────────────────────────────────────────
+function buildForestGame(area){
+  area.style.cssText += 'background:radial-gradient(ellipse at bottom,#001208,#000806);cursor:crosshair';
+  let score=0;
+  // Plant trees on click
+  area.addEventListener('click',e=>{
+    const rect=area.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    const glow=document.createElement('div');
+    const colors=['#34d399','#6ee7b7','#a7f3d0','#059669'];
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    const size=20+Math.random()*40;
+    glow.style.cssText=`position:absolute;left:${x-size/2}px;top:${y-size/2}px;
+      width:${size}px;height:${size}px;border-radius:50%;background:radial-gradient(${col},transparent);
+      pointer-events:none;animation:forestGlow ${2+Math.random()*2}s ease-out forwards`;
+    area.appendChild(glow);
+    score++;
+    document.getElementById('dream-score').textContent='ÁRVORES: '+score;
+    setTimeout(()=>glow.remove(), 4000);
+    // Spawn fireflies
+    for(let i=0;i<4;i++){
+      const ff=document.createElement('div');
+      ff.style.cssText=`position:absolute;width:4px;height:4px;border-radius:50%;background:${col};
+        left:${x+(Math.random()-.5)*60}px;top:${y+(Math.random()-.5)*60}px;
+        animation:riseUp ${3+Math.random()*3}s linear forwards;box-shadow:0 0 6px ${col}`;
+      area.appendChild(ff);
+      setTimeout(()=>ff.remove(), 6000);
+    }
+  });
+  if(!document.getElementById('dream-kf4')){
+    const s=document.createElement('style');
+    s.id='dream-kf4';
+    s.textContent='@keyframes forestGlow{from{opacity:1;transform:scale(0.5)}to{opacity:0;transform:scale(3)}}';
+    document.head.appendChild(s);
+  }
+  // Background fireflies
+  function spawnFirefly(){
+    const ff=document.createElement('div');
+    const colors=['#34d399','#6ee7b7','#fde68a','#a7f3d0'];
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    ff.style.cssText=`position:absolute;width:3px;height:3px;border-radius:50%;background:${col};
+      box-shadow:0 0 8px ${col};left:${Math.random()*100}%;bottom:0px;pointer-events:none;
+      animation:riseUp ${5+Math.random()*8}s linear forwards`;
+    area.appendChild(ff);
+    setTimeout(()=>{ ff.remove(); spawnFirefly(); }, (5+Math.random()*8)*1000);
+  }
+  for(let i=0;i<15;i++) setTimeout(()=>spawnFirefly(), i*400);
+}
+
+
+// ═══════════════════════════════════════
+// FOOTBALL BOT AI ENHANCED
+// ═══════════════════════════════════════
+function updateFootballBotAI(){
+  if(!S.running||S.paused||!ball3d) return;
+  const t=performance.now()*0.001;
+  bots3d.forEach((bot,i)=>{
+    if(bot.frozen||!bot.group) return;
+    const dx=ball3d.x-bot.x, dz=ball3d.z-bot.z;
+    const distToBall=Math.sqrt(dx*dx+dz*dz);
+    // State: chase ball or defend
+    if(distToBall<1.8 && !ballHeld){
+      // Bot intercepts ball — shoot toward player goal
+      ball3d.vx=-Math.sin(bot.group.rotation.y||0)*6;
+      ball3d.vz=-Math.cos(bot.group.rotation.y||0)*6;
+      ball3d.vy=0.3;
+      playSound&&playSound('kick');
+    } else {
+      // Move toward ball
+      const speed=0.06*(1+i*0.01);
+      if(distToBall>2){
+        bot.x+=dx/distToBall*speed;
+        bot.z+=dz/distToBall*speed;
+      }
+      // Keep on field
+      bot.x=Math.max(-35,Math.min(35,bot.x));
+      bot.z=Math.max(-22,Math.min(22,bot.z));
+      if(bot.group) bot.group.position.set(bot.x, bot.y||0, bot.z);
+    }
+    // Walk animation
+    if(bot.group){
+      bot._walkT=(bot._walkT||0)+0.12;
+      const wt=bot._walkT;
+      bot.group.children.forEach((c,ci)=>{
+        if(ci===4) c.rotation.x=Math.sin(wt)*0.5;
+        if(ci===5) c.rotation.x=-Math.sin(wt)*0.5;
+      });
+    }
+  });
+}
+
+function updateBasketballBotAI(){
+  if(!S.running||S.paused||!ball3d) return;
+  bots3d.forEach((bot,i)=>{
+    if(bot.frozen||!bot.group) return;
+    const dx=ball3d.x-bot.x, dz=ball3d.z-bot.z;
+    const distToBall=Math.sqrt(dx*dx+dz*dz);
+    if(distToBall<2 && !ballHeld && Math.random()<0.02){
+      // Bot shoots toward hoop
+      ball3d.vx=(17-bot.x)*0.05;
+      ball3d.vz=(0-bot.z)*0.03;
+      ball3d.vy=0.35;
+    } else if(distToBall>2){
+      const speed=0.055*(1+i*0.005);
+      bot.x+=dx/distToBall*speed;
+      bot.z+=dz/distToBall*speed;
+      bot.x=Math.max(-16,Math.min(16,bot.x));
+      bot.z=Math.max(-9,Math.min(9,bot.z));
+      if(bot.group) bot.group.position.set(bot.x, bot.y||0, bot.z);
+    }
+  });
+}
+
+
+// ── TRY REAL WEBXR IF AVAILABLE ───────────────────────────────────────
+async function tryWebXR(){
+  if(!navigator.xr){ toast('WebXR não disponível — usando modo VR simulado','warn'); toggleVRMode(); return; }
+  try{
+    const supported = await navigator.xr.isSessionSupported('immersive-vr');
+    if(!supported){ toast('Headset VR não detectado — VR simulado ativado','warn'); toggleVRMode(); return; }
+    const session = await navigator.xr.requestSession('immersive-vr',{
+      requiredFeatures:['viewer','local'],
+      optionalFeatures:['hand-tracking','bounded-floor']
+    });
+    toast('🥽 WebXR ativado! Coloque o headset.','ok');
+    // Basic XR session setup
+    session.addEventListener('end',()=>{ toast('VR encerrado',''); });
+    if(ren3d) ren3d.xr.enabled=true;
+    if(ren3d) ren3d.xr.setSession(session);
+    vrActive=true;
+    document.getElementById('vr-overlay').style.display='none'; // WebXR handles its own display
+  }catch(e){
+    console.warn('WebXR error:',e);
+    toast('Usando VR simulado','warn');
+    toggleVRMode();
+  }
+}
+
 // BOOT
 (function(){
   goPage('login');
   document.getElementById('adm-btn').style.display='none';
-  setTimeout(()=>document.getElementById('galert').classList.add('on'),1500);
+  // galert removed (sem eventos laranja)
   // Try to restore saved session
   try{
     const saved=localStorage.getItem('freegames_profile');
@@ -11612,5 +13314,18 @@ function updateDreamsStatus(){
   }catch(e){}
 })();
 </script>
+
+<!-- VR MODE OVERLAY -->
+<div id="vr-overlay" style="display:none;position:fixed;inset:0;z-index:9500;background:#000;flex-direction:column;align-items:center;justify-content:center">
+  <div id="vr-left" style="position:absolute;left:0;top:0;width:50%;height:100%;overflow:hidden;border-right:2px solid #222">
+    <canvas id="vr-canvas-l" style="width:100%;height:100%;display:block"></canvas>
+  </div>
+  <div id="vr-right" style="position:absolute;right:0;top:0;width:50%;height:100%;overflow:hidden">
+    <canvas id="vr-canvas-r" style="width:100%;height:100%;display:block"></canvas>
+  </div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:100%;background:rgba(255,255,255,.05)"></div>
+  <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);border:1px solid rgba(213,0,249,.3);color:var(--p);padding:4px 16px;border-radius:20px;font-family:var(--fm);font-size:.7rem;letter-spacing:2px">VR MODE — MOVA A CABEÇA PARA OLHAR</div>
+  <button onclick="toggleVRMode()" style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(213,0,249,.2);border:1px solid rgba(213,0,249,.4);color:var(--p);padding:8px 20px;border-radius:8px;font-family:var(--fm);font-size:.8rem">SAIR DO VR</button>
+</div>
 </body>
 </html>

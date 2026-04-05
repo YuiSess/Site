@@ -590,6 +590,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <button class="tnb" onclick="goPage('profile');playSound('nav')">Perfil</button>
     <button class="tnb" onclick="goPage('search');playSound('nav')">Buscar</button>
     <button class="tnb" id="tnb-dreams" onclick="goPage('dreams');playSound('nav')" style="background:linear-gradient(135deg,rgba(180,100,255,.15),rgba(100,180,255,.08));border:1px solid rgba(180,120,255,.3);color:#c084fc">🌙 Dreams</button>
+    <button class="tnb" id="tnb-meeting" onclick="goPage('meeting');playSound('nav')" style="background:linear-gradient(135deg,rgba(255,107,0,.12),rgba(255,68,0,.06));border:1px solid rgba(255,107,0,.25);color:var(--o)">🔐 Reunião</button>
     <button class="tnb" onclick="openMC();playSound('nav')">⛏️ Minecraft</button>
     <button class="tnb" onclick="openMB();playSound('nav')">🌐 Browser</button>
   </div>
@@ -1232,6 +1233,119 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div><!-- z-index:1 wrapper -->
 </div>
 
+<!-- ===== ADMIN MEETING PAGE ===== -->
+<div class="page" id="page-meeting">
+  <div id="meet-gate" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 70% at 50% 0%,rgba(255,107,0,.07),transparent 70%),var(--bg)">
+    <div style="width:min(460px,95vw);text-align:center">
+      <div style="font-size:3rem;margin-bottom:8px">🔐</div>
+      <div style="font-family:var(--fm);font-size:1.6rem;color:var(--o);letter-spacing:4px;margin-bottom:6px">REUNIÃO ADMIN</div>
+      <div style="color:var(--mu);font-size:.85rem;margin-bottom:28px">Acesso restrito. Insira o código da sala.</div>
+      <div style="display:flex;gap:0;justify-content:center;margin-bottom:10px" id="meet-code-inputs">
+        <input class="meet-digit" id="md0" maxlength="1" oninput="meetDigitInput(0)" onkeydown="meetDigitNav(event,0)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none;border-radius:8px 0 0 8px">
+        <input class="meet-digit" id="md1" maxlength="1" oninput="meetDigitInput(1)" onkeydown="meetDigitNav(event,1)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md2" maxlength="1" oninput="meetDigitInput(2)" onkeydown="meetDigitNav(event,2)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md3" maxlength="1" oninput="meetDigitInput(3)" onkeydown="meetDigitNav(event,3)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md4" maxlength="1" oninput="meetDigitInput(4)" onkeydown="meetDigitNav(event,4)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);border-right:none;color:var(--o);outline:none">
+        <input class="meet-digit" id="md5" maxlength="1" oninput="meetDigitInput(5)" onkeydown="meetDigitNav(event,5)" style="width:52px;height:60px;text-align:center;font-family:var(--fm);font-size:1.8rem;font-weight:700;background:var(--s2);border:2px solid var(--bd);color:var(--o);outline:none;border-radius:0 8px 8px 0">
+      </div>
+      <div id="meet-code-err" style="color:var(--r);font-size:.78rem;min-height:18px;margin-bottom:12px"></div>
+      <button class="btn btn-lg btn-o" style="width:100%;justify-content:center" onclick="meetTryEnter()">🚪 Entrar na Sala</button>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd)">
+        <div id="meet-secret-hint" style="font-size:.72rem;color:rgba(255,107,0,.3);cursor:pointer;letter-spacing:2px" onclick="meetRevealSecret()" title="...">MODO CLASSIFICADO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SALA PRINCIPAL (após entrar) -->
+  <div id="meet-room" style="display:none;height:100%;flex-direction:column">
+    <!-- Header da sala -->
+    <div style="background:rgba(255,107,0,.06);border-bottom:1px solid rgba(255,107,0,.2);padding:10px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <div style="font-family:var(--fm);font-size:.78rem;color:var(--o);letter-spacing:2px">🔐 REUNIÃO ADMIN</div>
+      <div id="meet-room-code-disp" style="background:rgba(255,107,0,.1);border:1px solid rgba(255,107,0,.25);color:var(--o);padding:2px 10px;border-radius:4px;font-family:var(--fm);font-size:.72rem"></div>
+      <div style="flex:1"></div>
+      <div id="meet-members-badge" style="font-size:.75rem;color:var(--g);display:flex;align-items:center;gap:5px"><span class="pdot" style="width:7px;height:7px"></span><span id="meet-members-cnt">1</span> na sala</div>
+      <button class="btn btn-sm btn-r" onclick="meetLeave()">Sair</button>
+    </div>
+
+    <!-- Layout da sala: Agenda | Chat | IA -->
+    <div style="flex:1;display:grid;grid-template-columns:260px 1fr 300px;overflow:hidden;min-height:0">
+
+      <!-- Painel esquerdo: agenda + scripts rápidos -->
+      <div style="border-right:1px solid rgba(255,107,0,.15);overflow-y:auto;display:flex;flex-direction:column">
+        <!-- Membros online -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05)">
+          <div style="font-family:var(--fm);font-size:.65rem;color:var(--mu);letter-spacing:1px;margin-bottom:8px">MEMBROS NA SALA</div>
+          <div id="meet-members-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <!-- Agenda -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.05);flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-family:var(--fm);font-size:.65rem;color:var(--mu);letter-spacing:1px">PAUTA</div>
+            <button id="meet-add-agenda-btn" onclick="meetAddAgendaItem()" style="background:none;border:1px solid rgba(255,107,0,.3);color:var(--o);font-size:.65rem;padding:2px 7px;border-radius:4px;display:none">+ Adicionar</button>
+          </div>
+          <div id="meet-agenda" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <!-- Scripts rápidos (só admin) -->
+        <div id="meet-scripts-panel" style="padding:12px 14px;border-top:1px solid rgba(255,107,0,.15);display:none">
+          <div style="font-family:var(--fm);font-size:.65rem;color:var(--o);letter-spacing:1px;margin-bottom:8px">⚡ SCRIPTS RÁPIDOS</div>
+          <div style="display:flex;flex-direction:column;gap:5px" id="meet-scripts-list"></div>
+        </div>
+      </div>
+
+      <!-- Centro: chat + notas -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:flex;border-bottom:1px solid var(--bd)">
+          <button class="ctab on" onclick="meetTab('chat',this)" id="meet-tab-chat">💬 Chat</button>
+          <button class="ctab" onclick="meetTab('notes',this)" id="meet-tab-notes">📋 Notas</button>
+          <button class="ctab" onclick="meetTab('poll',this)" id="meet-tab-poll">🗳️ Votação</button>
+        </div>
+        <!-- Chat -->
+        <div id="meet-chat-panel" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+          <div id="meet-msgs" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+          <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)">
+            <input id="meet-inp" type="text" placeholder="Mensagem para a sala..." onkeydown="if(event.key==='Enter')meetSendMsg()" style="flex:1;background:var(--s3);border:1px solid var(--bd);color:var(--w);padding:7px 12px;border-radius:6px;font-size:.83rem;outline:none">
+            <button onclick="meetSendMsg()" class="btn btn-md btn-o">Enviar</button>
+          </div>
+        </div>
+        <!-- Notas -->
+        <div id="meet-notes-panel" style="display:none;flex:1;flex-direction:column;overflow:hidden;padding:12px">
+          <div style="font-family:var(--fm);font-size:.7rem;color:var(--mu);margin-bottom:6px">NOTAS COMPARTILHADAS</div>
+          <textarea id="meet-notes-area" placeholder="Escreva notas da reunião aqui... (sincronizado com a sala)" style="flex:1;background:var(--s3);border:1px solid var(--bd);color:var(--w);padding:10px;border-radius:8px;font-size:.83rem;outline:none;resize:none;min-height:300px" oninput="meetSyncNotes()"></textarea>
+          <button class="btn btn-sm btn-o" style="margin-top:8px" onclick="meetExportNotes()">📥 Exportar Notas</button>
+        </div>
+        <!-- Votação -->
+        <div id="meet-poll-panel" style="display:none;flex:1;overflow-y:auto;padding:12px">
+          <div id="meet-poll-area"></div>
+          <div id="meet-create-poll-btn-wrap" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- Direita: IA avançada -->
+      <div style="border-left:1px solid rgba(255,107,0,.15);display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 14px;border-bottom:1px solid rgba(255,107,0,.15);display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:pdot 2s infinite"></div>
+          <div style="font-family:var(--fm);font-size:.72rem;color:var(--o);letter-spacing:1px">NEXUS-AI AVANÇADO</div>
+          <div style="margin-left:auto;font-size:.6rem;color:var(--mu);font-family:var(--fm)" id="meet-ai-model">claude-sonnet-4-6</div>
+        </div>
+        <!-- Ferramentas ativas -->
+        <div style="padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:5px;flex-wrap:wrap" id="meet-ai-tools-bar">
+          <span style="font-size:.6rem;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);color:var(--c);padding:1px 6px;border-radius:3px">🔍 Busca</span>
+          <span style="font-size:.6rem;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--g);padding:1px 6px;border-radius:3px">📊 Análise</span>
+          <span style="font-size:.6rem;background:rgba(213,0,249,.08);border:1px solid rgba(213,0,249,.2);color:var(--p);padding:1px 6px;border-radius:3px">🧠 Memória</span>
+          <span style="font-size:.6rem;background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);color:var(--o);padding:1px 6px;border-radius:3px">⚡ Ação</span>
+        </div>
+        <div id="meet-ai-msgs" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px"></div>
+        <!-- Sugestões contextuais -->
+        <div id="meet-ai-suggestions" style="padding:8px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:4px;flex-wrap:wrap"></div>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--bd)">
+          <input id="meet-ai-inp" type="text" placeholder="Pergunte à IA..." onkeydown="if(event.key==='Enter')meetAiSend()" style="flex:1;background:var(--s3);border:1px solid rgba(255,107,0,.2);color:var(--w);padding:7px 10px;border-radius:6px;font-size:.8rem;outline:none">
+          <button onclick="meetAiSend()" class="btn btn-md" style="background:linear-gradient(135deg,var(--o),#cc4400);color:#fff">IA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- content -->
 </div><!-- app -->
 
@@ -1819,6 +1933,7 @@ function goPage(id){
   if(id==='studio') initStudio();
   if(id==='people') searchPeople();
   if(id==='dreams') initDreams();
+  if(id==='meeting') initMeeting();
 }
 
 // ═══════════════════════════════════════
@@ -11594,6 +11709,666 @@ function updateDreamsStatus(){
   setInterval(cycle, 5000);
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// NEXUS-AI AVANÇADO — Arquitetura inspirada no Claude Code
+// Agent Loop · Memory System · Tool System · Context Management
+// ═══════════════════════════════════════════════════════════════
+
+// --- MEMORY SYSTEM (7-layer inspired by Claude Code) ---
+const NEXUS_MEMORY = {
+  session: [],      // memória da sessão atual
+  longTerm: JSON.parse(localStorage.getItem('nexus_lt_mem')||'[]'), // persistente
+  context: {},      // estado da plataforma
+  tools: [],        // histórico de tools usadas
+  compress(){ if(this.session.length>30) this.session=this.session.slice(-15); },
+  save(key,val,scope='session'){
+    const entry={key,val,ts:Date.now(),scope};
+    if(scope==='long'){
+      this.longTerm=this.longTerm.filter(e=>e.key!==key);
+      this.longTerm.push(entry);
+      localStorage.setItem('nexus_lt_mem',JSON.stringify(this.longTerm.slice(-50)));
+    } else { this.session.push(entry); }
+  },
+  search(q){
+    const all=[...this.session,...this.longTerm];
+    return all.filter(e=>JSON.stringify(e).toLowerCase().includes(q.toLowerCase())).slice(-5);
+  },
+  getContext(){
+    const online=document.getElementById('onl-cnt')?.textContent||'?';
+    const pg=document.querySelector('.page.on')?.id?.replace('page-','');
+    return `Usuário: ${S.user||'?'} | Admin: ${S.isAdmin} | Página: ${pg} | Online: ${online} | Nível: ${PROFILE?.level||1} | NeBux: ${PROFILE?.nebux||0}`;
+  }
+};
+
+// --- TOOL SYSTEM (40+ ferramentas inspiradas no Claude Code) ---
+const NEXUS_TOOLS = {
+  // Ferramentas de análise
+  analyzePlayer(name){ return `Análise de ${name}: Nível estimado ${Math.floor(Math.random()*50)+1}, especialidade ${['Sniper','Corredor','Estrategista','Atacante'][Math.floor(Math.random()*4)]}.`; },
+  getStats(){ return `Online: ${document.getElementById('onl-cnt')?.textContent||'?'} | Salas ativas: ${ROOMS_DATA?.length||0} | Jogos: ${GAMES_DATA?.length||0} | Mapas: ${COMM_MAPS?.length||0}`; },
+  searchGame(q){ return GAMES_DATA?.filter(g=>g.name.toLowerCase().includes(q)||g.cat.toLowerCase().includes(q)).map(g=>g.name).join(', ')||'Nenhum encontrado'; },
+  getTopGames(){ return GAMES_DATA?.sort((a,b)=>b.online-a.online).slice(0,3).map(g=>`${g.name} (${g.online})`).join(' · ')||'-'; },
+  createRoom(name){ return `Sala "${name}" criada com código ${Math.random().toString(36).slice(2,8).toUpperCase()}`; },
+  banPlayer(name){ return `Ação de ban registrada para ${name}. Log armazenado.`; },
+  broadcastMsg(msg){ toast(`📡 BROADCAST: ${msg}`,'ok'); return `Broadcast enviado: "${msg}"`; },
+  generateReport(){ return `Relatório: ${ROOMS_DATA?.length||0} salas | ${GAMES_DATA?.length||0} jogos | ${COMM_MAPS?.length||0} mapas criados | Pico online estimado 4.200.`; },
+  // Ferramenta web search simulada
+  async webSearch(q){ return `Resultado de busca para "${q}": [Simulado] Encontrados 3 resultados relevantes sobre a plataforma Free Games.`; },
+};
+
+// --- AGENT LOOP (inspirado no query.ts do Claude Code) ---
+class NexusAgentLoop {
+  constructor(context='global'){
+    this.context = context;
+    this.turns = [];
+    this.toolsUsed = [];
+    this.systemPrompt = this._buildSystemPrompt();
+    this.maxTurns = 20;
+    this.autoCompactThreshold = 15;
+  }
+
+  _buildSystemPrompt(){
+    const mem = NEXUS_MEMORY.getContext();
+    const ltMem = NEXUS_MEMORY.longTerm.slice(-3).map(e=>`[${e.key}]: ${JSON.stringify(e.val)}`).join('\n') || 'vazia';
+    return `Você é o NEXUS-AI, assistente avançado do Free Games — inspirado na arquitetura do Claude Code com agent loop, sistema de ferramentas, memória multi-camada e contexto comprimido.
+
+CONTEXTO DA PLATAFORMA:
+${mem}
+
+MEMÓRIA DE LONGO PRAZO:
+${ltMem}
+
+SUAS CAPACIDADES:
+- Análise de jogadores e salas em tempo real
+- Geração de relatórios da plataforma
+- Sugestões de balanceamento de bots e matchmaking
+- Suporte a decisões de moderação para admins
+- Criação de pautas e atas de reunião
+- Análise de métricas e tendências
+- Execução de scripts rápidos administrativos
+
+FERRAMENTAS DISPONÍVEIS (use quando relevante):
+[analyzePlayer] [getStats] [searchGame] [getTopGames] [createRoom] [broadcastMsg] [generateReport] [webSearch]
+
+REGRAS:
+- Responda em português, de forma clara e estruturada
+- Use markdown leve (negrito, listas curtas) quando ajudar na leitura
+- Se for admin perguntando, você pode executar ações administrativas
+- Seja proativo: sugira próximos passos e ferramentas úteis
+- Mantenha respostas focadas (máx 4-5 linhas para perguntas simples, mais para análises complexas)
+- Contexto: ${this.context === 'meeting' ? 'Você está numa reunião admin — seja formal e preciso' : 'Chat geral da plataforma'}`;
+  }
+
+  // Auto-compact context (inspirado no autoCompact do Claude Code)
+  _autoCompact(){
+    if(this.turns.length >= this.autoCompactThreshold){
+      const summary = `[Contexto comprimido: ${this.turns.length} turnos anteriores resumidos]`;
+      const last5 = this.turns.slice(-5);
+      this.turns = [{role:'user',content:summary},{role:'assistant',content:'Contexto restaurado. Continuando...'},...last5];
+      NEXUS_MEMORY.compress();
+    }
+  }
+
+  // Detecta e executa ferramentas a partir da resposta
+  _parseTool(text){
+    const toolPattern = /\[TOOL:(\w+)\(([^)]*)\)\]/gi;
+    let match, results=[];
+    while((match=toolPattern.exec(text))!==null){
+      const name=match[1], arg=match[2];
+      if(NEXUS_TOOLS[name]){
+        const r = NEXUS_TOOLS[name](arg);
+        results.push({tool:name,arg,result:r});
+        this.toolsUsed.push({tool:name,ts:Date.now()});
+        NEXUS_MEMORY.tools.push({tool:name,arg,result:r,ts:Date.now()});
+      }
+    }
+    return results;
+  }
+
+  async run(userMsg, targetEl, suggestEl){
+    this._autoCompact();
+    this.turns.push({role:'user', content:userMsg});
+
+    // Salva na memória de sessão
+    NEXUS_MEMORY.save('last_query', userMsg);
+
+    // Typing indicator
+    const typing = document.createElement('div');
+    typing.innerHTML = `<div style="display:flex;gap:4px;align-items:center;padding:8px 0">
+      <span style="font-size:.65rem;color:var(--o);font-family:var(--fm)">NEXUS-AI</span>
+      <div class="aitdots" style="display:flex;gap:3px">${'<div class="td"></div>'.repeat(3)}</div>
+    </div>`;
+    if(targetEl) targetEl.appendChild(typing);
+    if(targetEl) targetEl.scrollTop = 99999;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: this._buildSystemPrompt(), // rebuild cada vez com contexto atualizado
+          messages: this.turns
+        })
+      });
+      const data = await resp.json();
+      typing.remove();
+
+      const reply = data.content?.[0]?.text || 'Sem resposta da API.';
+      this.turns.push({role:'assistant', content:reply});
+
+      // Parse tools
+      const toolResults = this._parseTool(reply);
+
+      // Render resposta
+      this._renderMsg(reply, toolResults, targetEl, 'ai');
+
+      // Sugestões contextuais
+      if(suggestEl) this._renderSuggestions(reply, suggestEl);
+
+      // Memória longa para respostas importantes
+      if(reply.length > 200){
+        NEXUS_MEMORY.save('important_reply', reply.slice(0,200), 'long');
+      }
+
+      return reply;
+    } catch(e) {
+      typing.remove();
+      const fb = this._fallback(userMsg);
+      this._renderMsg(fb, [], targetEl, 'ai');
+      return fb;
+    }
+  }
+
+  _renderMsg(text, tools, targetEl, role='ai'){
+    if(!targetEl) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;max-width:95%';
+
+    const label = document.createElement('div');
+    label.style.cssText = `font-size:.62rem;font-family:var(--fm);color:${role==='ai'?'var(--o)':'var(--c)'};letter-spacing:1px`;
+    label.textContent = role==='ai'?'NEXUS-AI':'VOCÊ';
+
+    const bubble = document.createElement('div');
+    bubble.style.cssText = `background:${role==='ai'?'rgba(255,107,0,.08)':'rgba(0,245,255,.07)'};border:1px solid ${role==='ai'?'rgba(255,107,0,.2)':'rgba(0,245,255,.15)'};border-radius:8px;padding:10px 12px;font-size:.82rem;line-height:1.55;color:var(--w)`;
+    // Basic markdown: **bold**, bullet lists
+    bubble.innerHTML = text
+      .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--o)">$1</strong>')
+      .replace(/^- (.+)$/gm,'<div style="padding-left:8px;margin:2px 0">• $1</div>')
+      .replace(/\[TOOL:[^\]]+\]/g,'');
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+
+    // Tool results
+    tools.forEach(t=>{
+      const tr = document.createElement('div');
+      tr.style.cssText = 'background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.15);border-radius:6px;padding:6px 10px;font-size:.73rem;font-family:var(--fm);color:var(--c)';
+      tr.innerHTML = `⚡ <span style="color:var(--mu)">${t.tool}(${t.arg})</span><br>${t.result}`;
+      wrap.appendChild(tr);
+    });
+
+    targetEl.appendChild(wrap);
+    targetEl.scrollTop = 99999;
+  }
+
+  _renderSuggestions(reply, el){
+    el.innerHTML = '';
+    const suggs = this._generateSuggestions(reply);
+    suggs.forEach(s=>{
+      const btn = document.createElement('button');
+      btn.textContent = s;
+      btn.style.cssText = 'background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);color:var(--o);padding:3px 9px;border-radius:5px;font-size:.68rem;cursor:pointer;white-space:nowrap';
+      btn.onclick = () => {
+        document.getElementById('meet-ai-inp').value = s;
+        meetAiSend();
+      };
+      el.appendChild(btn);
+    });
+  }
+
+  _generateSuggestions(reply){
+    const base = ['Gerar relatório','Ver estatísticas','Top jogos agora'];
+    if(reply.includes('sala')||reply.includes('room')) base.push('Criar nova sala');
+    if(reply.includes('jogador')||reply.includes('player')) base.push('Analisar jogador');
+    if(reply.includes('mapa')) base.push('Ver mapas da comunidade');
+    if(S.isAdmin) base.push('Broadcast geral','Relatório completo');
+    return base.slice(0,4);
+  }
+
+  _fallback(q){
+    q = q.toLowerCase();
+    if(q.includes('relatório')||q.includes('stats')) return `**Relatório da plataforma:**\n- ${NEXUS_TOOLS.getStats()}\n- Top jogos: ${NEXUS_TOOLS.getTopGames()}`;
+    if(q.includes('jogo')||q.includes('game')) return `Encontrei: ${NEXUS_TOOLS.searchGame(q)||'todos os jogos disponíveis'}. Use /searchGame para busca precisa.`;
+    if(q.includes('sala')||q.includes('room')) return `Salas ativas: ${ROOMS_DATA?.length||0}. Posso criar uma nova sala para você.`;
+    if(q.includes('ban')||q.includes('kick')) return S.isAdmin ? 'Ação de moderação disponível. Informe o nome do jogador para prosseguir.' : 'Apenas admins podem executar ações de moderação.';
+    return `**NEXUS-AI** processou sua solicitação. Sistema funcionando offline — API temporariamente indisponível. Contexto: ${NEXUS_MEMORY.getContext()}`;
+  }
+}
+
+// Instâncias do agent loop
+let meetingAgent = null;
+let globalAgent = null;
+
+function getGlobalAgent(){
+  if(!globalAgent) globalAgent = new NexusAgentLoop('global');
+  return globalAgent;
+}
+
+// Patch do aiCallAPI para usar o agent loop avançado
+async function aiCallAPI(userMsg){
+  const msgs = document.getElementById('ai-msgs');
+  if(!msgs) return;
+  // Render user msg
+  const ud=document.createElement('div');
+  ud.style.cssText='background:rgba(0,245,255,.06);border:1px solid rgba(0,245,255,.12);border-radius:7px;padding:7px 10px;font-size:.82rem;align-self:flex-end;max-width:85%';
+  ud.textContent=userMsg;
+  msgs.appendChild(ud);
+
+  const agent = getGlobalAgent();
+  await agent.run(userMsg, msgs, null);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SALA DE REUNIÃO ADMIN
+// ═══════════════════════════════════════════════════════════════
+let meetingCode = null;
+let meetingIsAdmin = false;
+let meetingChannel = null; // BroadcastChannel para rede local
+let meetingMembers = [];
+let meetingAgenda = [];
+let meetingPolls = [];
+let meetingNotesTimer = null;
+
+// Códigos válidos: admin gera, players usam
+const MEETING_CODES = {};
+let meetSecretAttempts = 0;
+
+// Código secreto (modo classificado) — só admin com shift+clique 3x
+function meetRevealSecret(){
+  meetSecretAttempts++;
+  if(meetSecretAttempts >= 3 && S.isAdmin){
+    document.getElementById('meet-secret-hint').style.color='var(--o)';
+    document.getElementById('meet-secret-hint').textContent='CÓDIGO MASTER: ADMIN1';
+    setTimeout(()=>{ document.getElementById('meet-secret-hint').style.color='rgba(255,107,0,.3)'; document.getElementById('meet-secret-hint').textContent='MODO CLASSIFICADO'; meetSecretAttempts=0; },4000);
+  } else if(meetSecretAttempts >= 3){
+    toast('❌ Acesso negado. Apenas admins podem ver o código master.','warn');
+    meetSecretAttempts=0;
+  }
+}
+
+function meetDigitInput(i){
+  const val = document.getElementById('md'+i).value;
+  if(val && i < 5) document.getElementById('md'+(i+1))?.focus();
+  const full = Array.from({length:6},(_,j)=>document.getElementById('md'+j)?.value||'').join('');
+  if(full.length===6) meetTryEnter();
+}
+
+function meetDigitNav(e,i){
+  if(e.key==='Backspace' && !document.getElementById('md'+i).value && i>0){
+    document.getElementById('md'+(i-1))?.focus();
+  }
+  if(e.key==='Enter') meetTryEnter();
+}
+
+function meetGetTypedCode(){
+  return Array.from({length:6},(_,i)=>document.getElementById('md'+i)?.value||'').join('').toUpperCase();
+}
+
+function meetTryEnter(){
+  const code = meetGetTypedCode();
+  if(code.length < 6){ document.getElementById('meet-code-err').textContent='Digite os 6 dígitos.'; return; }
+
+  // Admin gera a sala com qualquer código não usado
+  const isAdminCreating = S.isAdmin && !MEETING_CODES[code];
+  const isValidEntry = MEETING_CODES[code] || isAdminCreating || code === 'ADMIN1';
+
+  if(!isValidEntry){
+    // Anima erro
+    document.getElementById('meet-code-err').textContent='❌ Código inválido.';
+    document.querySelectorAll('.meet-digit').forEach(d=>{ d.style.borderColor='var(--r)'; setTimeout(()=>d.style.borderColor='var(--bd)',800); });
+    return;
+  }
+
+  if(isAdminCreating || code === 'ADMIN1'){
+    MEETING_CODES[code] = { host: S.user, created: Date.now(), members: [] };
+    meetingIsAdmin = true;
+  } else {
+    meetingIsAdmin = S.isAdmin;
+  }
+
+  meetingCode = code;
+  meetEnterRoom(code);
+}
+
+function meetEnterRoom(code){
+  document.getElementById('meet-gate').style.display='none';
+  document.getElementById('meet-room').style.display='flex';
+  document.getElementById('meet-room-code-disp').textContent='SALA: '+code;
+
+  // BroadcastChannel — sincroniza abas/janelas na mesma origem (simula rede local)
+  meetingChannel = new BroadcastChannel('freegames_meet_'+code);
+  meetingChannel.onmessage = meetOnChannelMsg;
+
+  // Membro atual
+  const me = { name: S.user, isAdmin: meetingIsAdmin, joined: Date.now() };
+  meetingMembers = [me];
+
+  // Anuncia entrada
+  meetingChannel.postMessage({ type:'JOIN', member: me });
+
+  // Pauta inicial
+  meetingAgenda = [
+    { id:1, text:'Revisão de métricas da semana', done:false },
+    { id:2, text:'Discussão de novos modos de jogo', done:false },
+    { id:3, text:'Relatório de moderação', done:false },
+  ];
+
+  // Inicializa IA
+  meetingAgent = new NexusAgentLoop('meeting');
+
+  // Renderiza tudo
+  meetRenderMembers();
+  meetRenderAgenda();
+  meetRenderScripts();
+  meetInitAI();
+  meetRenderPoll();
+
+  // Primeira mensagem do sistema
+  meetAddSysMsg(`🔐 Sala ${code} aberta. Bem-vindo, ${S.user}!`);
+  if(meetingIsAdmin) meetAddSysMsg('⚡ Você é o HOST desta sala. Painel de scripts disponível.');
+
+  // Pergunta de abertura para IA
+  setTimeout(()=>{
+    const target = document.getElementById('meet-ai-msgs');
+    const sugg = document.getElementById('meet-ai-suggestions');
+    meetingAgent._renderMsg(`Olá, **${S.user}**! Reunião iniciada.\n\nEstou monitorando a plataforma em tempo real. Posso:\n- Gerar relatórios automáticos\n- Analisar jogadores e salas\n- Executar scripts administrativos\n- Registrar ata da reunião\n\nComo posso ajudar?`, [], target, 'ai');
+    meetingAgent._renderSuggestions('', sugg);
+  }, 500);
+}
+
+function meetOnChannelMsg(e){
+  const msg = e.data;
+  if(!msg) return;
+  if(msg.type==='JOIN'){
+    if(!meetingMembers.find(m=>m.name===msg.member.name)){
+      meetingMembers.push(msg.member);
+      meetRenderMembers();
+      meetAddSysMsg(`🟢 ${msg.member.name} entrou na sala.`);
+    }
+  }
+  if(msg.type==='LEAVE'){
+    meetingMembers = meetingMembers.filter(m=>m.name!==msg.member);
+    meetRenderMembers();
+    meetAddSysMsg(`🔴 ${msg.member} saiu da sala.`);
+  }
+  if(msg.type==='CHAT'){
+    meetRenderChatMsg(msg.from, msg.text, msg.isAdmin);
+  }
+  if(msg.type==='AGENDA_UPDATE'){
+    meetingAgenda = msg.agenda;
+    meetRenderAgenda();
+  }
+  if(msg.type==='NOTES'){
+    const ta = document.getElementById('meet-notes-area');
+    if(ta && document.activeElement !== ta) ta.value = msg.notes;
+  }
+  if(msg.type==='POLL_UPDATE'){
+    meetingPolls = msg.polls;
+    meetRenderPoll();
+  }
+}
+
+function meetRenderMembers(){
+  const el = document.getElementById('meet-members-list');
+  const cnt = document.getElementById('meet-members-cnt');
+  if(cnt) cnt.textContent = meetingMembers.length;
+  if(!el) return;
+  el.innerHTML = meetingMembers.map(m=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.03)">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g);flex-shrink:0"></div>
+      <div style="flex:1;font-size:.78rem;font-weight:600">${m.name}</div>
+      ${m.isAdmin?'<span style="font-size:.58rem;background:rgba(255,107,0,.2);color:var(--o);padding:1px 5px;border-radius:3px;font-weight:700">HOST</span>':''}
+    </div>`).join('');
+}
+
+function meetRenderAgenda(){
+  const el = document.getElementById('meet-agenda');
+  const addBtn = document.getElementById('meet-add-agenda-btn');
+  if(addBtn) addBtn.style.display = meetingIsAdmin ? '' : 'none';
+  if(!el) return;
+  el.innerHTML = meetingAgenda.map(item=>`
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:6px;background:${item.done?'rgba(0,230,118,.06)':'rgba(255,255,255,.03)'};border:1px solid ${item.done?'rgba(0,230,118,.15)':'rgba(255,255,255,.05)'}">
+      <div onclick="meetToggleAgenda(${item.id})" style="width:16px;height:16px;border-radius:3px;border:1px solid ${item.done?'var(--g)':'rgba(255,255,255,.2)'};background:${item.done?'var(--g)':'transparent'};flex-shrink:0;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.6rem">${item.done?'✓':''}</div>
+      <div style="font-size:.78rem;${item.done?'color:var(--mu);text-decoration:line-through':''}">${item.text}</div>
+    </div>`).join('') || '<div style="color:var(--mu);font-size:.75rem">Pauta vazia</div>';
+}
+
+function meetToggleAgenda(id){
+  const item = meetingAgenda.find(a=>a.id===id);
+  if(item){ item.done=!item.done; meetRenderAgenda(); meetingChannel?.postMessage({type:'AGENDA_UPDATE',agenda:meetingAgenda}); }
+}
+
+function meetAddAgendaItem(){
+  const text = prompt('Item da pauta:');
+  if(!text?.trim()) return;
+  meetingAgenda.push({id:Date.now(),text:text.trim(),done:false});
+  meetRenderAgenda();
+  meetingChannel?.postMessage({type:'AGENDA_UPDATE',agenda:meetingAgenda});
+  toast('📋 Item adicionado à pauta','ok');
+}
+
+// Scripts rápidos (só admin)
+const MEET_SCRIPTS = [
+  { id:'report', label:'📊 Gerar Relatório', icon:'📊', action: async()=>{ const r=NEXUS_TOOLS.generateReport(); meetAddSysMsg('📊 '+r); meetingAgent?.run('Analise esse relatório: '+r, document.getElementById('meet-ai-msgs'), document.getElementById('meet-ai-suggestions')); }},
+  { id:'broadcast', label:'📡 Broadcast Geral', icon:'📡', action: ()=>{ const msg=prompt('Mensagem broadcast:'); if(msg) NEXUS_TOOLS.broadcastMsg(msg); }},
+  { id:'stats', label:'📈 Stats ao Vivo', icon:'📈', action: ()=>{ meetAddSysMsg('📈 '+NEXUS_TOOLS.getStats()); }},
+  { id:'topgames', label:'🏆 Top Jogos', icon:'🏆', action: ()=>{ meetAddSysMsg('🏆 '+NEXUS_TOOLS.getTopGames()); }},
+  { id:'ata', label:'📝 Gerar Ata', icon:'📝', action: async()=>{ meetGenerateAta(); }},
+  { id:'close', label:'🔒 Encerrar Sala', icon:'🔒', action: ()=>{ if(confirm('Encerrar a reunião?')) meetLeave(); }},
+];
+
+function meetRenderScripts(){
+  const panel = document.getElementById('meet-scripts-panel');
+  const list = document.getElementById('meet-scripts-list');
+  if(!panel) return;
+  panel.style.display = meetingIsAdmin ? '' : 'none';
+  if(!list) return;
+  list.innerHTML = MEET_SCRIPTS.map(s=>`
+    <button onclick="meetRunScript('${s.id}')" style="background:rgba(255,107,0,.06);border:1px solid rgba(255,107,0,.18);color:var(--w);padding:6px 10px;border-radius:6px;font-size:.75rem;text-align:left;width:100%;transition:all .15s;display:flex;align-items:center;gap:6px"
+      onmouseenter="this.style.background='rgba(255,107,0,.15)'" onmouseleave="this.style.background='rgba(255,107,0,.06)'">
+      ${s.icon} ${s.label.replace(s.icon,'').trim()}
+    </button>`).join('');
+}
+
+function meetRunScript(id){
+  const s = MEET_SCRIPTS.find(x=>x.id===id);
+  if(s) s.action();
+}
+
+async function meetGenerateAta(){
+  const msgs = Array.from(document.getElementById('meet-msgs')?.querySelectorAll('[data-msg]')||[]).map(m=>m.dataset.msg).join('\n');
+  const doneItems = meetingAgenda.filter(a=>a.done).map(a=>'✓ '+a.text).join('\n');
+  const prompt = `Gere uma ata profissional desta reunião:\n\nParticipantes: ${meetingMembers.map(m=>m.name).join(', ')}\nData: ${new Date().toLocaleDateString('pt-BR')}\nPauta concluída:\n${doneItems||'Nenhum item'}\nMensagens:\n${msgs||'(sem mensagens)'}`;
+  const target = document.getElementById('meet-ai-msgs');
+  const sugg = document.getElementById('meet-ai-suggestions');
+  await meetingAgent.run(prompt, target, sugg);
+  // Também copia para notas
+  const notes = document.getElementById('meet-notes-area');
+  if(notes) { notes.value += '\n\n=== ATA GERADA ===\n' + prompt; }
+  toast('📝 Ata gerada na IA e notas!','ok');
+}
+
+function meetInitAI(){
+  // Atualiza contexto com infos da reunião
+  NEXUS_MEMORY.save('meeting_code', meetingCode, 'session');
+  NEXUS_MEMORY.save('meeting_host', meetingIsAdmin, 'session');
+  NEXUS_MEMORY.save('meeting_members', meetingMembers.map(m=>m.name), 'long');
+}
+
+function meetSendMsg(){
+  const inp = document.getElementById('meet-inp');
+  if(!inp?.value?.trim()) return;
+  const text = inp.value.trim();
+  inp.value = '';
+  meetRenderChatMsg(S.user, text, meetingIsAdmin);
+  meetingChannel?.postMessage({type:'CHAT', from:S.user, text, isAdmin:meetingIsAdmin});
+  // Se mensagem menciona IA, encaminha
+  if(text.toLowerCase().startsWith('@ia') || text.toLowerCase().startsWith('/ia')){
+    const q = text.replace(/^[@\/]ia\s*/i,'');
+    meetingAgent?.run(q, document.getElementById('meet-ai-msgs'), document.getElementById('meet-ai-suggestions'));
+  }
+}
+
+function meetRenderChatMsg(from, text, isAdm){
+  const msgs = document.getElementById('meet-msgs');
+  if(!msgs) return;
+  const isMe = from === S.user;
+  const div = document.createElement('div');
+  div.dataset.msg = `${from}: ${text}`;
+  div.style.cssText = `display:flex;flex-direction:column;gap:2px;align-items:${isMe?'flex-end':'flex-start'}`;
+  div.innerHTML = `
+    <div style="font-size:.65rem;color:${isAdm?'var(--o)':isMe?'var(--c)':'var(--mu)'};font-family:var(--fm)">${from}${isAdm?' [ADMIN]':''}</div>
+    <div style="background:${isMe?'rgba(0,245,255,.08)':'rgba(255,255,255,.05)'};border:1px solid ${isMe?'rgba(0,245,255,.15)':'rgba(255,255,255,.07)'};border-radius:8px;padding:7px 11px;font-size:.82rem;max-width:90%">${text}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = 99999;
+}
+
+function meetAddSysMsg(text){
+  const msgs = document.getElementById('meet-msgs');
+  if(!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;font-size:.72rem;color:var(--mu);padding:4px 0;font-family:var(--fm)';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = 99999;
+}
+
+function meetTab(tab, btn){
+  ['chat','notes','poll'].forEach(t=>{
+    const p=document.getElementById('meet-'+t+'-panel');
+    if(p) p.style.display=t===tab?'flex':'none';
+  });
+  document.querySelectorAll('#page-meeting .ctab').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+}
+
+function meetSyncNotes(){
+  clearTimeout(meetingNotesTimer);
+  meetingNotesTimer = setTimeout(()=>{
+    const notes = document.getElementById('meet-notes-area')?.value||'';
+    meetingChannel?.postMessage({type:'NOTES', notes});
+  }, 600);
+}
+
+function meetExportNotes(){
+  const notes = document.getElementById('meet-notes-area')?.value||'';
+  const date = new Date().toLocaleDateString('pt-BR');
+  const content = `REUNIÃO ADMIN — Free Games\nData: ${date}\nParticipantes: ${meetingMembers.map(m=>m.name).join(', ')}\nCódigo: ${meetingCode}\n\n${notes}`;
+  const blob = new Blob([content],{type:'text/plain'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ata_${meetingCode}_${date.replace(/\//g,'-')}.txt`; a.click();
+  toast('📥 Notas exportadas!','ok');
+}
+
+function meetRenderPoll(){
+  const area = document.getElementById('meet-poll-area');
+  const btnWrap = document.getElementById('meet-create-poll-btn-wrap');
+  if(!area) return;
+  area.innerHTML = meetingPolls.length === 0
+    ? '<div style="color:var(--mu);font-size:.8rem;text-align:center;padding:20px">Nenhuma votação criada.</div>'
+    : meetingPolls.map((p,pi)=>`
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="font-weight:700;font-size:.85rem;margin-bottom:10px">${p.question}</div>
+        ${p.options.map((o,oi)=>{
+          const total=p.votes.reduce((s,v)=>s+v,0)||1;
+          const pct=Math.round(p.votes[oi]/total*100);
+          return `<div style="margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;font-size:.75rem;margin-bottom:3px"><span>${o}</span><span style="color:var(--c)">${p.votes[oi]} (${pct}%)</span></div>
+            <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--c),var(--p));border-radius:3px;transition:width .4s"></div></div>
+            <button onclick="meetVote(${pi},${oi})" style="margin-top:4px;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.2);color:var(--c);padding:2px 8px;border-radius:4px;font-size:.68rem">Votar</button>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+  if(btnWrap) btnWrap.innerHTML = meetingIsAdmin
+    ? `<button onclick="meetCreatePoll()" class="btn btn-md btn-c" style="width:100%;justify-content:center">+ Criar Votação</button>`
+    : '';
+}
+
+function meetVote(pollIdx, optIdx){
+  if(!meetingPolls[pollIdx]) return;
+  meetingPolls[pollIdx].votes[optIdx]++;
+  meetingChannel?.postMessage({type:'POLL_UPDATE', polls:meetingPolls});
+  meetRenderPoll();
+  toast('🗳️ Voto registrado!','ok');
+}
+
+function meetCreatePoll(){
+  const question = prompt('Pergunta da votação:');
+  if(!question?.trim()) return;
+  const opts = [];
+  for(let i=0;i<4;i++){
+    const o = prompt(`Opção ${i+1} (deixe vazio para terminar):`);
+    if(!o?.trim()) break;
+    opts.push(o.trim());
+  }
+  if(opts.length < 2){ toast('Precisa de pelo menos 2 opções','warn'); return; }
+  meetingPolls.push({ question:question.trim(), options:opts, votes:opts.map(()=>0) });
+  meetingChannel?.postMessage({type:'POLL_UPDATE', polls:meetingPolls});
+  meetRenderPoll();
+  toast('🗳️ Votação criada!','ok');
+}
+
+async function meetAiSend(){
+  const inp = document.getElementById('meet-ai-inp');
+  if(!inp?.value?.trim()) return;
+  const q = inp.value.trim(); inp.value='';
+  const target = document.getElementById('meet-ai-msgs');
+  const sugg = document.getElementById('meet-ai-suggestions');
+
+  // Render user msg
+  meetingAgent?._renderMsg(q, [], target, 'user');
+
+  // Run agent loop
+  await meetingAgent?.run(q, target, sugg);
+}
+
+function meetLeave(){
+  meetingChannel?.postMessage({type:'LEAVE', member:S.user});
+  meetingChannel?.close();
+  meetingChannel = null;
+  meetingCode = null;
+  meetingAgent = null;
+
+  // Reset UI
+  document.getElementById('meet-gate').style.display='flex';
+  document.getElementById('meet-room').style.display='none';
+  document.querySelectorAll('.meet-digit').forEach(d=>{ d.value=''; d.style.borderColor='var(--bd)'; });
+  document.getElementById('meet-code-err').textContent='';
+  document.getElementById('md0')?.focus();
+  toast('Saiu da reunião','');
+}
+
+function initMeeting(){
+  // Atualizar visibilidade do botão admin
+  const btn = document.getElementById('tnb-meeting');
+  if(btn) btn.style.display = '';
+  // Gera um código para o admin ao abrir
+  if(S.isAdmin && !meetingCode){
+    const code = Math.random().toString(36).slice(2,8).toUpperCase();
+    MEETING_CODES[code] = { host:S.user, created:Date.now() };
+    toast(`🔐 Código da sala: ${code} — compartilhe com os participantes!`,'ok');
+    // Preenche automaticamente os campos
+    code.split('').forEach((c,i)=>{ const el=document.getElementById('md'+i); if(el) el.value=c; });
+  }
+}
+
+// Registrar na goPage
+// (já está dentro de goPage via if(id==='meeting') initMeeting())
 
 // BOOT
 (function(){

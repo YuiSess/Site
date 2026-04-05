@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hand Track Studio — Blocos Físicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #04060f;
+  --panel: #070b18;
+  --c1: #00f5ff;   /* ciano */
+  --c2: #ff3cac;   /* magenta */
+  --cg: #39ff14;   /* verde neon */
+  --cy: #ffd60a;   /* amarelo */
+  --co: #ff6b35;   /* laranja */
+  --dim: #1a2a4a;
+  --muted: #2a3a5a;
+  --w: #e8f0ff;
+  --fm: 'Share Tech Mono', monospace;
+  --fo: 'Orbitron', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:var(--fm); }
+
+/* SCANLINES */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0px,rgba(0,0,0,.05) 1px,transparent 1px,transparent 4px);
+  pointer-events:none; z-index:9997;
+}
+
+/* TOPBAR */
+#topbar {
+  position:fixed; top:0; left:0; right:0; height:50px;
+  background:rgba(4,6,15,.96);
+  border-bottom:1px solid rgba(0,245,255,.18);
+  display:flex; align-items:center; gap:12px; padding:0 16px;
+  z-index:400; backdrop-filter:blur(20px);
+}
+.logo { font-family:var(--fo); font-size:.9rem; color:var(--c1); letter-spacing:4px; }
+.logo span { color:var(--c2); }
+
+.hpill {
+  display:flex; align-items:center; gap:7px;
+  background:rgba(0,245,255,.06);
+  border:1px solid rgba(0,245,255,.15);
+  border-radius:20px; padding:4px 12px;
+  font-size:.62rem; letter-spacing:1.5px;
+}
+.hpill.left { border-color:rgba(0,245,255,.25); color:var(--c1); }
+.hpill.right { border-color:rgba(255,60,172,.25); color:var(--c2); }
+.hdot { width:8px; height:8px; border-radius:50%; background:var(--muted); transition:all .3s; }
+.hdot.on { animation:hpulse 1.2s ease-in-out infinite; }
+.hdot.left { background:var(--c1); box-shadow:0 0 10px var(--c1); }
+.hdot.right { background:var(--c2); box-shadow:0 0 10px var(--c2); }
+@keyframes hpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+.score-pill {
+  background:rgba(57,255,20,.07);
+  border:1px solid rgba(57,255,20,.2);
+  border-radius:20px; padding:4px 14px;
+  font-size:.7rem; color:var(--cg); letter-spacing:2px;
+}
+
+.topbtn {
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--w); border-radius:6px;
+  padding:5px 13px; font-family:var(--fm); font-size:.65rem;
+  cursor:pointer; letter-spacing:1px; transition:all .2s;
+}
+.topbtn:hover { background:rgba(0,245,255,.1); border-color:var(--c1); color:var(--c1); }
+.topbtn.danger { border-color:rgba(255,60,172,.3); color:var(--c2); }
+.topbtn.danger:hover { background:rgba(255,60,172,.12); }
+
+/* LAYOUT */
+#layout {
+  position:fixed; top:50px; left:0; right:0; bottom:0;
+  display:grid;
+  grid-template-columns: 340px 1fr;
+}
+
+/* CÂMERA */
+#cam-wrap {
+  position:relative; background:#000;
+  border-right:1px solid rgba(0,245,255,.1);
+  overflow:hidden;
+}
+#video-el {
+  width:100%; height:100%; object-fit:cover;
+  transform:scaleX(-1);
+  opacity:0; transition:opacity .5s;
+}
+#video-el.on { opacity:1; }
+#ov-canvas {
+  position:absolute; inset:0;
+  pointer-events:none;
+}
+#cam-label {
+  position:absolute; top:10px; left:10px;
+  background:rgba(0,0,0,.8); border:1px solid rgba(0,245,255,.2);
+  color:var(--c1); font-size:.6rem; padding:3px 9px;
+  border-radius:3px; letter-spacing:2px;
+}
+#cam-off {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px;
+}
+#cam-off.hidden { display:none; }
+.cam-off-icon { font-size:3.5rem; opacity:.25; }
+.cam-off-txt { color:var(--muted); font-size:.78rem; text-align:center; line-height:1.7; }
+
+/* HAND INFO CARDS */
+#hand-cards {
+  position:absolute; bottom:10px; left:0; right:0;
+  display:flex; gap:6px; padding:0 8px;
+}
+.hcard {
+  flex:1;
+  background:rgba(0,0,0,.85);
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:.58rem; line-height:1.8;
+}
+.hcard.lcard { border:1px solid rgba(0,245,255,.25); }
+.hcard.rcard { border:1px solid rgba(255,60,172,.25); }
+.hcard-title { font-size:.65rem; letter-spacing:2px; margin-bottom:4px; }
+.lcard .hcard-title { color:var(--c1); }
+.rcard .hcard-title { color:var(--c2); }
+.hcard-row { display:flex; justify-content:space-between; }
+.hcard-row .val { color:var(--w); }
+.hcard-row .key { color:var(--muted); }
+
+/* CENA PRINCIPAL */
+#scene-wrap { position:relative; background:#000; overflow:hidden; }
+#physics-canvas { width:100%; height:100%; display:block; }
+
+#scene-label {
+  position:absolute; top:10px; right:10px;
+  background:rgba(0,0,0,.8); border:1px solid rgba(255,60,172,.2);
+  color:var(--c2); font-size:.6rem; padding:3px 9px;
+  border-radius:3px; letter-spacing:2px;
+}
+
+/* GESTURES PANEL */
+#gesture-panel {
+  position:absolute; bottom:10px; right:10px;
+  display:flex; gap:8px;
+}
+.gest-card {
+  background:rgba(0,0,0,.85);
+  border-radius:10px; padding:10px 14px;
+  text-align:center; min-width:100px;
+}
+.gest-card.lgest { border:1px solid rgba(0,245,255,.3); }
+.gest-card.rgest { border:1px solid rgba(255,60,172,.3); }
+.gest-icon { font-size:1.9rem; display:block; margin-bottom:3px; }
+.gest-name { font-size:.6rem; letter-spacing:1.5px; }
+.lgest .gest-name { color:var(--c1); }
+.rgest .gest-name { color:var(--c2); }
+
+/* SCORE */
+#score-board {
+  position:absolute; top:10px; left:10px;
+  background:rgba(0,0,0,.8); border:1px solid rgba(57,255,20,.2);
+  border-radius:8px; padding:8px 14px;
+  font-size:.62rem; color:var(--cg); letter-spacing:1px;
+}
+#score-board .val { font-size:1.4rem; font-family:var(--fo); display:block; }
+
+/* OVERLAY START */
+#start-overlay {
+  position:fixed; inset:0; z-index:600;
+  background:rgba(4,6,15,.97);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:20px;
+  animation:fadeUp .5s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.start-title {
+  font-family:var(--fo);
+  font-size:clamp(1.6rem,4vw,2.6rem);
+  color:var(--c1); letter-spacing:5px; text-align:center;
+  text-shadow:0 0 40px rgba(0,245,255,.5), 0 0 80px rgba(0,245,255,.15);
+}
+.start-title span { color:var(--c2); }
+.start-sub { color:var(--muted); font-size:.82rem; text-align:center; line-height:1.9; max-width:500px; }
+.start-grid {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:12px; max-width:440px; width:100%;
+  padding:0 20px;
+}
+.feat-box {
+  background:rgba(7,11,24,.9); border:1px solid rgba(0,245,255,.12);
+  border-radius:10px; padding:16px; text-align:center;
+}
+.feat-box:nth-child(2n) { border-color:rgba(255,60,172,.12); }
+.feat-box-icon { font-size:1.9rem; margin-bottom:6px; }
+.feat-box-name { font-family:var(--fo); font-size:.6rem; letter-spacing:2px; color:var(--c1); }
+.feat-box:nth-child(2n) .feat-box-name { color:var(--c2); }
+.feat-box-desc { font-size:.68rem; color:var(--muted); margin-top:5px; line-height:1.4; }
+.start-btn {
+  background:linear-gradient(135deg, var(--c1), #009ab5);
+  color:#000; border:none; border-radius:10px;
+  padding:14px 42px; font-family:var(--fo); font-size:.82rem;
+  letter-spacing:3px; cursor:pointer; font-weight:700;
+  transition:all .25s;
+}
+.start-btn:hover { transform:translateY(-3px); box-shadow:0 10px 35px rgba(0,245,255,.35); }
+.start-note { font-size:.6rem; color:var(--muted); letter-spacing:1px; }
+
+/* TUTORIAL OVERLAY */
+#tutorial {
+  position:absolute; top:60px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.9); border:1px solid rgba(0,245,255,.2);
+  border-radius:10px; padding:10px 18px; font-size:.65rem;
+  color:var(--c1); letter-spacing:1px; text-align:center;
+  z-index:50; transition:opacity .5s;
+  pointer-events:none;
+}
+#tutorial.fade { opacity:0; }
+
+/* TOAST */
+#toast {
+  position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+  background:rgba(7,11,24,.95); border:1px solid rgba(0,245,255,.25);
+  color:var(--w); padding:8px 18px; border-radius:8px;
+  font-size:.72rem; z-index:9000; pointer-events:none;
+  opacity:0; transition:opacity .3s; white-space:nowrap;
+}
+#toast.show { opacity:1; }
+
+/* RESET BTN */
+#btn-reset {
+  position:absolute; top:10px; left:50%; transform:translateX(-50%);
+  background:rgba(255,214,10,.08); border:1px solid rgba(255,214,10,.25);
+  color:var(--cy); font-family:var(--fm); font-size:.62rem;
+  padding:5px 14px; border-radius:6px; cursor:pointer; letter-spacing:1px;
+  transition:all .2s;
+}
+#btn-reset:hover { background:rgba(255,214,10,.18); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">HAND<span>TRACK</span> ✦ STUDIO</div>
+
+  <div class="hpill left" id="lpill">
+    <div class="hdot" id="ldot"></div>
+    <span id="ltxt">MÃO ESQ</span>
+  </div>
+  <div class="hpill right" id="rpill">
+    <div class="hdot" id="rdot"></div>
+    <span id="rtxt">MÃO DIR</span>
+  </div>
+
+  <div class="score-pill">🧊 BLOCOS: <span id="block-count">0</span></div>
+
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="topbtn" onclick="spawnBlocks()">+ Blocos</button>
+    <button class="topbtn" onclick="toggleSkeleton()">🦴 Esqueleto</button>
+    <button class="topbtn danger" id="btn-stop" onclick="stopCam()" style="display:none">⏹ Parar</button>
+    <button class="topbtn" onclick="history.back()">← Voltar</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- CAM -->
+  <div id="cam-wrap">
+    <div id="cam-label">📷 CÂMERA — DUPLO RASTREAMENTO</div>
+    <div id="cam-off">
+      <div class="cam-off-icon">📷</div>
+      <div class="cam-off-txt">Pressione <b style="color:var(--c1)">Iniciar</b> para<br>ativar câmera com 2 mãos</div>
+    </div>
+    <video id="video-el" autoplay playsinline muted></video>
+    <canvas id="ov-canvas"></canvas>
+
+    <div id="hand-cards">
+      <div class="hcard lcard">
+        <div class="hcard-title">✋ MÃO ESQUERDA</div>
+        <div class="hcard-row"><span class="key">GESTO</span><span class="val" id="l-gest">—</span></div>
+        <div class="hcard-row"><span class="key">DEDOS</span><span class="val" id="l-fing">—</span></div>
+        <div class="hcard-row"><span class="key">CONF.</span><span class="val" id="l-conf">—</span></div>
+        <div class="hcard-row"><span class="key">PINÇA</span><span class="val" id="l-pinch">—</span></div>
+      </div>
+      <div class="hcard rcard">
+        <div class="hcard-title">🤚 MÃO DIREITA</div>
+        <div class="hcard-row"><span class="key">GESTO</span><span class="val" id="r-gest">—</span></div>
+        <div class="hcard-row"><span class="key">DEDOS</span><span class="val" id="r-fing">—</span></div>
+        <div class="hcard-row"><span class="key">CONF.</span><span class="val" id="r-conf">—</span></div>
+        <div class="hcard-row"><span class="key">PINÇA</span><span class="val" id="r-pinch">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENA -->
+  <div id="scene-wrap">
+    <div id="scene-label">🧊 FÍSICA DE BLOCOS — MOVA COM AS MÃOS</div>
+    <canvas id="physics-canvas"></canvas>
+
+    <button id="btn-reset" onclick="resetBlocks()">🔄 Resetar Blocos</button>
+
+    <div id="score-board">
+      BLOCOS JOGADOS<br>
+      <span class="val" id="throw-count">0</span>
+    </div>
+
+    <div id="gesture-panel">
+      <div class="gest-card lgest">
+        <span class="gest-icon" id="lg-icon">🤚</span>
+        <div class="gest-name" id="lg-name">AGUARDANDO</div>
+      </div>
+      <div class="gest-card rgest">
+        <span class="gest-icon" id="rg-icon">🤚</span>
+        <div class="gest-name" id="rg-name">AGUARDANDO</div>
+      </div>
+    </div>
+
+    <div id="tutorial">✊ APERTE para segurar blocos &nbsp;|&nbsp; 🖐 ABRA para soltar &nbsp;|&nbsp; 👈 APONTE para empurrar</div>
+  </div>
+</div>
+
+<!-- START -->
+<div id="start-overlay">
+  <div class="start-title">✋ HAND TRACK<br><span>STUDIO</span></div>
+  <p class="start-sub">
+    Rastreie <b style="color:var(--c1)">DUAS MÃOS</b> simultaneamente.<br>
+    Agarre, empurre e arremesse blocos 3D com física real!
+  </p>
+  <div class="start-grid">
+    <div class="feat-box">
+      <div class="feat-box-icon">👐</div>
+      <div class="feat-box-name">2 MÃOS</div>
+      <div class="feat-box-desc">Rastreamento bilateral independente com cores distintas</div>
+    </div>
+    <div class="feat-box">
+      <div class="feat-box-icon">🧊</div>
+      <div class="feat-box-name">FÍSICA REAL</div>
+      <div class="feat-box-desc">Blocos com gravidade, colisão, fricção e rebote</div>
+    </div>
+    <div class="feat-box">
+      <div class="feat-box-icon">✊</div>
+      <div class="feat-box-name">AGARRE</div>
+      <div class="feat-box-desc">Feche o punho para segurar; abra para lançar</div>
+    </div>
+    <div class="feat-box">
+      <div class="feat-box-icon">👆</div>
+      <div class="feat-box-name">EMPURRAR</div>
+      <div class="feat-box-desc">Aponte o dedo para empurrar blocos com força</div>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startCam()">▶ INICIAR CÂMERA</button>
+  <p class="start-note">📵 Processamento 100% local — sem enviar dados</p>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let stream = null, hands = null, mpCam = null;
+let showSkel = true;
+let throwCount = 0;
+
+// Dados das mãos
+const handData = {
+  Left:  { active:false, lms:null, conf:0, gesture:'', pinching:false, vel:{x:0,y:0}, prevPos:{x:0,y:0} },
+  Right: { active:false, lms:null, conf:0, gesture:'', pinching:false, vel:{x:0,y:0}, prevPos:{x:0,y:0} }
+};
+
+// ══════════════════════════════════════════
+// CÂMERA + MEDIAPIPE
+// ══════════════════════════════════════════
+async function startCam() {
+  document.getElementById('start-overlay').style.display = 'none';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video:{width:640,height:480,facingMode:'user'}, audio:false });
+    const vid = document.getElementById('video-el');
+    vid.srcObject = stream;
+    vid.classList.add('on');
+    document.getElementById('cam-off').classList.add('hidden');
+    document.getElementById('btn-stop').style.display = '';
+    toast('📷 Câmera ligada! Carregando IA...');
+    await initMP();
+    toast('✅ Rastreamento DUPLO ativo!', 'ok');
+    setTimeout(() => document.getElementById('tutorial').classList.add('fade'), 5000);
+  } catch(e) {
+    toast('❌ Erro câmera: ' + e.message, 'err');
+    document.getElementById('start-overlay').style.display = 'flex';
+  }
+}
+
+async function initMP() {
+  const vid = document.getElementById('video-el');
+  hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  hands.setOptions({ maxNumHands:2, modelComplexity:1, minDetectionConfidence:0.65, minTrackingConfidence:0.6 });
+  hands.onResults(onResults);
+  mpCam = new Camera(vid, {
+    onFrame: async () => { await hands.send({ image: vid }); },
+    width:640, height:480
+  });
+  await mpCam.start();
+  resizeOvCanvas();
+  window.addEventListener('resize', resizeOvCanvas);
+}
+
+function resizeOvCanvas() {
+  const w = document.getElementById('cam-wrap');
+  const cv = document.getElementById('ov-canvas');
+  cv.width = w.clientWidth;
+  cv.height = w.clientHeight;
+}
+
+function stopCam() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if (mpCam) { try{mpCam.stop()}catch(e){} mpCam=null; }
+  const vid = document.getElementById('video-el');
+  vid.srcObject=null; vid.classList.remove('on');
+  document.getElementById('cam-off').classList.remove('hidden');
+  document.getElementById('btn-stop').style.display='none';
+  handData.Left.active = false; handData.Right.active = false;
+  updateHandPills();
+  toast('⏹ Câmera desligada');
+}
+
+// ══════════════════════════════════════════
+// MEDIAPIPE RESULTS
+// ══════════════════════════════════════════
+const CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
+];
+
+function onResults(res) {
+  // Reset ambas
+  handData.Left.active = false;
+  handData.Right.active = false;
+
+  const cv = document.getElementById('ov-canvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+
+  if (!res.multiHandLandmarks || res.multiHandLandmarks.length === 0) {
+    updateHandPills();
+    updateHUD();
+    return;
+  }
+
+  for (let i=0; i<res.multiHandLandmarks.length; i++) {
+    const lms = res.multiHandLandmarks[i];
+    // MediaPipe: Right no feed espelhado = mão esquerda visual
+    const label = res.multiHandedness[i]?.label || 'Right';
+    // Como o vídeo está espelhado, invertemos o label
+    const side = label === 'Right' ? 'Left' : 'Right';
+    const conf = res.multiHandedness[i]?.score || 0;
+
+    const hd = handData[side];
+    hd.active = true;
+    hd.lms = lms;
+    hd.conf = conf;
+
+    // Calcular velocidade do pulso
+    const wrist = lms[0];
+    const wx = wrist.x * cv.width;
+    const wy = wrist.y * cv.height;
+    hd.vel.x = wx - hd.prevPos.x;
+    hd.vel.y = wy - hd.prevPos.y;
+    hd.prevPos.x = wx;
+    hd.prevPos.y = wy;
+
+    if (showSkel) drawSkel(ctx, cv, lms, side);
+
+    // Analisa gestos + pinça
+    analyzeHand(side, lms, cv);
+  }
+
+  updateHandPills();
+  updateHUD();
+  applyHandsToPhysics();
+}
+
+function drawSkel(ctx, cv, lms, side) {
+  const W=cv.width, H=cv.height;
+  const isLeft = side === 'Left';
+  const col = isLeft ? '#00f5ff' : '#ff3cac';
+
+  // Linhas
+  ctx.lineWidth = 2.2;
+  CONNECTIONS.forEach(([a,b]) => {
+    ctx.strokeStyle = col + '99';
+    ctx.beginPath();
+    ctx.moveTo(lms[a].x*W, lms[a].y*H);
+    ctx.lineTo(lms[b].x*W, lms[b].y*H);
+    ctx.stroke();
+  });
+
+  // Pontos
+  lms.forEach((lm,i) => {
+    const isTip = [4,8,12,16,20].includes(i);
+    const isWrist = i===0;
+    ctx.beginPath();
+    ctx.arc(lm.x*W, lm.y*H, isWrist?9:isTip?7:4, 0, Math.PI*2);
+    ctx.fillStyle = isTip ? '#fff' : col;
+    ctx.fill();
+    if (isTip || isWrist) {
+      ctx.strokeStyle = col;
+      ctx.lineWidth = isWrist ? 3 : 2;
+      ctx.stroke();
+    }
+  });
+
+  // Glow no pulso
+  ctx.beginPath();
+  ctx.arc(lms[0].x*W, lms[0].y*H, 18, 0, Math.PI*2);
+  const grd = ctx.createRadialGradient(lms[0].x*W,lms[0].y*H,2,lms[0].x*W,lms[0].y*H,18);
+  grd.addColorStop(0, col + '55');
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.fill();
+}
+
+function analyzeHand(side, lms, cv) {
+  const hd = handData[side];
+  const tips  = [4,8,12,16,20];
+  const mcps  = [2,5,9,13,17];
+
+  // Curl de cada dedo
+  const curls = tips.map((t,i) => {
+    const tip = lms[t], mcp = lms[mcps[i]];
+    if (i===0) {
+      const dx=tip.x-mcp.x, dy=tip.y-mcp.y;
+      return 1-Math.min(1, Math.sqrt(dx*dx+dy*dy)*4);
+    }
+    return Math.max(0,Math.min(1, (tip.y-mcp.y)*5));
+  });
+
+  // Pinça (polegar + indicador próximos)
+  const thumb=lms[4], idx=lms[8];
+  const pdist = Math.sqrt((thumb.x-idx.x)**2+(thumb.y-idx.y)**2);
+  hd.pinching = pdist < 0.07;
+
+  // Gesto
+  const [th,ix,mx,rx,px] = curls;
+  const allOpen = ix<0.35 && mx<0.35 && rx<0.35 && px<0.35;
+  const allClose= ix>0.6 && mx>0.6 && rx>0.6 && px>0.6;
+  if (allClose)                        hd.gesture = 'PUNHO';
+  else if (allOpen)                    hd.gesture = 'ABERTA';
+  else if (ix<0.3&&mx>0.5&&rx>0.5)    hd.gesture = 'APONTANDO';
+  else if (ix<0.3&&mx<0.3&&rx>0.5)    hd.gesture = 'PAZ';
+  else if (hd.pinching)                hd.gesture = 'PINÇANDO';
+  else                                 hd.gesture = 'MÃO';
+
+  // Contar dedos levantados
+  let raised=0;
+  tips.forEach((t,i) => { if(lms[t].y < lms[mcps[i]].y-0.03) raised++; });
+  hd.raisedCount = raised;
+
+  // Posição normalizada para a cena
+  const wrist = lms[0];
+  hd.sceneX = (1-wrist.x); // espelha X
+  hd.sceneY = wrist.y;
+  hd.indexTip = { x:1-lms[8].x, y:lms[8].y };
+}
+
+function updateHandPills() {
+  const sides = [['Left','l','ldot','ltxt'],['Right','r','rdot','rtxt']];
+  sides.forEach(([side,pfx,dotId,txtId])=>{
+    const dot = document.getElementById(dotId);
+    const txt = document.getElementById(txtId);
+    const hd = handData[side];
+    if (hd.active) {
+      dot.className = 'hdot on ' + pfx;
+      txt.textContent = side==='Left' ? 'MÃO ESQ ✓' : 'MÃO DIR ✓';
+    } else {
+      dot.className = 'hdot';
+      txt.textContent = side==='Left' ? 'MÃO ESQ' : 'MÃO DIR';
+    }
+  });
+}
+
+function updateHUD() {
+  const lh = handData.Left, rh = handData.Right;
+  document.getElementById('l-gest').textContent = lh.active ? lh.gesture : '—';
+  document.getElementById('l-fing').textContent = lh.active ? (lh.raisedCount||0)+' LEV.' : '—';
+  document.getElementById('l-conf').textContent = lh.active ? (lh.conf*100).toFixed(0)+'%' : '—';
+  document.getElementById('l-pinch').textContent = lh.active ? (lh.pinching?'✅ SIM':'❌ NÃO') : '—';
+  document.getElementById('r-gest').textContent = rh.active ? rh.gesture : '—';
+  document.getElementById('r-fing').textContent = rh.active ? (rh.raisedCount||0)+' LEV.' : '—';
+  document.getElementById('r-conf').textContent = rh.active ? (rh.conf*100).toFixed(0)+'%' : '—';
+  document.getElementById('r-pinch').textContent = rh.active ? (rh.pinching?'✅ SIM':'❌ NÃO') : '—';
+
+  const gestMap = {
+    'PUNHO':'✊','ABERTA':'🖐','APONTANDO':'☝️','PAZ':'✌️','PINÇANDO':'🤏','MÃO':'🤚','—':'🤚'
+  };
+  const lg = lh.active ? lh.gesture : '—';
+  const rg = rh.active ? rh.gesture : '—';
+  document.getElementById('lg-icon').textContent = gestMap[lg]||'🤚';
+  document.getElementById('lg-name').textContent = lg==='—'?'AGUARDANDO':lg;
+  document.getElementById('rg-icon').textContent = gestMap[rg]||'🤚';
+  document.getElementById('rg-name').textContent = rg==='—'?'AGUARDANDO':rg;
+}
+
+function toggleSkeleton() {
+  showSkel = !showSkel;
+  if (!showSkel) {
+    const cv=document.getElementById('ov-canvas');
+    cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  }
+}
+
+// ══════════════════════════════════════════
+// MOTOR DE FÍSICA 2D (canvas)
+// ══════════════════════════════════════════
+const canvas = document.getElementById('physics-canvas');
+const ctx2 = canvas.getContext('2d');
+
+// Config física
+const GRAVITY = 0.35;
+const FRICTION = 0.88;
+const BOUNCE = 0.55;
+const BLOCK_COUNT = 10;
+
+let blocks = [];
+let handCursors = {
+  Left:  { x:0, y:0, active:false, holding:null, gesture:'' },
+  Right: { x:0, y:0, active:false, holding:null, gesture:'' }
+};
+
+const COLORS = [
+  '#00f5ff','#ff3cac','#39ff14','#ffd60a','#ff6b35',
+  '#bf5fff','#00cfff','#ff4d4d','#4dffa6','#ffaa00'
+];
+
+class Block {
+  constructor(x,y,w,h,color,label) {
+    this.x=x; this.y=y; this.w=w; this.h=h;
+    this.vx=0; this.vy=0; this.color=color;
+    this.label=label; this.angle=0; this.angVel=0;
+    this.held=false; this.heldBy=null;
+    this.glowT=0; this.mass=w*h*0.001;
+    this.id=Math.random().toString(36).slice(2,6).toUpperCase();
+  }
+
+  update(W,H) {
+    if (this.held) { this.angVel*=0.85; this.angle+=this.angVel; return; }
+    this.vy += GRAVITY;
+    this.vx *= FRICTION;
+    this.vy *= 0.995;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.angle += this.angVel;
+    this.angVel *= 0.92;
+
+    // Paredes
+    if (this.x - this.w/2 < 0)    { this.x=this.w/2;   this.vx*=-BOUNCE; this.angVel+=(Math.random()-.5)*0.3; }
+    if (this.x + this.w/2 > W)    { this.x=W-this.w/2; this.vx*=-BOUNCE; this.angVel+=(Math.random()-.5)*0.3; }
+    if (this.y - this.h/2 < 0)    { this.y=this.h/2;   this.vy*=-BOUNCE*0.7; }
+    if (this.y + this.h/2 > H-2)  { this.y=H-this.h/2; this.vy*=-BOUNCE; this.vx*=FRICTION; this.angVel*=0.7;
+      if (Math.abs(this.vy)<0.5) this.vy=0;
+    }
+    if (this.glowT>0) this.glowT-=2;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // Sombra
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = this.held ? 30 : (this.glowT>0 ? this.glowT*0.5 : 6);
+
+    // Fundo
+    ctx.fillStyle = this.held ? this.color+'44' : this.color+'22';
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.held ? 2.5 : 1.8;
+    roundRect(ctx, -this.w/2, -this.h/2, this.w, this.h, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Brilho interno no topo
+    const grad = ctx.createLinearGradient(-this.w/2,-this.h/2,-this.w/2,this.h/2);
+    grad.addColorStop(0, this.color+'33');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    roundRect(ctx,-this.w/2,-this.h/2,this.w,this.h,8);
+    ctx.fill();
+
+    // Label
+    ctx.shadowBlur=0;
+    ctx.fillStyle = this.color;
+    ctx.font = `bold ${Math.min(this.w,this.h)*0.28}px 'Share Tech Mono'`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(this.label, 0, 0);
+
+    // ID pequeno
+    ctx.font = `${Math.min(this.w,this.h)*0.18}px 'Share Tech Mono'`;
+    ctx.fillStyle = this.color+'88';
+    ctx.fillText(this.id, 0, this.h*0.28);
+
+    ctx.restore();
+  }
+
+  hitTest(hx,hy) {
+    // Test sem rotação (aproximação)
+    return Math.abs(hx-this.x)<this.w/2+10 && Math.abs(hy-this.y)<this.h/2+10;
+  }
+}
+
+function roundRect(ctx,x,y,w,h,r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+const LABELS = ['💎','⚡','🔥','💥','🌊','🎯','🚀','⭐','🎲','🌀'];
+
+function spawnBlocks() {
+  const W=canvas.width, H=canvas.height;
+  const n = 10;
+  for (let i=0; i<n; i++) {
+    const w = 55 + Math.random()*40;
+    const h = 45 + Math.random()*35;
+    const x = w/2 + Math.random()*(W-w);
+    const y = h/2 + Math.random()*(H*0.5);
+    const color = COLORS[i%COLORS.length];
+    const label = LABELS[i%LABELS.length];
+    const b = new Block(x,y,w,h,color,label);
+    b.vx = (Math.random()-.5)*4;
+    b.vy = Math.random()*2;
+    b.angVel = (Math.random()-.5)*0.1;
+    blocks.push(b);
+  }
+  document.getElementById('block-count').textContent = blocks.length;
+}
+
+function resetBlocks() {
+  // Libera todos
+  blocks.forEach(b=>{ b.held=false; b.heldBy=null; });
+  handCursors.Left.holding=null;
+  handCursors.Right.holding=null;
+  blocks = [];
+  document.getElementById('block-count').textContent = 0;
+  spawnBlocks();
+}
+
+// Colisão bloco vs bloco (simples AABB)
+function resolveCollisions() {
+  for (let i=0;i<blocks.length;i++) {
+    for (let j=i+1;j<blocks.length;j++) {
+      const a=blocks[i], b=blocks[j];
+      if (a.held || b.held) continue;
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const overX = (a.w/2+b.w/2) - Math.abs(dx);
+      const overY = (a.h/2+b.h/2) - Math.abs(dy);
+      if (overX>0 && overY>0) {
+        const push=0.5;
+        if (overX < overY) {
+          const s = dx>0?1:-1;
+          a.x -= s*overX*push; b.x += s*overX*push;
+          const relV = a.vx-b.vx;
+          a.vx -= relV*0.4; b.vx += relV*0.4;
+          a.angVel+=(Math.random()-.5)*0.08; b.angVel+=(Math.random()-.5)*0.08;
+          a.glowT=40; b.glowT=40;
+        } else {
+          const s = dy>0?1:-1;
+          a.y -= s*overY*push; b.y += s*overY*push;
+          const relV = a.vy-b.vy;
+          a.vy -= relV*0.4; b.vy += relV*0.4;
+          a.angVel+=(Math.random()-.5)*0.06; b.angVel+=(Math.random()-.5)*0.06;
+          a.glowT=40; b.glowT=40;
+        }
+      }
+    }
+  }
+}
+
+// ── Aplica interação das mãos ──────────────────────────────
+let prevHandPos = { Left:{x:0,y:0}, Right:{x:0,y:0} };
+
+function applyHandsToPhysics() {
+  const W=canvas.width, H=canvas.height;
+
+  ['Left','Right'].forEach(side => {
+    const hd = handData[side];
+    const cur = handCursors[side];
+    cur.active = hd.active;
+    cur.gesture = hd.gesture;
+
+    if (!hd.active) {
+      // Solta bloco se mão sumiu
+      if (cur.holding) {
+        cur.holding.held = false;
+        cur.holding.heldBy = null;
+        cur.holding = null;
+      }
+      return;
+    }
+
+    // Mapeia pos da mão para o canvas de física
+    const cx = hd.sceneX * W;
+    const cy = hd.sceneY * H;
+    cur.x = cx; cur.y = cy;
+
+    const dx = cx - prevHandPos[side].x;
+    const dy = cy - prevHandPos[side].y;
+    prevHandPos[side].x = cx;
+    prevHandPos[side].y = cy;
+
+    if (hd.gesture === 'PUNHO' || hd.pinching) {
+      // AGARRAR
+      if (!cur.holding) {
+        // Procura bloco sob a mão
+        for (let b of blocks) {
+          if (!b.held && b.hitTest(cx,cy)) {
+            cur.holding = b;
+            b.held = true; b.heldBy = side;
+            b.glowT = 80;
+            break;
+          }
+        }
+      }
+      // Move bloco agarrado
+      if (cur.holding) {
+        cur.holding.x += (cx - cur.holding.x)*0.3 + dx*0.5;
+        cur.holding.y += (cy - cur.holding.y)*0.3 + dy*0.5;
+        cur.holding.vx = dx*0.8;
+        cur.holding.vy = dy*0.8;
+      }
+    } else {
+      // SOLTAR
+      if (cur.holding) {
+        cur.holding.held = false;
+        cur.holding.heldBy = null;
+        const spd = Math.sqrt(dx*dx+dy*dy);
+        cur.holding.vx = dx * 1.2;
+        cur.holding.vy = dy * 1.2;
+        cur.holding.angVel = (Math.random()-.5)*0.2 + dx*0.01;
+        cur.holding.glowT = 80;
+        if (spd > 8) { throwCount++; document.getElementById('throw-count').textContent = throwCount; }
+        cur.holding = null;
+      }
+    }
+
+    // APONTAR = empurrar blocos próximos
+    if (hd.gesture === 'APONTANDO' && hd.indexTip) {
+      const ix = hd.indexTip.x * W;
+      const iy = hd.indexTip.y * H;
+      blocks.forEach(b => {
+        if (!b.held) {
+          const dist = Math.sqrt((b.x-ix)**2+(b.y-iy)**2);
+          if (dist < 60) {
+            const nx=(b.x-ix)/dist, ny=(b.y-iy)/dist;
+            const force = (60-dist)*0.15;
+            b.vx += nx*force + dx*0.4;
+            b.vy += ny*force + dy*0.4;
+            b.angVel += (Math.random()-.5)*0.15;
+            b.glowT = 60;
+          }
+        }
+      });
+    }
+  });
+}
+
+// ── Desenhar cursores das mãos ──────────────────────────────
+function drawHandCursors() {
+  const sides = [['Left','#00f5ff'], ['Right','#ff3cac']];
+  sides.forEach(([side, col]) => {
+    const cur = handCursors[side];
+    if (!cur.active) return;
+    const { x, y, gesture, holding } = cur;
+
+    ctx2.save();
+    ctx2.globalAlpha = 0.9;
+
+    // Circulo externo
+    ctx2.beginPath();
+    ctx2.arc(x,y, gesture==='PUNHO'?28:22, 0, Math.PI*2);
+    ctx2.strokeStyle = col;
+    ctx2.lineWidth = gesture==='PUNHO'?3:1.8;
+    ctx2.shadowColor = col;
+    ctx2.shadowBlur = 20;
+    ctx2.stroke();
+
+    // Circulo interno
+    ctx2.beginPath();
+    ctx2.arc(x,y,8,0,Math.PI*2);
+    ctx2.fillStyle = col + (gesture==='PUNHO'?'cc':'66');
+    ctx2.fill();
+
+    // Cross
+    ctx2.beginPath();
+    ctx2.moveTo(x-14,y); ctx2.lineTo(x+14,y);
+    ctx2.moveTo(x,y-14); ctx2.lineTo(x,y+14);
+    ctx2.strokeStyle = col + '88';
+    ctx2.lineWidth = 1;
+    ctx2.shadowBlur = 0;
+    ctx2.stroke();
+
+    // Label
+    ctx2.font = "10px 'Share Tech Mono'";
+    ctx2.fillStyle = col;
+    ctx2.textAlign = 'center';
+    ctx2.shadowBlur = 0;
+    ctx2.fillText(side==='Left'?'ESQ':'DIR', x, y-30);
+    ctx2.fillText(gesture||'', x, y+38);
+
+    // Linha ao bloco agarrado
+    if (holding) {
+      ctx2.beginPath();
+      ctx2.moveTo(x,y); ctx2.lineTo(holding.x,holding.y);
+      ctx2.strokeStyle = col + '44';
+      ctx2.lineWidth = 1.5;
+      ctx2.setLineDash([5,5]);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+    }
+
+    ctx2.restore();
+  });
+}
+
+// ── Desenhar fundo da cena ──────────────────────────────────
+let bgT = 0;
+function drawBG() {
+  ctx2.fillStyle = '#04060f';
+  ctx2.fillRect(0,0,canvas.width,canvas.height);
+
+  // Grid animado
+  const W=canvas.width, H=canvas.height;
+  ctx2.save();
+  ctx2.strokeStyle = 'rgba(0,245,255,0.04)';
+  ctx2.lineWidth = 1;
+  const gSize=50;
+  const offX=(bgT*10)%gSize, offY=(bgT*5)%gSize;
+  for(let x=-gSize+offX;x<W+gSize;x+=gSize) {
+    ctx2.beginPath(); ctx2.moveTo(x,0); ctx2.lineTo(x,H); ctx2.stroke();
+  }
+  for(let y=-gSize+offY;y<H+gSize;y+=gSize) {
+    ctx2.beginPath(); ctx2.moveTo(0,y); ctx2.lineTo(W,y); ctx2.stroke();
+  }
+
+  // Chão
+  ctx2.strokeStyle = 'rgba(0,245,255,0.15)';
+  ctx2.lineWidth = 2;
+  ctx2.shadowColor = '#00f5ff';
+  ctx2.shadowBlur = 8;
+  ctx2.beginPath();
+  ctx2.moveTo(0,H-2); ctx2.lineTo(W,H-2);
+  ctx2.stroke();
+  ctx2.shadowBlur = 0;
+
+  ctx2.restore();
+}
+
+// ── Resize canvas ──────────────────────────────────────────
+function resizePhysics() {
+  const wrap = document.getElementById('scene-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+// ══════════════════════════════════════════
+// LOOP PRINCIPAL
+// ══════════════════════════════════════════
+let raf;
+function loop() {
+  raf = requestAnimationFrame(loop);
+  bgT += 0.016;
+
+  resizePhysics();
+  drawBG();
+
+  // Update física
+  blocks.forEach(b => b.update(canvas.width, canvas.height));
+  resolveCollisions();
+
+  // Draw blocos
+  blocks.forEach(b => b.draw(ctx2));
+
+  // Draw cursores
+  drawHandCursors();
+
+  // Contador
+  document.getElementById('block-count').textContent = blocks.length;
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = type==='ok'?'rgba(57,255,20,.3)':type==='err'?'rgba(255,60,172,.3)':'rgba(0,245,255,.25)';
+  el.style.color = type==='ok'?'#39ff14':type==='err'?'#ff3cac':'#e8f0ff';
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+resizePhysics();
+spawnBlocks();
+loop();
+
+window.addEventListener('resize', () => { resizePhysics(); resizeOvCanvas && resizeOvCanvas(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') stopCam(); if(e.key==='r'||e.key==='R') resetBlocks(); });
+</script>
+</body>
+</html>
