@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hand Blocks 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ── RESET & BASE ────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;
+  font-family:'Exo 2',sans-serif;color:#e8f4ff;user-select:none}
+
+/* ── VARIÁVEIS ───────────────────────────────────────────── */
+:root{
+  --bg:#02040c;--s1:#060d1c;--s2:#0a1428;
+  --c:#00f5ff;--g:#00e676;--o:#ff6b00;
+  --r:#ff1744;--y:#ffd740;--p:#d500f9;
+  --mu:#3a5a7a;--fm:'Share Tech Mono',monospace;
+}
+
+/* ── TELA INICIAL ────────────────────────────────────────── */
+#splash{
+  position:fixed;inset:0;z-index:1000;
+  background:radial-gradient(ellipse at 50% 40%,#050e1e,#020408);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  padding:24px;
+}
+.splash-title{
+  font-family:var(--fm);font-size:clamp(2rem,6vw,3.5rem);
+  color:var(--c);letter-spacing:6px;
+  text-shadow:0 0 40px rgba(0,245,255,.5),0 0 80px rgba(0,245,255,.2);
+  text-align:center;
+}
+.splash-title span{color:var(--y);}
+.splash-sub{color:var(--mu);font-size:.9rem;text-align:center;line-height:1.8;max-width:460px;}
+.splash-cards{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:8px 0;}
+.splash-card{
+  background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.15);
+  border-radius:12px;padding:14px 18px;width:130px;text-align:center;
+}
+.sc-icon{font-size:1.8rem;margin-bottom:6px;}
+.sc-name{font-family:var(--fm);font-size:.65rem;color:var(--c);letter-spacing:1px;}
+.sc-desc{font-size:.7rem;color:var(--mu);margin-top:4px;line-height:1.4;}
+.start-btn{
+  background:linear-gradient(135deg,var(--c),#0090c0);color:#000;
+  border:none;border-radius:10px;padding:14px 40px;
+  font-family:var(--fm);font-size:.9rem;letter-spacing:3px;font-weight:700;
+  cursor:pointer;transition:all .2s;margin-top:4px;
+}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,245,255,.4);}
+.privacy-note{font-family:var(--fm);font-size:.58rem;color:var(--mu);letter-spacing:1px;text-align:center;}
+
+/* ── APP PRINCIPAL ───────────────────────────────────────── */
+#app{position:fixed;inset:0;display:none;flex-direction:column;}
+#app.on{display:flex;}
+
+/* ── TOPBAR ──────────────────────────────────────────────── */
+#topbar{
+  height:48px;flex-shrink:0;
+  background:rgba(2,4,12,.96);
+  border-bottom:1px solid rgba(0,245,255,.1);
+  backdrop-filter:blur(20px);
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+  z-index:100;
+}
+.tb-logo{font-family:var(--fm);font-size:1rem;color:var(--c);letter-spacing:3px;}
+.tb-logo span{color:var(--y);}
+.tb-status{
+  background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);
+  color:var(--g);padding:3px 10px;border-radius:12px;
+  font-family:var(--fm);font-size:.62rem;letter-spacing:1px;
+  display:flex;align-items:center;gap:5px;
+}
+.tb-dot{width:5px;height:5px;border-radius:50%;background:var(--g);animation:dot 1.5s infinite;}
+@keyframes dot{0%,100%{opacity:1}50%{opacity:.2}}
+.tb-gesture{
+  font-family:var(--fm);font-size:.68rem;color:var(--y);
+  background:rgba(255,215,64,.07);border:1px solid rgba(255,215,64,.2);
+  padding:3px 10px;border-radius:12px;display:flex;align-items:center;gap:5px;
+}
+.tb-blocks{
+  font-family:var(--fm);font-size:.68rem;color:var(--p);
+  background:rgba(213,0,249,.06);border:1px solid rgba(213,0,249,.2);
+  padding:3px 10px;border-radius:12px;
+}
+.tb-r{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.tb-btn{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--mu);padding:4px 10px;border-radius:6px;
+  font-family:var(--fm);font-size:.62rem;cursor:pointer;transition:all .15s;
+}
+.tb-btn:hover{border-color:var(--c);color:var(--c);}
+.tb-btn.danger{border-color:rgba(255,23,68,.3);color:var(--r);}
+.tb-btn.danger:hover{background:rgba(255,23,68,.1);}
+
+/* ── ÁREA PRINCIPAL ──────────────────────────────────────── */
+#main{flex:1;display:flex;overflow:hidden;position:relative;}
+
+/* Canvas 3D ocupa tudo */
+#three-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+
+/* ── CÂMERA PREVIEW ──────────────────────────────────────── */
+#cam-box{
+  position:absolute;bottom:80px;left:14px;
+  width:200px;height:150px;
+  border-radius:12px;overflow:hidden;
+  border:2px solid rgba(0,245,255,.35);
+  box-shadow:0 4px 20px rgba(0,0,0,.7);
+  z-index:10;
+}
+#cam-box.hidden{display:none;}
+#cam-video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block;}
+#cam-mp-canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);}
+.cam-label{
+  position:absolute;top:5px;left:7px;
+  font-family:var(--fm);font-size:.52rem;color:rgba(0,245,255,.7);
+  letter-spacing:1px;
+}
+
+/* ── PALETA DE BLOCOS ────────────────────────────────────── */
+#palette{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;align-items:center;
+  background:rgba(2,4,12,.85);
+  border:1px solid rgba(0,245,255,.15);
+  border-radius:14px;padding:8px 10px;
+  backdrop-filter:blur(12px);z-index:10;
+}
+.pal-block{
+  width:44px;height:44px;border-radius:8px;
+  border:2px solid rgba(255,255,255,.15);
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;position:relative;
+}
+.pal-block:hover{transform:scale(1.1);border-color:rgba(255,255,255,.5);}
+.pal-block.sel{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.4);transform:scale(1.12);}
+.pal-block .pal-num{
+  position:absolute;bottom:1px;right:3px;
+  font-family:var(--fm);font-size:.5rem;color:rgba(255,255,255,.5);
+}
+
+/* ── HUD GESTOS ──────────────────────────────────────────── */
+#gesture-hud{
+  position:absolute;top:14px;right:14px;
+  background:rgba(2,4,12,.85);border:1px solid rgba(0,245,255,.15);
+  border-radius:14px;padding:14px 16px;min-width:160px;z-index:10;
+  backdrop-filter:blur(12px);
+}
+.gh-title{font-family:var(--fm);font-size:.6rem;color:var(--mu);letter-spacing:2px;margin-bottom:10px;}
+.gh-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.gh-item:last-child{border:none;}
+.gh-icon{font-size:1.1rem;width:22px;flex-shrink:0;}
+.gh-info{}
+.gh-name{font-family:var(--fm);font-size:.62rem;color:var(--w);}
+.gh-action{font-size:.58rem;color:var(--mu);margin-top:1px;}
+
+/* ── CURSOR 3D (onde o bloco vai ser colocado) ───────────── */
+#cursor3d-hud{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:24px;height:24px;pointer-events:none;z-index:8;
+}
+#cursor3d-hud::before,#cursor3d-hud::after{
+  content:'';position:absolute;background:rgba(255,255,255,.9);border-radius:1px;
+}
+#cursor3d-hud::before{width:2px;height:100%;top:0;left:50%;transform:translateX(-50%);}
+#cursor3d-hud::after{height:2px;width:100%;top:50%;left:0;transform:translateY(-50%);}
+
+/* ── TOAST ───────────────────────────────────────────────── */
+#toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9000;
+  display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;}
+.toast{
+  background:var(--s2);border:1px solid rgba(0,245,255,.2);
+  color:var(--w);padding:8px 18px;border-radius:8px;
+  font-family:var(--fm);font-size:.72rem;
+  animation:tin .3s ease;max-width:320px;text-align:center;
+}
+.toast.ok{border-color:rgba(0,230,118,.3);color:var(--g);}
+.toast.err{border-color:rgba(255,23,68,.3);color:var(--r);}
+.toast.warn{border-color:rgba(255,215,64,.3);color:var(--y);}
+@keyframes tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+
+/* ── OVERLAY LOADING ─────────────────────────────────────── */
+#loading{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(2,4,12,.95);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+#loading.hidden{display:none;}
+.load-spinner{
+  width:40px;height:40px;border:3px solid rgba(0,245,255,.15);
+  border-top-color:var(--c);border-radius:50%;animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:var(--fm);font-size:.75rem;color:var(--c);letter-spacing:2px;}
+
+/* ── MOBILE DICA ─────────────────────────────────────────── */
+@media(max-width:600px){
+  #gesture-hud{display:none;}
+  #cam-box{width:150px;height:110px;bottom:90px;}
+  .pal-block{width:36px;height:36px;font-size:.9rem;}
+  #palette{padding:6px 8px;gap:4px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ SPLASH -->
+<div id="splash">
+  <div class="splash-title">✋ HAND<span>BLOCKS</span></div>
+  <p class="splash-sub">Construa em 3D usando só a sua mão.<br>Sem controle, sem teclado — só gestos.</p>
+
+  <div class="splash-cards">
+    <div class="splash-card">
+      <div class="sc-icon">☝️</div>
+      <div class="sc-name">APONTAR</div>
+      <div class="sc-desc">Move o cursor no espaço 3D</div>
+    </div>
+    <div class="splash-card">
+      <div class="sc-icon">✊</div>
+      <div class="sc-name">PUNHO</div>
+      <div class="sc-desc">Coloca um bloco</div>
+    </div>
+    <div class="splash-card">
+      <div class="sc-icon">🖐</div>
+      <div class="sc-name">MÃO ABERTA</div>
+      <div class="sc-desc">Remove o bloco</div>
+    </div>
+    <div class="splash-card">
+      <div class="sc-icon">✌️</div>
+      <div class="sc-name">DOIS DEDOS</div>
+      <div class="sc-desc">Troca o tipo de bloco</div>
+    </div>
+  </div>
+
+  <button class="start-btn" onclick="startApp()">▶ INICIAR CÂMERA</button>
+  <p class="privacy-note">📷 Vídeo processado localmente — nunca enviado a servidores</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ LOADING -->
+<div id="loading" class="hidden">
+  <div class="load-spinner"></div>
+  <div class="load-txt" id="load-txt">INICIANDO...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-logo">HAND<span>BLOCKS</span></div>
+    <div class="tb-status"><span class="tb-dot"></span><span id="tb-track">RASTREANDO</span></div>
+    <div class="tb-gesture">
+      <span id="tb-gest-icon">🤚</span>
+      <span id="tb-gest-name">—</span>
+    </div>
+    <div class="tb-blocks">🧱 <span id="tb-block-count">0</span> blocos</div>
+    <div class="tb-r">
+      <button class="tb-btn" onclick="toggleCam()">📷</button>
+      <button class="tb-btn" onclick="toggleGrid()">⊞</button>
+      <button class="tb-btn" onclick="clearWorld()">🗑️ Limpar</button>
+      <button class="tb-btn" onclick="undoBlock()">↩ Desfazer</button>
+      <button class="tb-btn danger" onclick="exitApp()">← Sair</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Crosshair -->
+    <div id="cursor3d-hud"></div>
+
+    <!-- Preview câmera -->
+    <div id="cam-box">
+      <video id="cam-video" autoplay playsinline muted></video>
+      <canvas id="cam-mp-canvas"></canvas>
+      <div class="cam-label">📷 AO VIVO</div>
+    </div>
+
+    <!-- Paleta de blocos -->
+    <div id="palette"></div>
+
+    <!-- HUD gestos -->
+    <div id="gesture-hud">
+      <div class="gh-title">GESTOS</div>
+      <div class="gh-item"><div class="gh-icon">☝️</div><div class="gh-info"><div class="gh-name">APONTAR</div><div class="gh-action">Mover cursor</div></div></div>
+      <div class="gh-item"><div class="gh-icon">✊</div><div class="gh-info"><div class="gh-name">PUNHO</div><div class="gh-action">Colocar bloco</div></div></div>
+      <div class="gh-item"><div class="gh-icon">🖐</div><div class="gh-info"><div class="gh-name">MÃO ABERTA</div><div class="gh-action">Remover bloco</div></div></div>
+      <div class="gh-item"><div class="gh-icon">✌️</div><div class="gh-info"><div class="gh-name">DOIS DEDOS</div><div class="gh-action">Próximo bloco</div></div></div>
+      <div class="gh-item"><div class="gh-icon">👍</div><div class="gh-info"><div class="gh-name">JOINHA</div><div class="gh-action">Rotacionar câmera</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-wrap"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════
+//  HAND BLOCKS 3D
+//  Sistema de blocos controlado por gestos de mão via MediaPipe
+// ═══════════════════════════════════════════════════════════════
+
+// ── TIPOS DE BLOCOS ───────────────────────────────────────────
+const BLOCK_TYPES = [
+  { id:'stone',  label:'Pedra',    color:0x8a8a8a, emissive:0x000000, rough:0.9, metal:0.0, emoji:'🪨' },
+  { id:'grass',  label:'Grama',    color:0x3a8c3a, emissive:0x001100, rough:0.9, metal:0.0, emoji:'🟩' },
+  { id:'wood',   label:'Madeira',  color:0x7a4a1a, emissive:0x000000, rough:0.9, metal:0.0, emoji:'🪵' },
+  { id:'sand',   label:'Areia',    color:0xd4b264, emissive:0x000000, rough:1.0, metal:0.0, emoji:'🟡' },
+  { id:'brick',  label:'Tijolo',   color:0xb03a2e, emissive:0x000000, rough:0.8, metal:0.0, emoji:'🔴' },
+  { id:'glass',  label:'Vidro',    color:0x80d8e8, emissive:0x001122, rough:0.05,metal:0.1, emoji:'🔷', transparent:true, opacity:0.55 },
+  { id:'gold',   label:'Ouro',     color:0xffd740, emissive:0x221100, rough:0.2, metal:0.9, emoji:'🌟' },
+  { id:'neon_c', label:'Neon Azul',color:0x00f5ff, emissive:0x00f5ff, rough:0.3, metal:0.2, emoji:'💠', glow:true, glowCol:0x00f5ff },
+  { id:'neon_p', label:'Neon Roxo',color:0xd500f9, emissive:0xd500f9, rough:0.3, metal:0.2, emoji:'💜', glow:true, glowCol:0xd500f9 },
+  { id:'neon_g', label:'Neon Verde',color:0x00e676,emissive:0x00e676, rough:0.3, metal:0.2, emoji:'💚', glow:true, glowCol:0x00e676 },
+];
+
+// ── ESTADO GLOBAL ─────────────────────────────────────────────
+const G = {
+  // hand tracking
+  mp: null, mpCam: null, stream: null,
+  tracking: false,
+  // mão
+  lms: null,
+  fingers: [0,0,0,0,0],  // curl 0=aberto 1=fechado
+  fingerSmooth: [0,0,0,0,0],
+  gesture: 'none',
+  gestureTime: 0,         // quando o gesto começou
+  gestureLock: false,     // evita disparo múltiplo
+  gestureCd: 0,           // cooldown ms
+  handX: 0.5, handY: 0.5,// posição normalizada do pulso
+  handXSmooth: 0.5, handYSmooth: 0.5,
+  confidence: 0,
+  // mundo 3D
+  world: new Map(),       // "x,y,z" → blockTypeId
+  worldMeshes: new Map(), // "x,y,z" → { mesh, light? }
+  history: [],            // para undo
+  selectedBlock: 0,
+  blockCount: 0,
+  // cursor 3D
+  cursorX: 0, cursorY: 1, cursorZ: 0,
+  cursorMesh: null,
+  cursorMat: null,
+  cursorTargetX: 0, cursorTargetY: 1, cursorTargetZ: 0,
+  // câmera órbita
+  camTheta: 0.8,          // ângulo horizontal
+  camPhi: 0.55,           // ângulo vertical
+  camRadius: 18,
+  camPanning: false,
+  // flags
+  showCam: true,
+  showGrid: true,
+  // three.js
+  renderer: null, scene: null, camera: null,
+  gridHelper: null,
+  ambLight: null, dirLight: null,
+  raf: null,
+  now: 0,
+};
+
+// ── MATERIAIS cache ────────────────────────────────────────────
+const _mats = {};
+function getMat(typeId) {
+  if (_mats[typeId]) return _mats[typeId];
+  const t = BLOCK_TYPES.find(b => b.id === typeId) || BLOCK_TYPES[0];
+  const mat = new THREE.MeshStandardMaterial({
+    color: t.color,
+    emissive: t.emissive,
+    emissiveIntensity: t.glow ? 0.8 : (t.emissive > 0 ? 0.2 : 0),
+    roughness: t.rough,
+    metalness: t.metal,
+    transparent: !!t.transparent,
+    opacity: t.opacity ?? 1,
+  });
+  _mats[typeId] = mat;
+  return mat;
+}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const wrap = document.getElementById('toast-wrap');
+  const d = document.createElement('div');
+  d.className = 'toast ' + type;
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(() => { d.style.transition='opacity .4s'; d.style.opacity='0'; }, 2200);
+  setTimeout(() => d.remove(), 2700);
+}
+
+// ── THREE.JS SETUP ─────────────────────────────────────────────
+function initThree() {
+  const cv = document.getElementById('three-canvas');
+  const main = document.getElementById('main');
+
+  G.renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
+  G.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  G.renderer.setSize(main.clientWidth, main.clientHeight);
+  G.renderer.shadowMap.enabled = true;
+  G.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  G.renderer.setClearColor(0x040810, 1);
+
+  G.scene = new THREE.Scene();
+  G.scene.fog = new THREE.Fog(0x040810, 25, 60);
+
+  G.camera = new THREE.PerspectiveCamera(55, main.clientWidth / main.clientHeight, 0.1, 200);
+  _updateCameraPos();
+
+  // Luzes
+  G.ambLight = new THREE.AmbientLight(0x223344, 0.7);
+  G.scene.add(G.ambLight);
+
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+  sun.position.set(8, 14, 6);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 0.1;
+  sun.shadow.camera.far = 80;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
+  sun.shadow.camera.right = sun.shadow.camera.top = 20;
+  G.scene.add(sun);
+  G.dirLight = sun;
+
+  const fill = new THREE.DirectionalLight(0x4488bb, 0.4);
+  fill.position.set(-6, 4, -8);
+  G.scene.add(fill);
+
+  // Chão plano de referência
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 1 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.01;
+  floor.receiveShadow = true;
+  G.scene.add(floor);
+
+  // Grid
+  G.gridHelper = new THREE.GridHelper(40, 40, 0x001a33, 0x001a33);
+  G.gridHelper.material.transparent = true;
+  G.gridHelper.material.opacity = 0.4;
+  G.scene.add(G.gridHelper);
+
+  // Cursor de posicionamento
+  const cursorGeo = new THREE.BoxGeometry(1.04, 1.04, 1.04);
+  G.cursorMat = new THREE.MeshBasicMaterial({
+    color: 0x00f5ff, transparent: true, opacity: 0.35,
+    wireframe: false, depthWrite: false,
+  });
+  G.cursorMesh = new THREE.Mesh(cursorGeo, G.cursorMat);
+  G.cursorMesh.position.set(0, 0.5, 0);
+  G.scene.add(G.cursorMesh);
+
+  // Borda do cursor (wireframe)
+  const cursorWire = new THREE.Mesh(cursorGeo,
+    new THREE.MeshBasicMaterial({ color: 0x00f5ff, wireframe: true }));
+  G.cursorMesh.add(cursorWire);
+
+  // Particles de fundo
+  _buildBgParticles();
+
+  // Resize
+  window.addEventListener('resize', _onResize);
+}
+
+function _buildBgParticles() {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(300 * 3);
+  for (let i = 0; i < 300 * 3; i++) pos[i] = (Math.random() - 0.5) * 80;
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(geo,
+    new THREE.PointsMaterial({ color: 0x004466, size: 0.05, transparent: true, opacity: 0.5 }));
+  G.scene.add(pts);
+}
+
+function _updateCameraPos() {
+  const r = G.camRadius;
+  const x = r * Math.sin(G.camPhi) * Math.sin(G.camTheta);
+  const y = r * Math.cos(G.camPhi);
+  const z = r * Math.sin(G.camPhi) * Math.cos(G.camTheta);
+  G.camera.position.set(x, Math.max(1, y), z);
+  G.camera.lookAt(0, 2, 0);
+}
+
+function _onResize() {
+  const main = document.getElementById('main');
+  if (!G.renderer || !main) return;
+  G.renderer.setSize(main.clientWidth, main.clientHeight);
+  G.camera.aspect = main.clientWidth / main.clientHeight;
+  G.camera.updateProjectionMatrix();
+}
+
+// ── PALETA ────────────────────────────────────────────────────
+function buildPalette() {
+  const pal = document.getElementById('palette');
+  pal.innerHTML = BLOCK_TYPES.map((b, i) => `
+    <div class="pal-block${i === 0 ? ' sel' : ''}" id="pal-${i}"
+      style="background:${'#' + b.color.toString(16).padStart(6,'0')}22;border-color:${'#' + b.color.toString(16).padStart(6,'0')}55"
+      onclick="selectBlock(${i})" title="${b.label}">
+      $
