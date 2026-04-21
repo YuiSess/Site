@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnimeStudio PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060610;--surface:#0d0d1a;--panel:#0f0f1d;--border:#1a1a2e;
+  --accent:#e8c840;--accent2:#ff6b35;--blue:#4fc3f7;--purple:#a855f7;
+  --text:#eeeef5;--muted:#4a4a68;--green:#4ade80;--pink:#f472b6;--cyan:#22d3ee;
+}
+body{background:var(--bg);font-family:'Rajdhani',sans-serif;color:var(--text);height:100vh;overflow:hidden;}
+/* HEADER */
+header{height:46px;padding:0 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:rgba(10,10,22,.97);backdrop-filter:blur(12px);flex-shrink:0;position:relative;z-index:100;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:5px;background:linear-gradient(90deg,#e8c840,#ff6b35,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-size:.58rem;color:var(--muted);font-weight:700;letter-spacing:3px;}
+.hbadge{padding:2px 9px;border-radius:20px;font-size:.55rem;font-weight:700;letter-spacing:1px;border:1px solid currentColor;cursor:pointer;}
+.hbadge.yellow{color:var(--accent);border-color:var(--accent);background:#e8c84010;}
+.hbadge.purple{color:var(--purple);border-color:var(--purple);background:#a855f710;}
+.hbadge.cyan{color:var(--cyan);border-color:var(--cyan);background:#22d3ee10;}
+/* LAYOUT */
+.app{display:grid;grid-template-columns:1fr 310px;height:calc(100vh - 46px);}
+/* VIEWER */
+.viewer{display:flex;flex-direction:column;background:#000;border-right:1px solid var(--border);position:relative;}
+.vstage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,#0a0a1a,#020208);}
+#mainCanvas{display:block;}
+#onionCanvas{position:absolute;pointer-events:none;}
+.bar-top,.bar-bot{position:absolute;left:0;right:0;height:0;background:#000;transition:height .4s;z-index:5;}
+.bar-top{top:0;}.bar-bot{bottom:0;}
+#subOverlay{position:absolute;bottom:50px;left:0;right:0;text-align:center;z-index:10;pointer-events:none;opacity:0;transition:opacity .3s;}
+#subText{display:inline-block;background:rgba(0,0,0,.88);color:#fff;font-size:14px;padding:5px 20px;border-radius:3px;max-width:92%;line-height:1.5;border-left:3px solid var(--accent);}
+#hudFrame{position:absolute;top:9px;left:10px;background:rgba(0,0,0,.75);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:4px;z-index:10;border:1px solid #e8c84030;}
+#hudMode{position:absolute;top:9px;right:10px;background:rgba(0,0,0,.75);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:3px 8px;border-radius:4px;z-index:10;border:1px solid #22d3ee30;}
+/* CTRL BAR */
+.ctrl-bar{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:5px 9px;display:flex;gap:6px;align-items:center;}
+.cbtn{padding:5px 13px;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;font-family:'Rajdhani',sans-serif;transition:all .15s;}
+.cbtn-play{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;}
+.cbtn-play.stop{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;}
+.cbtn-sm{padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;font-size:.7rem;cursor:pointer;font-weight:700;transition:all .12s;}
+.cbtn-sm:hover,.cbtn-sm.on{border-color:var(--accent);color:var(--accent);}
+.fps-row{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--muted);font-weight:700;}
+.fps-row input{width:50px;accent-color:var(--accent);}
+.fstrip-wrap{flex:1;overflow:hidden;}
+.fstrip{display:flex;gap:3px;overflow-x:auto;padding:2px 0;}
+.fstrip::-webkit-scrollbar{height:3px;}.fstrip::-webkit-scrollbar-thumb{background:var(--border);}
+.fth{flex-shrink:0;width:38px;height:28px;border:2px solid var(--border);border-radius:3px;cursor:pointer;background:#111;overflow:hidden;position:relative;transition:border-color .1s;}
+.fth.on{border-color:var(--accent);}
+.fth img{width:100%;height:100%;object-fit:cover;}
+.fth .fn{position:absolute;bottom:0;right:1px;font-size:.34rem;font-weight:700;color:#fff;text-shadow:0 0 3px #000;}
+/* PANEL */
+.rpanel{overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.rpanel::-webkit-scrollbar{width:3px;}.rpanel::-webkit-scrollbar-thumb{background:var(--border);}
+.sec{padding:11px 11px 9px;border-bottom:1px solid var(--border);}
+.stitle{font-size:.56rem;font-weight:700;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:4px;}
+.stitle em{color:var(--accent);font-style:normal;}
+/* BIG TOGGLE BUTTONS */
+.big-grid{display:grid;gap:5px;margin-bottom:8px;}
+.big-grid.col2{grid-template-columns:1fr 1fr;}
+.big-grid.col3{grid-template-columns:1fr 1fr 1fr;}
+.bigbtn{padding:9px 4px;border:2px solid var(--border);border-radius:9px;background:transparent;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:1.5px;cursor:pointer;transition:all .18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;}
+.bigbtn .ico{font-size:1.1rem;}
+.bigbtn.on-yellow{border-color:var(--accent)!important;background:#e8c84020!important;color:var(--accent)!important;}
+.bigbtn.on-purple{border-color:var(--purple)!important;background:#a855f720!important;color:var(--purple)!important;}
+.bigbtn.on-blue{border-color:var(--blue)!important;background:#4fc3f720!important;color:var(--blue)!important;}
+.bigbtn.on-cyan{border-color:var(--cyan)!important;background:#22d3ee20!important;color:var(--cyan)!important;}
+/* INPUTS */
+.keybox{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 9px;margin-top:5px;transition:border-color .2s;}
+.keybox.active{border-color:#e8c84040;}
+.keybox-lbl{font-size:.5rem;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+.keybox-row{display:flex;align-items:center;gap:3px;}
+.keybox input{flex:1;background:transparent;border:none;font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--text);outline:none;min-width:0;}
+.keybox button{background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--muted);padding:0 2px;}
+.keybox-hint{font-size:.48rem;color:var(--muted);margin-top:3px;}
+.keybox-hint a{color:var(--accent);text-decoration:none;}
+.model-row{display:none;gap:3px;margin:4px 0;}
+.model-row.vis{display:flex;}
+.mpb{flex:1;padding:4px 3px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.mpb.on{border-color:var(--accent);color:var(--accent);background:#e8c84010;}
+/* TEXTAREA */
+.sinput{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--text);resize:none;height:78px;line-height:1.4;}
+.sinput:focus{outline:none;border-color:var(--accent);}
+/* CHAR FIELDS */
+.cfield{display:flex;gap:5px;align-items:center;margin-bottom:4px;}
+.cfield-lbl{font-size:.52rem;color:var(--muted);font-weight:700;width:55px;flex-shrink:0;letter-spacing:.5px;text-transform:uppercase;}
+.cfield input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-family:'Rajdhani',sans-serif;font-size:.7rem;color:var(--text);}
+.cfield input:focus{outline:none;border-color:var(--blue);}
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0 5px;}
+.tag{padding:3px 8px;background:transparent;border:1px solid var(--border);border-radius:12px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .12s;}
+.tag:hover{color:var(--text);border-color:#555;}
+.tag.on{color:#000;background:var(--accent);border-color:transparent;}
+/* DUR */
+.dur-row{display:flex;gap:3px;margin-bottom:4px;}
+.durbtn{flex:1;padding:5px 2px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.durbtn.on{border-color:var(--blue);color:var(--blue);background:#4fc3f710;}
+/* REF */
+.refup{display:flex;align-items:center;gap:7px;padding:6px 8px;border:1.5px dashed var(--border);border-radius:7px;cursor:pointer;transition:all .15s;margin:5px 0;}
+.refup:hover{border-color:var(--accent);}
+.refup.loaded{border-color:var(--green);border-style:solid;}
+.refprev{width:28px;height:28px;object-fit:cover;border-radius:3px;display:none;}
+.refup.loaded .refprev{display:block;}
+.reftxt{font-size:.6rem;font-weight:700;color:var(--muted);}
+.refup.loaded .reftxt{color:var(--green);}
+/* GEN BTN */
+.genbtn{width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;position:relative;overflow:hidden;}
+.genbtn:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 4px 18px #e8c84040;}
+.genbtn:disabled{opacity:.35;cursor:wait;transform:none;}
+.genbtn.img-mode{background:linear-gradient(135deg,var(--purple),var(--pink));}
+.spin{width:13px;height:13px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:sp .5s linear infinite;display:none;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg);}}
+/* PROGRESS */
+.pbar-wrap{margin-top:6px;}
+.pbar{height:4px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .4s;border-radius:3px;}
+.pfill.img{background:linear-gradient(90deg,var(--purple),var(--pink));}
+.ptxt{font-size:.6rem;font-weight:700;color:var(--accent2);min-height:14px;margin-top:3px;text-align:center;}
+.binfo{font-size:.55rem;color:var(--muted);text-align:center;margin-top:1px;}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:5px 0;}
+.stat-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 3px;text-align:center;}
+.stat-val{font-family:'Share Tech Mono',monospace;font-size:.9rem;font-weight:700;}
+.stat-lbl{font-size:.45rem;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
+#moodChart{width:100%;height:40px;display:block;margin:4px 0;}
+/* SETTINGS TOG */
+.setting{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:.68rem;font-weight:600;color:var(--muted);}
+.tog{width:30px;height:16px;background:var(--border);border-radius:8px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.tog.on{background:var(--accent);}
+.tog::after{content:'';position:absolute;width:8px;height:8px;background:white;border-radius:50%;top:2px;left:2px;transition:left .2s;}
+.tog.on::after{left:18px;}
+/* EXPORT */
+.expgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.ebtn{padding:6px 3px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:.65rem;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;}
+.ebtn:hover{border-color:var(--accent);color:var(--accent);}
+/* AR BUTTONS */
+.ar-row{display:flex;gap:3px;margin-bottom:5px;}
+.arbtn{flex:1;padding:4px 2px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.arbtn.on{border-color:var(--cyan);color:var(--cyan);background:#22d3ee10;}
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);font-size:.8rem;font-weight:700;padding:8px 20px;border-radius:22px;box-shadow:0 4px 24px rgba(0,0,0,.8);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;border:1px solid var(--border);white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* ═══════════════════════════════════════════
+   VR MODE
+═══════════════════════════════════════════ */
+#vrOverlay{position:fixed;inset:0;z-index:500;display:none;background:#000;flex-direction:column;}
+#vrOverlay.show{display:flex;}
+/* SPLIT SCREEN */
+#vrScreen{flex:1;display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden;}
+.vr-eye{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000;}
+.vr-eye:first-child{border-right:3px solid #000;}
+.vr-canvas-wrap{position:relative;transform-origin:center center;}
+/* VR UI */
+#vrHUD{position:absolute;top:0;left:0;right:0;height:36px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:10;pointer-events:none;}
+#vrStatus{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:#00ff88;letter-spacing:2px;}
+#vrFPS{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#4fc3f7;}
+/* CENTER LINE */
+#vrCenter{position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(180deg,transparent,#00000044,transparent);transform:translateX(-50%);pointer-events:none;z-index:20;}
+/* RETICLE */
+.vr-reticle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:15;}
+.vr-reticle svg{opacity:.7;}
+/* HAND OVERLAY */
+#vrHandCanvas{position:absolute;inset:0;pointer-events:none;z-index:30;}
+/* VR CONTROLS BAR */
+#vrControls{height:44px;background:rgba(0,0,0,.9);border-top:1px solid #111;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 14px;flex-shrink:0;}
+.vr-cbtn{padding:6px 14px;background:transparent;border:1px solid #333;border-radius:16px;color:#aaa;font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:2px;cursor:pointer;transition:all .15s;}
+.vr-cbtn:hover,.vr-cbtn.on{border-color:var(--accent);color:var(--accent);}
+.vr-cbtn.exit{border-color:#f87171;color:#f87171;}
+/* GESTURE INDICATOR */
+#gestureHint{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid #a855f744;border-radius:20px;padding:4px 16px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--purple);letter-spacing:2px;pointer-events:none;z-index:40;opacity:0;transition:opacity .3s;}
+#gestureHint.show{opacity:1;}
+/* VR HAND SKELETON */
+.hand-dot{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>ANIMESTUDIO</h1>
+  <div class="hsub">PRO</div>
+  <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+    <span class="hbadge yellow" id="badgeSVG">🎨 SVG</span>
+    <span class="hbadge purple" id="badgeIMG" style="display:none;">🖼 IMG</span>
+    <span class="hbadge cyan" onclick="enterVR()" style="cursor:pointer;font-size:.62rem;padding:3px 11px;">🥽 VR MODE</span>
+    <span class="hbadge" style="color:#4ade80;border-color:#4ade80;background:#4ade8010;font-size:.52rem;padding:3px 9px;" title="Modo Raciocínio PRO — coordenadas precisas, anatomia real, zero palito">🎯 MODO PRO</span>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app">
+  <!-- VIEWER -->
+  <div class="viewer">
+    <div class="vstage" id="vstage">
+      <div class="bar-top" id="barTop"></div>
+      <canvas id="onionCanvas"></canvas>
+      <canvas id="mainCanvas"></canvas>
+      <div id="hudFrame">FRAME 1/1</div>
+      <div id="hudMode">PRONTO</div>
+      <div id="subOverlay"><span id="subText"></span></div>
+      <div class="bar-bot" id="barBot"></div>
+    </div>
+    <div class="ctrl-bar">
+      <button class="cbtn cbtn-play" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
+      <button class="cbtn-sm" id="cinBtn" onclick="toggleCinema()">🎬</button>
+      <div class="fps-row">
+        <span>FPS</span>
+        <input type="range" min="0.1" max="18" step="0.1" value="0.1" id="fpsSlider" oninput="setFPS(this.value)">
+        <span id="fpsLbl">0.1</span>
+      </div>
+      <div class="fstrip-wrap"><div class="fstrip" id="fstrip"></div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="rpanel">
+
+    <!-- IA SECTION -->
+    <div class="sec">
+      <div class="stitle"><em>⚡</em> MOTOR DE IA</div>
+      <!-- SVG vs IMAGE -->
+      <div class="big-grid col2" style="margin-bottom:9px;">
+        <button class="bigbtn on-yellow" id="modeSVG" onclick="setMode('svg')">
+          <span class="ico">🎨</span>SVG ANIME
+        </button>
+        <button class="bigbtn" id="modeIMG" onclick="setMode('image')">
+          <span class="ico">🖼</span>IMAGEM IA
+        </button>
+      </div>
+
+      <!-- SVG PROVIDERS -->
+      <div id="svgProv">
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:2px;margin-bottom:5px;">IA PARA SVG:</div>
+        <div class="big-grid col3">
+          <button class="bigbtn on-yellow" id="provClaude" onclick="setProv('claude')">
+            <span class="ico">🟣</span>CLAUDE
+          </button>
+          <button class="bigbtn" id="provGemini" onclick="setProv('gemini')">
+            <span class="ico">🔵</span>GEMINI
+          </button>
+          <button class="bigbtn" id="provGroq" onclick="setProv('groq')">
+            <span class="ico">🟡</span>GROQ
+          </button>
+        </div>
+        <div class="model-row" id="geminiMR">
+          <button class="mpb on" id="gmFlash" onclick="setGM('gemini-2.0-flash')">⚡ Flash</button>
+          <button class="mpb" id="gmPro" onclick="setGM('gemini-2.5-pro-preview-05-06')">💎 Pro</button>
+        </div>
+        <div class="model-row" id="groqMR">
+          <button class="mpb on" id="gqFast" onclick="setGQ('meta-llama/llama-4-scout-17b-16e-instruct')">⚡ Llama4</button>
+          <button class="mpb" id="gqDeep" onclick="setGQ('deepseek-r1-distill-llama-70b')">🧠 Deep</button>
+        </div>
+        <div class="keybox" id="svgKeyBox">
+          <div class="keybox-lbl" id="keyLbl">🔑 Anthropic API Key</div>
+          <div class="keybox-row">
+            <input type="password" id="keyInput" placeholder="sk-ant-api03-..." oninput="saveKey(this)" autocomplete="off">
+            <button onclick="toggleKV('keyInput')">👁</button>
+          </div>
+          <div class="keybox-hint" id="keyHint">
+            Cole sua chave · <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGE PROVIDERS -->
+      <div id="imgProv" style="display:none;">
+        <div style="background:#a855f718;border:1px solid #a855f730;border-radius:6px;padding:5px 8px;font-size:.6rem;color:var(--purple);font-weight:700;margin-bottom:7px;text-align:center;">
+          🖼 GERAÇÃO DE IMAGEM REAL
+        </div>
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:2px;margin-bottom:5px;">SERVIÇO:</div>
+        <div class="big-grid col3">
+          <button class="bigbtn on-purple" id="imgProvT" onclick="setImgProv('together')">
+            <span class="ico">⚡</span>TOGETHER
+          </button>
+          <button class="bigbtn" id="imgProvF" onclick="setImgProv('fal')">
+            <span class="ico">🌟</span>FAL.AI
+          </button>
+          <button class="bigbtn" id="imgProvH" onclick="setImgProv('hf')">
+            <span class="ico">🤗</span>HF
+          </button>
+        </div>
+        <div class="model-row vis" id="togetherMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'black-forest-labs/FLUX.1-schnell-Free')">FLUX Free</button>
+          <button class="mpb" onclick="setImgM(this,'black-forest-labs/FLUX.1-schnell')">FLUX Pro</button>
+          <button class="mpb" onclick="setImgM(this,'Kvikontent/flux-anime')">Flux Anime</button>
+          <button class="mpb" onclick="setImgM(this,'Lykon/dreamshaper-xl-turbo')">Dreamshaper</button>
+        </div>
+        <div class="model-row" id="falMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'fal-ai/fast-anime-diffusion')">Fast Anime</button>
+          <button class="mpb" onclick="setImgM(this,'fal-ai/stable-diffusion-xl')">SDXL</button>
+        </div>
+        <div class="model-row" id="hfMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'Ojimi/anime-pastel-dream')">Pastel</button>
+          <button class="mpb" onclick="setImgM(this,'dreamlike-art/dreamlike-anime-1.0')">Dreamlike</button>
+        </div>
+        <div class="keybox">
+          <div class="keybox-lbl" id="imgKeyLbl">🔑 Together API Key</div>
+          <div class="keybox-row">
+            <input type="password" id="imgKeyInput" placeholder="together_..." oninput="saveImgKey(this)" autocomplete="off">
+            <button onclick="toggleKV('imgKeyInput')">👁</button>
+          </div>
+          <div class="keybox-hint">Grátis em <a href="https://api.together.xyz" target="_blank" style="color:var(--purple);">api.together.xyz</a></div>
+        </div>
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin:6px 0 3px;">📐 RESOLUÇÃO:</div>
+        <div class="ar-row">
+          <button class="arbtn on" onclick="setAR(this,'768x512')">16:9</button>
+          <button class="arbtn" onclick="setAR(this,'512x512')">1:1</button>
+          <button class="arbtn" onclick="setAR(this,'512x768')">9:16</button>
+          <button class="arbtn" onclick="setAR(this,'1024x576')">HD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE -->
+    <div class="sec">
+      <div class="stitle"><em>📝</em> CENA — DESCREVA COM DETALHES</div>
+      <textarea class="sinput" id="sceneInput" placeholder="Ex: guerreiro jovem, cabelo branco longo, olhos amarelos felinos, kimono preto com detalhes dourados, katana brilhante, enfrenta dragão negro, cidade destruída, relâmpagos roxos..."></textarea>
+
+      <div style="font-size:.5rem;color:var(--accent2);font-weight:700;letter-spacing:2px;margin:7px 0 5px;text-transform:uppercase;">👤 Detalhes do Personagem</div>
+      <div class="cfield"><span class="cfield-lbl">Cabelo</span><input id="charHair" placeholder="branco longo com mechas" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Olhos</span><input id="charEyes" placeholder="amarelos felinos brilhantes" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Roupa</span><input id="charClothes" placeholder="kimono preto detalhe dourado" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Corpo</span><input id="charBody" placeholder="atlético 1.80m musculoso" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Arma</span><input id="charWeapon" placeholder="katana brilhante com runas" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Especial</span><input id="charSpecial" placeholder="aura de energia azul" type="text"></div>
+
+      <div style="font-size:.5rem;color:var(--accent2);font-weight:700;letter-spacing:2px;margin:7px 0 5px;text-transform:uppercase;">🌆 Ambiente</div>
+      <div class="cfield"><span class="cfield-lbl">Cenário</span><input id="envScene" placeholder="cidade japonesa medieval" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Clima</span><input id="envWeather" placeholder="tempestade relâmpagos roxos" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Hora</span><input id="envTime" placeholder="noite, entardecer" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Mood</span><input id="envMood" placeholder="épico tenso melancólico" type="text"></div>
+
+      <label class="refup" id="refLabel" for="refInput">
+        <img class="refprev" id="refPrev" src="" alt="">
+        <div><div class="reftxt" id="refTxt">📎 Imagem de referência (opcional)</div></div>
+        <input type="file" id="refInput" accept="image/*" style="display:none" onchange="loadRef(this)">
+      </label>
+      <button id="refClearBtn" onclick="clearRef()" style="display:none;width:100%;padding:3px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:.56rem;cursor:pointer;margin-bottom:5px;">✕ Remover referência</button>
+
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">⏱ DURAÇÃO:</div>
+      <div class="dur-row">
+        <button class="durbtn" onclick="setDur(this,15)">15s</button>
+        <button class="durbtn on" onclick="setDur(this,30)">30s</button>
+        <button class="durbtn" onclick="setDur(this,50)">50s ⭐</button>
+        <button class="durbtn" onclick="setDur(this,90)">90s</button>
+      </div>
+      <div id="durInfo" style="font-size:.54rem;color:var(--muted);text-align:center;margin-top:2px;"></div>
+    </div>
+
+    <!-- STYLE -->
+    <div class="sec">
+      <div class="stitle"><em>🎨</em> ESTILO</div>
+      <div class="tags">
+        <span class="tag on" data-sk="anime_film" onclick="setSt(this,'anime_film')">🎌 Anime HD</span>
+        <span class="tag" data-sk="shonen" onclick="setSt(this,'shonen')">⚡ Shōnen</span>
+        <span class="tag" data-sk="seinen" onclick="setSt(this,'seinen')">🌑 Seinen</span>
+        <span class="tag" data-sk="ghibli" onclick="setSt(this,'ghibli')">🍃 Ghibli</span>
+        <span class="tag" data-sk="cyberpunk" onclick="setSt(this,'cyberpunk')">🔮 Cyber</span>
+        <span class="tag" data-sk="dark_fantasy" onclick="setSt(this,'dark_fantasy')">⚔ Dark</span>
+      </div>
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">CÂMERA:</div>
+      <div class="tags">
+        <span class="tag on" data-ck="dynamic" onclick="setCam(this,'dynamic')">📹 Dinâmica</span>
+        <span class="tag" data-ck="fixed" onclick="setCam(this,'fixed')">🎯 Fixa</span>
+        <span class="tag" data-ck="zoom" onclick="setCam(this,'zoom')">🔭 Zoom</span>
+        <span class="tag" data-ck="orbit" onclick="setCam(this,'orbit')">🌀 Órbita</span>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="sec">
+      <button class="genbtn" id="genBtn" onclick="startGen()">
+        <span class="spin" id="spinEl"></span>🎬 GERAR ANIME
+      </button>
+      <div class="pbar-wrap">
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+        <div class="ptxt" id="ptxt"></div>
+        <div class="binfo" id="binfo"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sec">
+      <div class="stitle"><em>📊</em> STATS</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" style="color:var(--accent)" id="stFrames">0</div><div class="stat-lbl">FRAMES</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:var(--blue)" id="stDur">0s</div><div class="stat-lbl">DURAÇÃO</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:var(--purple)" id="stMode">SVG</div><div class="stat-lbl">MODO</div></div>
+      </div>
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:2px;">INTENSIDADE DA CENA</div>
+      <canvas id="moodChart"></canvas>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="sec">
+      <div class="stitle"><em>⚙️</em> OPÇÕES</div>
+      <div class="setting"><span>🔊 Voz nas legendas</span><div class="tog on" id="voiceTog" onclick="this.classList.toggle('on');voiceOn=this.classList.contains('on')"></div></div>
+      <div class="setting"><span>👻 Onion skin</span><div class="tog" id="onionTog" onclick="toggleOnion(this)"></div></div>
+      <div class="setting"><span>🔁 Loop</span><div class="tog on" id="loopTog" onclick="this.classList.toggle('on');loopOn=this.classList.contains('on')"></div></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="sec">
+      <div class="stitle"><em>💾</em> EXPORTAR</div>
+      <div class="expgrid">
+        <button class="ebtn" onclick="expPNGs()">🖼 PNGs</button>
+        <button class="ebtn" onclick="savePrj()">💾 Projeto</button>
+        <button class="ebtn" onclick="loadPrj()">📂 Abrir</button>
+        <button class="ebtn" onclick="enterVR()">🥽 VR Mode</button>
+      </div>
+      <input type="file" id="prjInput" accept=".json" style="display:none" onchange="loadPrjFile(this)">
+    </div>
+
+  </div><!-- /rpanel -->
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     VR OVERLAY
+═══════════════════════════════════════════ -->
+<div id="vrOverlay">
+  <div id="vrHUD">
+    <div id="vrStatus">● VR ATIVO</div>
+    <div id="vrFPS">60 FPS · GYRO ON</div>
+  </div>
+
+  <div id="vrScreen">
+    <!-- LEFT EYE -->
+    <div class="vr-eye" id="vrLeft">
+      <div class="vr-canvas-wrap" id="vrWrapL">
+        <canvas id="vrCanvasL"></canvas>
+      </div>
+      <div class="vr-reticle">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="10" fill="none" stroke="white" stroke-width="1" opacity=".5"/>
+          <circle cx="14" cy="14" r="2" fill="white" opacity=".8"/>
+          <line x1="14" y1="2" x2="14" y2="8" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="14" y1="20" x2="14" y2="26" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="2" y1="14" x2="8" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="20" y1="14" x2="26" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+    <!-- RIGHT EYE -->
+    <div class="vr-eye" id="vrRight">
+      <div class="vr-canvas-wrap" id="vrWrapR">
+        <canvas id="vrCanvasR"></canvas>
+      </div>
+      <div class="vr-reticle">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="10" fill="none" stroke="white" stroke-width="1" opacity=".5"/>
+          <circle cx="14" cy="14" r="2" fill="white" opacity=".8"/>
+          <line x1="14" y1="2" x2="14" y2="8" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="14" y1="20" x2="14" y2="26" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="2" y1="14" x2="8" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="20" y1="14" x2="26" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="vrCenter"></div>
+    <canvas id="vrHandCanvas"></canvas>
+
+    <div id="gestureHint">✋ ABRA A MÃO PARA PLAY</div>
+  </div>
+
+  <div id="vrControls">
+    <button class="vr-cbtn on" id="vrGyroBtn" onclick="toggleVRGyro()">📱 GIROSCÓPIO</button>
+    <button class="vr-cbtn" id="vrHandBtn" onclick="toggleVRHand()">✋ MÃOS</button>
+    <button class="vr-cbtn" id="vrPlayBtn" onclick="toggleVRPlay()">▶ PLAY</button>
+    <button class="vr-cbtn exit" onclick="exitVR()">✕ SAIR</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CORE STATE
+// ═══════════════════════════════════════════
+const CW=540,CH=380;
+let frames=[],cur=0,fps=0.1;
+let playing=false,playIv=null;
+let loopOn=true,voiceOn=true,onionOn=false,cinemaOn=false;
+let provider='claude',gModel='gemini-2.0-flash',gqModel='meta-llama/llama-4-scout-17b-16e-instruct';
+let refImgData=null,filmDur=30,aiSt='anime_film',aiCam='dynamic';
+let frameDialogues=[],moodScores=[];
+let genMode='svg',imgProvider='together',imgModel='black-forest-labs/FLUX.1-schnell-Free',imgAR='768x512';
+
+const cv=document.getElementById('mainCanvas');
+const ctx=cv.getContext('2d');
+const oc=document.getElementById('onionCanvas');
+const octx=oc.getContext('2d');
+cv.width=CW;cv.height=CH;oc.width=CW;oc.height=CH;
+
+// ═══════════════════════════════════════════
+// INIT & RESIZE
+// ═══════════════════════════════════════════
+function resizeCanvas(){
+  const s=document.getElementById('vstage');
+  const sw=s.clientWidth,sh=s.clientHeight;
+  const sc=Math.min(sw/CW,sh/CH,1);
+  const dw=Math.round(CW*sc),dh=Math.round(CH*sc);
+  cv.style.cssText=`display:block;width:${dw}px;height:${dh}px;`;
+  oc.style.cssText=`position:absolute;width:${dw}px;height:${dh}px;left:${Math.round((sw-dw)/2)}px;top:${Math.round((sh-dh)/2)}px;pointer-events:none;opacity:${onionOn?.18:0};`;
+}
+window.addEventListener('resize',resizeCanvas);
+
+function blank(){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  const c=t.getContext('2d');
+  const g=c.createLinearGradient(0,0,0,CH);g.addColorStop(0,'#0a0a1e');g.addColorStop(1,'#1a0a2e');
+  c.fillStyle=g;c.fillRect(0,0,CW,CH);
+  c.fillStyle='#e8c840';c.font='bold 14px Rajdhani,sans-serif';c.textAlign='center';
+  c.fillText('✦ ANIMESTUDIO PRO ✦',CW/2,CH/2-12);
+  c.fillStyle='#4a4a68';c.font='11px Rajdhani,sans-serif';
+  c.fillText('Descreva sua cena e clique GERAR',CW/2,CH/2+10);
+  return t.toDataURL();
+}
+
+function init(){
+  frames=[blank()];cur=0;frameDialogues=[''];
+  loadF(0);renderStrip();updHUD();
+  setTimeout(resizeCanvas,60);updDurInfo();updStats();
+}
+
+function loadF(i){
+  const img=new Image();
+  img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0,CW,CH);drawOnion();};
+  img.onerror=()=>{ctx.fillStyle='#1a0a2e';ctx.fillRect(0,0,CW,CH);};
+  img.src=frames[i];
+}
+function drawOnion(){
+  octx.clearRect(0,0,CW,CH);
+  if(!onionOn||cur===0)return;
+  const img=new Image();img.onload=()=>octx.drawImage(img,0,0);img.src=frames[cur-1];
+}
+function toggleOnion(el){el.classList.toggle('on');onionOn=el.classList.contains('on');resizeCanvas();drawOnion();}
+
+function renderStrip(){
+  const s=document.getElementById('fstrip');s.innerHTML='';
+  frames.forEach((f,i)=>{
+    const d=document.createElement('div');d.className='fth'+(i===cur?' on':'');
+    d.onclick=()=>{if(!playing){cur=i;loadF(i);renderStrip();updHUD();}};
+    const img=document.createElement('img');img.src=f;
+    const n=document.createElement('span');n.className='fn';n.textContent=i+1;
+    d.append(img,n);s.appendChild(d);
+  });
+  const a=s.querySelectorAll('.fth')[cur];
+  if(a)a.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
+}
+function updHUD(){
+  document.getElementById('hudFrame').textContent='FRAME '+(cur+1)+'/'+frames.length;
+}
+function updStats(){
+  document.getElementById('stFrames').textContent=frames.length||0;
+  document.getElementById('stDur').textContent=Math.round((frames.length||0)/fps)+'s';
+  document.getElementById('stMode').textContent=genMode.toUpperCase();
+  drawMoodChart();
+}
+
+// ═══════════════════════════════════════════
+// MOOD CHART
+// ═══════════════════════════════════════════
+function drawMoodChart(){
+  const canvas=document.getElementById('moodChart');
+  canvas.width=canvas.offsetWidth||280;canvas.height=40;
+  const c=canvas.getContext('2d');
+  c.fillStyle='#0a0a14';c.fillRect(0,0,canvas.width,canvas.height);
+  if(moodScores.length<2){
+    c.fillStyle='#2a2a3e';c.font='9px Rajdhani,sans-serif';c.textAlign='center';
+    c.fillText('Gere um anime para ver a timeline',canvas.width/2,20);return;
+  }
+  [.25,.5,.75].forEach(y=>{c.strokeStyle='#1a1a2e';c.lineWidth=1;c.beginPath();c.moveTo(0,y*canvas.height);c.lineTo(canvas.width,y*canvas.height);c.stroke();});
+  c.beginPath();
+  const grd=c.createLinearGradient(0,0,canvas.width,0);
+  grd.addColorStop(0,'#4fc3f7');grd.addColorStop(.5,'#e8c840');grd.addColorStop(1,'#ff6b35');
+  c.strokeStyle=grd;c.lineWidth=2;
+  moodScores.forEach((v,i)=>{
+    const x=(i/(moodScores.length-1))*canvas.width;
+    const y=canvas.height-(v*canvas.height*.8)-canvas.height*.1;
+    i===0?c.moveTo(x,y):c.lineTo(x,y);
+  });
+  c.stroke();
+  if(frames.length>1){
+    const mx=(cur/(frames.length-1))*canvas.width;
+    c.strokeStyle='#ffffff55';c.lineWidth=1;c.setLineDash([2,2]);c.beginPath();c.moveTo(mx,0);c.lineTo(mx,canvas.height);c.stroke();c.setLineDash([]);
+  }
+}
+
+// ═══════════════════════════════════════════
+// MODE / PROVIDER SWITCHING
+// ═══════════════════════════════════════════
+function activateBtn(id,cls){
+  const el=document.getElementById(id);if(!el)return;
+  el.className=el.className.replace(/on-\w+/,'').trim()+' '+cls;
+}
+function deactivateBtn(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.className=el.className.replace(/on-\w+/,'').trim();
+}
+
+function setMode(m){
+  genMode=m;
+  if(m==='svg'){activateBtn('modeSVG','on-yellow');deactivateBtn('modeIMG');}
+  else{activateBtn('modeIMG','on-purple');deactivateBtn('modeSVG');}
+  document.getElementById('svgProv').style.display=m==='svg'?'block':'none';
+  document.getElementById('imgProv').style.display=m==='image'?'block':'none';
+  document.getElementById('badgeSVG').style.display=m==='svg'?'inline':'none';
+  document.getElementById('badgeIMG').style.display=m==='image'?'inline':'none';
+  const gb=document.getElementById('genBtn');
+  if(gb){
+    gb.className=gb.className.replace('img-mode','').trim();
+    if(m==='image')gb.classList.add('img-mode');
+    document.getElementById('spinEl').style.display='none';
+    gb.innerHTML=(m==='image'
+      ?'<span class="spin" id="spinEl"></span>🖼 GERAR IMAGEM IA'
+      :'<span class="spin" id="spinEl"></span>🎬 GERAR ANIME SVG');
+  }
+  document.getElementById('hudMode').textContent=m==='svg'?'SVG MODE':'IMAGE MODE';
+  updDurInfo();updStats();
+}
+
+function setProv(p){
+  provider=p;
+  ['Claude','Gemini','Groq'].forEach(n=>{
+    const id='prov'+n;const el=document.getElementById(id);if(!el)return;
+    el.className=el.className.replace(/on-\w+/,'').trim();
+  });
+  activateBtn('prov'+p.charAt(0).toUpperCase()+p.slice(1),'on-yellow');
+  document.getElementById('geminiMR').classList.toggle('vis',p==='gemini');
+  document.getElementById('groqMR').classList.toggle('vis',p==='groq');
+  const lbl=document.getElementById('keyLbl');
+  const inp=document.getElementById('keyInput');
+  const hint=document.getElementById('keyHint');
+  if(p==='claude'){
+    if(lbl)lbl.textContent='🔑 Anthropic API Key';
+    if(inp)inp.placeholder='sk-ant-api03-...';
+    if(hint)hint.innerHTML='<a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a>';
+  }else if(p==='gemini'){
+    if(lbl)lbl.textContent='🔑 Google Gemini Key';
+    if(inp)inp.placeholder='AIzaSy...';
+    if(hint)hint.innerHTML='<a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com</a>';
+  }else{
+    if(lbl)lbl.textContent='🔑 Groq API Key';
+    if(inp)inp.placeholder='gsk_...';
+    if(hint)hint.innerHTML='<a href="https://console.groq.com" target="_blank" style="color:var(--accent);">console.groq.com</a>';
+  }
+  loadKey();
+}
+
+function setGM(m){gModel=m;document.getElementById('gmFlash').classList.toggle('on',m.includes('flash'));document.getElementById('gmPro').classList.toggle('on',m.includes('pro'));}
+function setGQ(m){gqModel=m;document.getElementById('gqFast').classList.toggle('on',m.includes('scout'));document.getElementById('gqDeep').classList.toggle('on',m.includes('deepseek'));}
+
+function setImgProv(p){
+  imgProvider=p;
+  ['T','F','H'].forEach(n=>deactivateBtn('imgProv'+n));
+  const map={together:'T',fal:'F',hf:'H'};
+  activateBtn('imgProv'+map[p],'on-purple');
+  document.getElementById('togetherMR').classList.toggle('vis',p==='together');
+  document.getElementById('falMR').classList.toggle('vis',p==='fal');
+  document.getElementById('hfMR').classList.toggle('vis',p==='hf');
+  const lbl=document.getElementById('imgKeyLbl');
+  const inp=document.getElementById('imgKeyInput');
+  if(p==='together'){if(lbl)lbl.textContent='🔑 Together API Key';if(inp)inp.placeholder='together_...';}
+  else if(p==='fal'){if(lbl)lbl.textContent='🔑 fal.ai API Key';if(inp)inp.placeholder='fal_...';}
+  else{if(lbl)lbl.textContent='🔑 HuggingFace Token';if(inp)inp.placeholder='hf_...';}
+}
+
+function setImgM(el,m){
+  imgModel=m;
+  el.closest('.model-row').querySelectorAll('.mpb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+function setAR(el,ar){imgAR=ar;document.querySelectorAll('.arbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setSt(el,s){aiSt=s;document.querySelectorAll('.tag[data-sk]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setCam(el,c){aiCam=c;document.querySelectorAll('.tag[data-ck]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// KEY MANAGEMENT
+function isKeyOK(p,v){if(p==='claude')return v.startsWith('sk-ant-');if(p==='gemini')return v.startsWith('AIza');if(p==='groq')return v.startsWith('gsk_');return v.length>8;}
+function saveKey(el){const v=el.value.trim();localStorage.setItem('as_'+provider,v);const box=el.closest('.keybox');if(box)box.style.borderColor=isKeyOK(provider,v)?'var(--green)':'var(--border)';}
+function saveImgKey(el){const v=el.value.trim();localStorage.setItem('asimg_'+imgProvider,v);const box=el.closest('.keybox');if(box)box.style.borderColor=v.length>8?'var(--green)':'var(--border)';}
+function toggleKV(id){const el=document.getElementById(id);if(el)el.type=el.type==='password'?'text':'password';}
+function loadKey(){
+  const k=localStorage.getItem('as_'+provider)||'';
+  const el=document.getElementById('keyInput');
+  if(el){el.value=k;const box=el.closest('.keybox');if(box)box.style.borderColor=isKeyOK(provider,k)?'var(--green)':'var(--border)';}
+}
+
+// DURATION
+function setDur(el,d){filmDur=d;document.querySelectorAll('.durbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');updDurInfo();}
+function updDurInfo(){
+  const n=Math.ceil(filmDur/4);
+  const cost=genMode==='image'?'~$'+((n*0.012).toFixed(2)):'~'+Math.round(n*18)+'s';
+  document.getElementById('durInfo').textContent=`${n} cenas · ${n} chamadas · ${cost}`;
+}
+
+// ═══════════════════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════════════════
+function speak(txt){
+  if(!voiceOn||!txt)return;
+  const sy=window.speechSynthesis;if(!sy)return;if(sy.speaking)sy.cancel();
+  const u=new SpeechSynthesisUtterance(txt);u.lang='pt-BR';u.rate=0.88;u.pitch=1.05;
+  const vs=sy.getVoices();const v=vs.find(x=>x.lang.startsWith('pt'))||vs[0];
+  if(v)u.voice=v;sy.speak(u);
+}
+function showSub(txt){
+  const o=document.getElementById('subOverlay'),t=document.getElementById('subText');
+  if(o&&t){if(txt){t.textContent=txt;o.style.opacity='1';}else{o.style.opacity='0';}}
+}
+function togglePlay(){
+  playing=!playing;
+  const btn=document.getElementById('playBtn');
+  if(playing){
+    btn.textContent='⏹ STOP';btn.classList.add('stop');
+    oc.style.opacity='0';let i=cur;
+    const step=()=>{
+      if(!frames[i])return;
+      const img=new Image();
+      img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0,CW,CH);};
+      img.src=frames[i];cur=i;updHUD();
+      document.querySelectorAll('.fth').forEach((t,ti)=>t.classList.toggle('on',ti===i));
+      const d=frameDialogues[i]||'';showSub(d);speak(d);drawMoodChart();
+      // also update VR if active
+      if(vrActive)vrSyncFrame();
+      i=(i+1)%frames.length;
+      if(!loopOn&&i===0){setTimeout(()=>{if(playing)togglePlay();},1200);return;}
+    };
+    step();playIv=setInterval(step,1000/fps);
+  }else{
+    btn.textContent='▶ PLAY';btn.classList.remove('stop');
+    clearInterval(playIv);try{window.speechSynthesis?.cancel();}catch(e){}showSub('');
+    oc.style.opacity=onionOn?'.18':'0';loadF(cur);renderStrip();
+  }
+}
+function setFPS(v){fps=parseFloat(v);document.getElementById('fpsLbl').textContent=parseFloat(v).toFixed(1);updStats();if(playing){clearInterval(playIv);playing=false;togglePlay();}}
+function toggleCinema(){
+  cinemaOn=!cinemaOn;
+  document.getElementById('barTop').style.height=cinemaOn?'40px':'0';
+  document.getElementById('barBot').style.height=cinemaOn?'40px':'0';
+  document.getElementById('cinBtn').classList.toggle('on',cinemaOn);
+}
+
+// REF IMAGE
+function loadRef(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    refImgData=e.target.result;
+    document.getElementById('refLabel').classList.add('loaded');
+    document.getElementById('refPrev').src=refImgData;
+    document.getElementById('refTxt').textContent='✅ '+file.name.slice(0,22);
+    document.getElementById('refClearBtn').style.display='block';
+    toast('Referência carregada! 🎨');
+  };r.readAsDataURL(file);
+}
+function clearRef(){
+  refImgData=null;
+  document.getElementById('refLabel').classList.remove('loaded');
+  document.getElementById('refPrev').src='';
+  document.getElementById('refTxt').textContent='📎 Imagem de referência (opcional)';
+  document.getElementById('refClearBtn').style.display='none';
+  document.getElementById('refInput').value='';
+}
+
+// ═══════════════════════════════════════════
+// CHAR DETAILS HELPER
+// ═══════════════════════════════════════════
+function getCD(){
+  const ids=['charHair','charEyes','charClothes','charBody','charWeapon','charSpecial','envScene','envWeather','envTime','envMood'];
+  const lbls=['CABELO','OLHOS','ROUPA','CORPO','ARMA','ESPECIAL','CENÁRIO','CLIMA','HORÁRIO','MOOD'];
+  return ids.map((id,i)=>{const v=(document.getElementById(id)||{}).value||'';return v?lbls[i]+': '+v:'';}).filter(Boolean).join(' | ');
+}
+
+function getHairColor(){
+  const v=((document.getElementById('charHair')||{}).value||'').toLowerCase();
+  if(v.includes('branco')||v.includes('prata')||v.includes('prateado'))return 'White/silver: fills #F0F0F8 #E0E0F0, stroke #aaa, highlight #fff';
+  if(v.includes('preto'))return 'Black: fills #0a0a18 #1a1a2e, shine #4a4a88';
+  if(v.includes('loiro')||v.includes('amarelo'))return 'Blonde: fills #F5D060 #E8C040, highlight #FFF0A0';
+  if(v.includes('vermelho')||v.includes('ruivo')||v.includes('laranja'))return 'Red: fills #C02020 #A01010, highlight #FF4040';
+  if(v.includes('azul'))return 'Blue: fills #2233CC #1122AA, highlight #88aaFF';
+  if(v.includes('roxo'))return 'Purple: fills #6622AA #441188, highlight #aa66FF';
+  if(v.includes('rosa'))return 'Pink: fills #FF80A0 #E06080, highlight #FFB0C8';
+  if(v.includes('verde'))return 'Green: fills #228822 #114411, highlight #66FF66';
+  return 'Use hair color from description. Multiple strand paths with gradient';
+}
+
+// ═══════════════════════════════════════════
+// PROMPT BUILDER
+// ═══════════════════════════════════════════
+function buildPrompt(beat,storyCtx,sceneN,totalN){
+  const cd=getCD();
+  const hc=getHairColor();
+  const cx=Math.round(CW/2);
+  const ch=CH;
+  const cw=CW;
+
+  // Skin colors by description
+  const skinLight='#FFD5A8';
+  const skinMid='#E8A87C';
+  const skinDark='#C07848';
+
+  // Hair color from helper
+  const hairFill=hc.includes('White')?'#F0F0F8':hc.includes('Black')?'#1a1a2e':hc.includes('Blonde')?'#F5D060':hc.includes('Red')?'#C02020':hc.includes('Blue')?'#2233CC':hc.includes('Purple')?'#6622AA':hc.includes('Pink')?'#FF80A0':hc.includes('Green')?'#228822':'#2a1a0a';
+  const hairHighlight=hc.includes('White')?'#FFFFFF':hc.includes('Black')?'#4a4aaa':hc.includes('Blonde')?'#FFF0A0':hc.includes('Red')?'#FF6060':hc.includes('Blue')?'#88aaFF':hc.includes('Purple')?'#cc88FF':hc.includes('Pink')?'#FFD0E0':hc.includes('Green')?'#88FF88':'#886644';
+
+  const styleColors={
+    anime_film:{sky1:'#1a0838',sky2:'#6b21a8',sky3:'#f97316',outline:'2',aura:'#f59e0b',particle:'#fbbf24'},
+    shonen:    {sky1:'#0c4a6e',sky2:'#0369a1',sky3:'#7dd3fc',outline:'3',aura:'#60a5fa',particle:'#e0f2fe'},
+    seinen:    {sky1:'#0a0a0a',sky2:'#1c1917',sky3:'#292524',outline:'1.5',aura:'#dc2626',particle:'#ef4444'},
+    ghibli:    {sky1:'#bfdbfe',sky2:'#93c5fd',sky3:'#dbeafe',outline:'2',aura:'#86efac',particle:'#bbf7d0'},
+    cyberpunk: {sky1:'#020617',sky2:'#0f172a',sky3:'#1e1b4b',outline:'2',aura:'#06b6d4',particle:'#22d3ee'},
+    dark_fantasy:{sky1:'#1e0a2e',sky2:'#2d1b69',sky3:'#0f172a',outline:'2',aura:'#a855f7',particle:'#c084fc'},
+  };
+  const sc=styleColors[aiSt]||styleColors['anime_film'];
+
+  // Pose offsets for variety
+  const poses=[
+    {lArmRot:-30, rArmRot:30,  lLegRot:-8,  rLegRot:8,   lean:0},   // neutral
+    {lArmRot:-80, rArmRot:60,  lLegRot:-15, rLegRot:5,   lean:-5},  // battle
+    {lArmRot:40,  rArmRot:-140,lLegRot:-20, rLegRot:20,  lean:5},   // strike
+    {lArmRot:-50, rArmRot:-50, lLegRot:-5,  rLegRot:5,   lean:0},   // guard
+    {lArmRot:30,  rArmRot:-30, lLegRot:-25, rLegRot:10,  lean:-3},  // run
+    {lArmRot:-20, rArmRot:20,  lLegRot:0,   rLegRot:0,   lean:0},   // hero
+  ];
+  const pose=poses[sceneN%6];
+
+  // Emotion for mouth/brow
+  const isIntense=beat.toLowerCase().includes('clímax')||beat.toLowerCase().includes('batalha')||beat.toLowerCase().includes('ação')||beat.toLowerCase().includes('furiosa')||beat.toLowerCase().includes('confronto');
+  const isCalm=beat.toLowerCase().includes('ghibli')||beat.toLowerCase().includes('resolução')||beat.toLowerCase().includes('epílogo');
+  const mouthPath=isIntense?`M ${cx-9},${Math.round(ch*0.30)} C ${cx-5},${Math.round(ch*0.305)} ${cx+5},${Math.round(ch*0.305)} ${cx+9},${Math.round(ch*0.30)} L ${cx+7},${Math.round(ch*0.295)} L ${cx-7},${Math.round(ch*0.295)} Z`:`M ${cx-7},${Math.round(ch*0.295)} Q ${cx},${Math.round(ch*0.305)} ${cx+7},${Math.round(ch*0.295)}`;
+  const browLPath=isIntense?`M ${cx-19},${Math.round(ch*0.22)} Q ${cx-11},${Math.round(ch*0.215)} ${cx-5},${Math.round(ch*0.22)}`:`M ${cx-19},${Math.round(ch*0.218)} Q ${cx-11},${Math.round(ch*0.213)} ${cx-5},${Math.round(ch*0.218)}`;
+  const browRPath=isIntense?`M ${cx+5},${Math.round(ch*0.22)} Q ${cx+11},${Math.round(ch*0.215)} ${cx+19},${Math.round(ch*0.22)}`:`M ${cx+5},${Math.round(ch*0.218)} Q ${cx+11},${Math.round(ch*0.213)} ${cx+19},${Math.round(ch*0.218)}`;
+
+  // Y positions
+  const headY=Math.round(ch*0.19);
+  const neckY=Math.round(ch*0.285);
+  const shoulderY=Math.round(ch*0.32);
+  const chestY=Math.round(ch*0.40);
+  const waistY=Math.round(ch*0.50);
+  const hipY=Math.round(ch*0.555);
+  const thighMidY=Math.round(ch*0.65);
+  const kneeY=Math.round(ch*0.72);
+  const shinMidY=Math.round(ch*0.80);
+  const ankleY=Math.round(ch*0.87);
+  const footY=Math.round(ch*0.92);
+  const groundY=Math.round(ch*0.93);
+
+  // Body shape SVG template embedded directly
+  const bodySVG=`
+<!-- DEFS: all gradients + filters for scene ${sceneN} -->
+<defs>
+  <linearGradient id="sky_${sceneN}" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${sc.sky1}"/>
+    <stop offset="55%" stop-color="${sc.sky2}"/>
+    <stop offset="100%" stop-color="${sc.sky3}"/>
+  </linearGradient>
+  <linearGradient id="skin_${sceneN}" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="${skinLight}"/>
+    <stop offset="100%" stop-color="${skinMid}"/>
+  </linearGradient>
+  <linearGradient id="hair_${sceneN}" x1="0" y1="0" x2="0.5" y2="1">
+    <stop offset="0%" stop-color="${hairHighlight}"/>
+    <stop offset="60%" stop-color="${hairFill}"/>
+  </linearGradient>
+  <radialGradient id="irisL_${sceneN}" cx="35%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="30%" stop-color="IRIS_COLOR"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </radialGradient>
+  <radialGradient id="irisR_${sceneN}" cx="35%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="30%" stop-color="IRIS_COLOR"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </radialGradient>
+  <radialGradient id="aura_${sceneN}" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="${sc.aura}" stop-opacity="0.35"/>
+    <stop offset="100%" stop-color="${sc.aura}" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="glow_${sceneN}"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow_${sceneN}"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+
+<!-- ═══ BACKGROUND — YOU MUST MAKE THIS MATCH THE SCENE ═══ -->
+<rect width="${cw}" height="${ch}" fill="url(#sky_${sceneN})"/>
+<!-- ADD 4-6 background shapes here: mountains/clouds/buildings/ground etc matching: ${beat} -->
+
+<!-- ═══ GROUND SHADOW ═══ -->
+<ellipse cx="${cx}" cy="${groundY}" rx="52" ry="9" fill="#000000" fill-opacity="0.3" filter="url(#shadow_${sceneN})"/>
+
+<!-- ═══ BODY — DO NOT CHANGE THESE SHAPES, ONLY COLORS/DETAILS ═══ -->
+
+<!-- RIGHT LEG back -->
+<path d="M ${cx+18},${hipY} C ${cx+28},${thighMidY} ${cx+24},${kneeY-10} ${cx+22},${kneeY} C ${cx+20},${kneeY+10} ${cx+20},${shinMidY} ${cx+18},${ankleY} C ${cx+14},${ankleY+5} ${cx+8},${ankleY+8} ${cx+6},${ankleY} C ${cx+4},${ankleY-8} ${cx+6},${shinMidY} ${cx+8},${kneeY} C ${cx+10},${kneeY-10} ${cx+10},${thighMidY} ${cx+2},${hipY} Z"
+      fill="${skinMid}" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+
+<!-- LEFT LEG front -->
+<path d="M ${cx-2},${hipY} C ${cx-12},${thighMidY} ${cx-18},${kneeY-10} ${cx-20},${kneeY} C ${cx-22},${kneeY+10} ${cx-20},${shinMidY} ${cx-18},${ankleY} C ${cx-14},${ankleY+5} ${cx-8},${ankleY+8} ${cx-6},${ankleY} C ${cx-4},${ankleY-8} ${cx-8},${shinMidY} ${cx-10},${kneeY} C ${cx-12},${kneeY-10} ${cx-10},${thighMidY} ${cx-18},${hipY} Z"
+      fill="${skinLight}" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+
+<!-- Knee caps -->
+<ellipse cx="${cx-14}" cy="${kneeY}" rx="8" ry="7" fill="${skinLight}" stroke="#1a0a00" stroke-width="1.5"/>
+<ellipse cx="${cx+16}" cy="${kneeY}" rx="8" ry="7" fill="${skinMid}" stroke="#1a0a00" stroke-width="1.5"/>
+
+<!-- FEET / SHOES -->
+<path d="M ${cx-22},${ankleY+2} C ${cx-28},${ankleY+4} ${cx-38},${footY} ${cx-36},${footY+4} C ${cx-34},${footY+8} ${cx-10},${footY+8} ${cx-8},${footY+4} C ${cx-6},${footY} ${cx-12},${ankleY} ${cx-22},${ankleY+2} Z"
+      fill="#1a0a00" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M ${cx+10},${ankleY+2} C ${cx+16},${ankleY+4} ${cx+26},${footY} ${cx+24},${footY+4} C ${cx+22},${footY+8} ${cx+4},${footY+8} ${cx+2},${footY+4} C ${cx},${footY} ${cx+6},${ankleY} ${cx+10},${ankleY+2} Z"
+      fill="#1a0a00" stroke="#000" stroke-width="1.5" stroke-linejoin="round"/>
+
+<!-- TORSO — broad shoulders, defined waist, hips -->
+<path d="M ${cx-42},${shoulderY} C ${cx-45},${chestY} ${cx-38},${waistY-10} ${cx-28},${waistY} C ${cx-20},${waistY+8} ${cx-22},${hipY-5} ${cx-20},${hipY} L ${cx+20},${hipY} C ${cx+22},${hipY-5} ${cx+20},${waistY+8} ${cx+28},${waistY} C ${cx+38},${waistY-10} ${cx+45},${chestY} ${cx+42},${shoulderY} Z"
+      fill="url(#skin_${sceneN})" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+
+<!-- Belly button / torso details -->
+<circle cx="${cx}" cy="${Math.round(ch*0.47)}" r="2" fill="${skinDark}" fill-opacity="0.5"/>
+<path d="M ${cx-10},${chestY} C ${cx-8},${chestY-5} ${cx+8},${chestY-5} ${cx+10},${chestY}" fill="none" stroke="${skinDark}" stroke-width="1" opacity="0.6"/>
+
+<!-- NECK -->
+<path d="M ${cx-10},${neckY} C ${cx-8},${neckY+15} ${cx-6},${shoulderY-5} ${cx-6},${shoulderY} L ${cx+6},${shoulderY} C ${cx+6},${shoulderY-5} ${cx+8},${neckY+15} ${cx+10},${neckY} Z"
+      fill="url(#skin_${sceneN})" stroke="#1a0a00" stroke-width="1.5"/>
+
+<!-- LEFT ARM (front) -->
+<path d="M ${cx-42},${shoulderY+5} C ${cx-50},${chestY} ${cx-54},${waistY-15} ${cx-48},${waistY+10} C ${cx-44},${waistY+20} ${cx-38},${waistY+25} ${cx-34},${waistY+10} C ${cx-30},${waistY-15} ${cx-32},${chestY-10} ${cx-36},${shoulderY+5} Z"
+      fill="${skinLight}" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+<!-- Left elbow -->
+<ellipse cx="${cx-48}" cy="${waistY-8}" rx="7" ry="8" fill="${skinLight}" stroke="#1a0a00" stroke-width="1.5"/>
+<!-- Left hand -->
+<ellipse cx="${cx-38}" cy="${waistY+22}" rx="8" ry="10" fill="${skinLight}" stroke="#1a0a00" stroke-width="1.5"/>
+<path d="M ${cx-44},${waistY+16} C ${cx-47},${waistY+12} ${cx-50},${waistY+10} ${cx-50},${waistY+15}" fill="none" stroke="#1a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M ${cx-41},${waistY+14} C ${cx-43},${waistY+9} ${cx-46},${waistY+7} ${cx-46},${waistY+12}" fill="none" stroke="#1a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M ${cx-37},${waistY+14} C ${cx-38},${waistY+8} ${cx-41},${waistY+6} ${cx-41},${waistY+11}" fill="none" stroke="#1a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M ${cx-33},${waistY+15} C ${cx-33},${waistY+9} ${cx-36},${waistY+8} ${cx-36},${waistY+13}" fill="none" stroke="#1a0a00" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- RIGHT ARM (back) -->
+<path d="M ${cx+36},${shoulderY+5} C ${cx+44},${chestY} ${cx+48},${waistY-15} ${cx+42},${waistY+10} C ${cx+38},${waistY+20} ${cx+32},${waistY+25} ${cx+28},${waistY+10} C ${cx+24},${waistY-15} ${cx+26},${chestY-10} ${cx+30},${shoulderY+5} Z"
+      fill="${skinMid}" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+<!-- Right elbow -->
+<ellipse cx="${cx+42}" cy="${waistY-8}" rx="7" ry="8" fill="${skinMid}" stroke="#1a0a00" stroke-width="1.5"/>
+<!-- Right hand -->
+<ellipse cx="${cx+32}" cy="${waistY+22}" rx="8" ry="10" fill="${skinMid}" stroke="#1a0a00" stroke-width="1.5"/>
+
+<!-- ═══ HEAD ═══ -->
+<!-- Ear left -->
+<ellipse cx="${cx-22}" cy="${Math.round(ch*0.245)}" rx="5" ry="8" fill="${skinLight}" stroke="#1a0a00" stroke-width="1.5"/>
+<!-- Ear right -->
+<ellipse cx="${cx+22}" cy="${Math.round(ch*0.245)}" rx="5" ry="8" fill="${skinLight}" stroke="#1a0a00" stroke-width="1.5"/>
+<!-- Head shape — oval with defined jaw -->
+<path d="M ${cx},${headY-22} C ${cx+24},${headY-22} ${cx+28},${headY} ${cx+26},${Math.round(ch*0.265)} C ${cx+24},${Math.round(ch*0.28)} ${cx+14},${Math.round(ch*0.29)} ${cx},${Math.round(ch*0.295)} C ${cx-14},${Math.round(ch*0.29)} ${cx-24},${Math.round(ch*0.28)} ${cx-26},${Math.round(ch*0.265)} C ${cx-28},${headY} ${cx-24},${headY-22} ${cx},${headY-22} Z"
+      fill="url(#skin_${sceneN})" stroke="#1a0a00" stroke-width="${sc.outline}" stroke-linejoin="round"/>
+<!-- Chin shadow -->
+<path d="M ${cx-12},${Math.round(ch*0.285)} Q ${cx},${Math.round(ch*0.300)} ${cx+12},${Math.round(ch*0.285)}" fill="none" stroke="${skinDark}" stroke-width="1" opacity="0.4"/>
+
+<!-- ═══ HAIR — BACK LAYER ═══ -->
+<path d="M ${cx-26},${headY} C ${cx-30},${headY-10} ${cx-20},${headY-28} ${cx},${headY-28} C ${cx+20},${headY-28} ${cx+30},${headY-10} ${cx+26},${headY} C ${cx+32},${Math.round(ch*0.22)} ${cx+34},${Math.round(ch*0.26)} ${cx+30},${Math.round(ch*0.30)} L ${cx-30},${Math.round(ch*0.30)} C ${cx-34},${Math.round(ch*0.26)} ${cx-32},${Math.round(ch*0.22)} ${cx-26},${headY} Z"
+      fill="${hairFill}" stroke="#0a0a00" stroke-width="1.5"/>
+<!-- Hair top/front layer -->
+<path d="M ${cx-22},${headY-5} C ${cx-18},${headY-30} ${cx-8},${headY-34} ${cx},${headY-32} C ${cx+8},${headY-34} ${cx+18},${headY-30} ${cx+22},${headY-5} C ${cx+18},${headY-2} ${cx+10},${headY+2} ${cx},${headY+2} C ${cx-10},${headY+2} ${cx-18},${headY-2} ${cx-22},${headY-5} Z"
+      fill="url(#hair_${sceneN})" stroke="#0a0a00" stroke-width="1.5"/>
+<!-- Hair side strands left -->
+<path d="M ${cx-22},${headY} C ${cx-28},${Math.round(ch*0.22)} ${cx-32},${Math.round(ch*0.26)} ${cx-28},${Math.round(ch*0.29)} C ${cx-26},${Math.round(ch*0.275)} ${cx-22},${Math.round(ch*0.25)} ${cx-20},${Math.round(ch*0.23)} C ${cx-20},${Math.round(ch*0.22)} ${cx-18},${headY+5} ${cx-18},${headY} Z"
+      fill="${hairFill}" stroke="#0a0a00" stroke-width="1"/>
+<!-- Hair side strands right -->
+<path d="M ${cx+22},${headY} C ${cx+28},${Math.round(ch*0.22)} ${cx+32},${Math.round(ch*0.26)} ${cx+28},${Math.round(ch*0.29)} C ${cx+26},${Math.round(ch*0.275)} ${cx+22},${Math.round(ch*0.25)} ${cx+20},${Math.round(ch*0.23)} C ${cx+20},${Math.round(ch*0.22)} ${cx+18},${headY+5} ${cx+18},${headY} Z"
+      fill="${hairFill}" stroke="#0a0a00" stroke-width="1"/>
+<!-- Hair highlight streak -->
+<path d="M ${cx-8},${headY-30} C ${cx-4},${headY-28} ${cx+2},${headY-26} ${cx+8},${headY-24}" fill="none" stroke="${hairHighlight}" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+
+<!-- ═══ FACE FEATURES ═══ -->
+<!-- Left eye -->
+<ellipse cx="${cx-12}" cy="${Math.round(ch*0.246)}" rx="9" ry="8" fill="#FFFFFF" stroke="#1a0a00" stroke-width="1.5"/>
+<ellipse cx="${cx-12}" cy="${Math.round(ch*0.246)}" rx="7" ry="7" fill="url(#irisL_${sceneN})"/>
+<ellipse cx="${cx-12}" cy="${Math.round(ch*0.247)}" rx="3.5" ry="4" fill="#0a0a0a"/>
+<ellipse cx="${cx-14}" cy="${Math.round(ch*0.242)}" rx="2" ry="1.8" fill="#ffffff"/>
+<circle cx="${cx-10}" cy="${Math.round(ch*0.250)}" r="0.9" fill="#ffffff"/>
+<!-- Left upper eyelid -->
+<path d="M ${cx-21},${Math.round(ch*0.242)} C ${cx-17},${Math.round(ch*0.236)} ${cx-8},${Math.round(ch*0.236)} ${cx-3},${Math.round(ch*0.242)}" fill="none" stroke="#0a0a00" stroke-width="2" stroke-linecap="round"/>
+<!-- Left lashes -->
+<line x1="${cx-20}" y1="${Math.round(ch*0.241)}" x2="${cx-23}" y2="${Math.round(ch*0.237)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx-16}" y1="${Math.round(ch*0.238)}" x2="${cx-17}" y2="${Math.round(ch*0.233)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx-12}" y1="${Math.round(ch*0.237)}" x2="${cx-12}" y2="${Math.round(ch*0.232)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx-8}" y1="${Math.round(ch*0.238)}" x2="${cx-7}" y2="${Math.round(ch*0.233)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx-4}" y1="${Math.round(ch*0.241)}" x2="${cx-2}" y2="${Math.round(ch*0.237)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Right eye -->
+<ellipse cx="${cx+12}" cy="${Math.round(ch*0.246)}" rx="9" ry="8" fill="#FFFFFF" stroke="#1a0a00" stroke-width="1.5"/>
+<ellipse cx="${cx+12}" cy="${Math.round(ch*0.246)}" rx="7" ry="7" fill="url(#irisR_${sceneN})"/>
+<ellipse cx="${cx+12}" cy="${Math.round(ch*0.247)}" rx="3.5" ry="4" fill="#0a0a0a"/>
+<ellipse cx="${cx+10}" cy="${Math.round(ch*0.242)}" rx="2" ry="1.8" fill="#ffffff"/>
+<circle cx="${cx+14}" cy="${Math.round(ch*0.250)}" r="0.9" fill="#ffffff"/>
+<!-- Right upper eyelid -->
+<path d="M ${cx+3},${Math.round(ch*0.242)} C ${cx+8},${Math.round(ch*0.236)} ${cx+17},${Math.round(ch*0.236)} ${cx+21},${Math.round(ch*0.242)}" fill="none" stroke="#0a0a00" stroke-width="2" stroke-linecap="round"/>
+<!-- Right lashes -->
+<line x1="${cx+4}" y1="${Math.round(ch*0.241)}" x2="${cx+2}" y2="${Math.round(ch*0.237)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx+8}" y1="${Math.round(ch*0.238)}" x2="${cx+7}" y2="${Math.round(ch*0.233)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx+12}" y1="${Math.round(ch*0.237)}" x2="${cx+12}" y2="${Math.round(ch*0.232)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx+16}" y1="${Math.round(ch*0.238)}" x2="${cx+17}" y2="${Math.round(ch*0.233)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="${cx+20}" y1="${Math.round(ch*0.241)}" x2="${cx+22}" y2="${Math.round(ch*0.237)}" stroke="#0a0a00" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Eyebrows -->
+<path d="${browLPath}" fill="none" stroke="${hairFill}" stroke-width="3" stroke-linecap="round"/>
+<path d="${browRPath}" fill="none" stroke="${hairFill}" stroke-width="3" stroke-linecap="round"/>
+
+<!-- Nose -->
+<path d="M ${cx-3},${Math.round(ch*0.264)} C ${cx-2},${Math.round(ch*0.270)} ${cx+2},${Math.round(ch*0.270)} ${cx+3},${Math.round(ch*0.264)}" fill="none" stroke="${skinDark}" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="${cx-4}" cy="${Math.round(ch*0.268)}" r="1.2" fill="${skinDark}" fill-opacity="0.5"/>
+<circle cx="${cx+4}" cy="${Math.round(ch*0.268)}" r="1.2" fill="${skinDark}" fill-opacity="0.5"/>
+
+<!-- Mouth -->
+<path d="${mouthPath}" fill="${isIntense?'#aa2200':'none'}" stroke="#7a2020" stroke-width="1.8" stroke-linecap="round"/>
+${isIntense?`<path d="M ${cx-6},${Math.round(ch*0.298)} L ${cx+6},${Math.round(ch*0.298)}" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.8"/>`:``}
+
+<!-- ═══ AURA EFFECT ═══ -->
+<ellipse cx="${cx}" cy="${Math.round(ch*0.55)}" rx="90" ry="160" fill="url(#aura_${sceneN})"/>
+
+<!-- ═══ SUBTITLE BAR ═══ -->
+<rect x="0" y="${ch-34}" width="${cw}" height="34" fill="#000000" fill-opacity="0.85"/>
+<rect x="0" y="${ch-34}" width="4" height="34" fill="${sc.aura}"/>
+<text x="${cx}" y="${ch-12}" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="14" font-weight="600" fill="#ffffff" letter-spacing="0.5">DIALOGUE_PLACEHOLDER</text>`;
+
+  return `You are a professional anime SVG artist. Your task: take the BODY TEMPLATE below and COMPLETE it into a full, beautiful anime scene.
+
+SCENE ${sceneN}/${totalN}: "${beat}"
+NARRATIVE: ${storyCtx||'opening scene'}
+CHARACTER DETAILS: ${cd||'anime protagonist'}
+STYLE PALETTE: sky colors ${sc.sky1}→${sc.sky2}→${sc.sky3}, aura ${sc.aura}
+HAIR: ${hc}
+CAMERA: ${sceneN<=2?'FULL BODY — show entire figure head to toe':sceneN<=Math.floor(totalN*.5)?'MEDIUM — waist to head visible':'DRAMATIC — full body with environment'}
+POSE THIS SCENE: ${['neutral ready stance','aggressive battle stance','powerful strike pose','defensive guard','dynamic running/movement','iconic hero pose'][sceneN%6]}
+
+WHAT YOU MUST DO:
+1. Keep every single body element from the template EXACTLY as-is — do NOT remove or simplify any body part
+2. Replace IRIS_COLOR with a vivid eye color that fits the character (e.g. #2266ee for blue, #22aa44 for green, #aa3322 for red)
+3. Replace DIALOGUE_PLACEHOLDER with the actual dialogue text in Portuguese
+4. ADD a rich background AFTER the sky rect: 4-6 environment shapes (clouds, mountains, buildings, ground, arena, etc.) that match the scene mood: "${beat}"
+5. ADD clothing OVER the body: draw clothes as filled bezier paths directly over the torso/legs/arms shapes. Use colors matching the style. Add fold lines as thin strokes.
+6. ADD 6-10 special effects: energy particles as small circles/ellipses, speed lines as thin paths, aura glow paths — all in color ${sc.aura} with varying fill-opacity (0.1 to 0.4)
+7. ADD hair flyaway strands: 4-6 thin bezier paths extending from the hair mass, fill="none" stroke="${hairFill}" stroke-width="1.5"
+
+IRIS COLOR RULE: replace both occurrences of IRIS_COLOR with the same actual hex color. Never leave "IRIS_COLOR" in the output.
+
+OUTPUT ONLY THIS JSON (no markdown, no explanation, nothing else):
+{"dialogue":"frase impactante em português (máx 8 palavras)","svg":"<svg xmlns='http://www.w3.org/2000/svg' width='${cw}' height='${ch}' viewBox='0 0 ${cw} ${ch}'>${bodySVG.replace(/\n/g,' ')} <!-- YOUR ADDITIONS HERE --> </svg>"}
+
+CRITICAL: The output must be valid JSON. The svg value must contain the COMPLETE SVG with all template elements plus your additions.`;
+}
+// ═══════════════════════════════════════════
+// STORY BEATS
+// ═══════════════════════════════════════════
+function makeBeats(scene,n){
+  const beats=[];moodScores=[];
+  const phases=[
+    [0,    .12,'ABERTURA ÉPICA: '+scene+'. Plano geral. Personagem aparece. Cenário estabelecido.'],
+    [.12,  .22,'INTRODUÇÃO: '+scene+'. Personagem vira para câmera. Olhar determinado.'],
+    [.22,  .38,'DESENVOLVIMENTO: '+scene+'. Tensão crescente. Personagem em movimento.'],
+    [.38,  .52,'CONFRONTO: '+scene+'. Primeiro contato. Postura de batalha. Olhos arregalados.'],
+    [.52,  .67,'CLÍMAX: '+scene+'. Ação intensa. Efeitos de energia máximos. Expressão furiosa.'],
+    [.67,  .78,'VIRADA: '+scene+'. Momento decisivo. Aura máxima. Câmera dramática extrema.'],
+    [.78,  .88,'RESOLUÇÃO: '+scene+'. Consequência. Personagem de pé vitorioso.'],
+    [.88,  .95,'DESFECHO: '+scene+'. Silêncio dramático. Close no rosto.'],
+    [.95,   1,'EPÍLOGO: '+scene+'. Plano final. Pose icônica. Reflexão.']
+  ];
+  for(let i=0;i<n;i++){
+    const p=i/n;
+    const ph=phases.find(([s,e])=>p>=s&&p<e)||phases[phases.length-1];
+    beats.push(ph[2]);
+    moodScores.push(Math.min(1,p<.5?p*2:1-(p-.5)*.4+.4));
+  }
+  return beats;
+}
+
+// ═══════════════════════════════════════════
+// AI CALLS
+// ═══════════════════════════════════════════
+async function callClaude(prompt,key){
+  const uc=[];
+  if(refImgData){const[m,b]=refImgData.split(',');uc.push({type:'image',source:{type:'base64',media_type:m.match(/:(.*?);/)?.[1]||'image/png',data:b}});}
+  uc.push({type:'text',text:prompt});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-opus-4-5',max_tokens:14000,
+      system:`You are a professional anime SVG illustrator. Your ONLY job is to produce beautiful, anatomically correct anime character SVGs. 
+
+ABSOLUTE RULES — breaking any = catastrophic failure:
+1. NEVER produce stick figures. Every single limb must be a closed bezier <path> shape with both fill and stroke. Arms minimum 14px wide. Legs minimum 20px wide.
+2. NEVER produce chibi or childish art. Head height is exactly 55px. Total body height 380px. Adult proportions only.
+3. NEVER produce ugly faces. Both eyes must be at the same Y coordinate. Iris must use radialGradient fill. Symmetrical always.
+4. NEVER use rgba() in ANY SVG attribute. Only hex colors + separate fill-opacity attribute.
+5. NEVER use <rect> for any body part. Head=<ellipse>. Torso=<path>. Limbs=<path>. 
+6. ALWAYS draw complete lower body: hips, thighs, knees, shins, ankles, and shoes.
+7. ALWAYS use strokeLinejoin="round" strokeLinecap="round" on character paths.
+8. ALL gradient and filter IDs must be unique (append scene number).
+9. Output ONLY valid JSON: {"dialogue":"...","svg":"..."}. Zero markdown. Zero explanation.`,
+      messages:[{role:'user',content:uc}]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Claude erro '+res.status);}
+  return (await res.json()).content?.map(c=>c.text||'').join('')||'';
+}
+
+async function callGemini(prompt,key){
+  const parts=[];
+  if(refImgData){const[m,b]=refImgData.split(',');parts.push({inlineData:{mimeType:m.match(/:(.*?);/)?.[1]||'image/png',data:b}});}
+  parts.push({text:`PROFESSIONAL ANIME SVG ILLUSTRATOR. ABSOLUTE RULES: (1) NEVER stick figures — all limbs are closed bezier paths with fill+stroke, min 14px wide. (2) NEVER chibi — head=55px, body=380px total, adult proportions. (3) NEVER ugly asymmetric faces — both eyes at same Y, iris=radialGradient. (4) NEVER rgba() — hex+fill-opacity only. (5) NEVER rect for body parts. (6) ALWAYS draw full legs to shoes. (7) strokeLinejoin="round" strokeLinecap="round" always. Output ONLY JSON {"dialogue":"...","svg":"..."}. Zero markdown.\n\n`+prompt});
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:12000,temperature:.75}})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Gemini erro '+res.status);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+async function callGroq(prompt,key){
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:gqModel,messages:[
+      {role:'system',content:'PROFESSIONAL ANIME SVG ILLUSTRATOR. ABSOLUTE RULES: (1) NEVER stick figures — all limbs closed bezier paths, min 14px wide. (2) NEVER chibi — head=55px, body=380px, adult proportions only. (3) NEVER ugly/asymmetric faces — both eyes same Y, iris=radialGradient. (4) NEVER rgba() — hex+fill-opacity only. (5) NEVER rect for body parts. (6) ALWAYS full legs to shoes. (7) strokeLinejoin="round" strokeLinecap="round". Output ONLY JSON {"dialogue":"...","svg":"..."}. Zero markdown, zero preamble.'},
+      {role:'user',content:prompt+'\n\nOUTPUT ONLY THE JSON:'}
+    ],max_tokens:8000,temperature:.8})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Groq erro '+res.status);
+  return (d.choices?.[0]?.message?.content||'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+}
+
+async function callAI(prompt,key){
+  if(provider==='claude')return callClaude(prompt,key);
+  if(provider==='gemini')return callGemini(prompt,key);
+  return callGroq(prompt,key);
+}
+
+// ═══════════════════════════════════════════
+// IMAGE GEN API
+// ═══════════════════════════════════════════
+function buildImgPrompt(beat){
+  const cd=getCD();
+  const styleMap={
+    anime_film:'masterpiece, best quality, ultra detailed anime film art, Attack on Titan Demon Slayer style, cinematic lighting',
+    shonen:'masterpiece, shonen anime, Naruto Dragon Ball style, bold outlines, vibrant colors, energy aura',
+    seinen:'masterpiece, seinen anime, Berserk style, dark palette, high contrast, realistic proportions',
+    ghibli:'masterpiece, Studio Ghibli style, watercolor, soft lighting, detailed nature',
+    cyberpunk:'masterpiece, cyberpunk anime, neon lights, rain, holographic, dark city',
+    dark_fantasy:'masterpiece, dark fantasy anime, dramatic lighting, magical effects, epic'
+  }[aiSt]||'masterpiece, best quality, anime';
+  const prompt=`${styleMap}, ${beat}, ${cd}, correct human anatomy, full body visible, expressive anime eyes, detailed hair, fabric folds, cinematic composition, 8k, no text, no watermark`;
+  const neg='worst quality, bad quality, bad anatomy, extra limbs, deformed, chibi, watermark, text, blurry';
+  return {prompt,neg};
+}
+
+async function callTogetherImg(pd,key){
+  const [w,h]=imgAR.split('x').map(Number);
+  const res=await fetch('https://api.together.xyz/v1/images/generations',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:imgModel,prompt:pd.prompt,negative_prompt:pd.neg,width:w,height:h,steps:4,n:1,response_format:'b64_json'})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Together '+res.status);}
+  const d=await res.json();
+  return 'data:image/jpeg;base64,'+(d.data[0].b64_json);
+}
+
+async function callFalImg(pd,key){
+  const [w,h]=imgAR.split('x').map(Number);
+  const res=await fetch('https://fal.run/'+imgModel,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Key '+key},
+    body:JSON.stringify({prompt:pd.prompt,negative_prompt:pd.neg,image_size:{width:w,height:h},num_inference_steps:4,num_images:1})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.detail||'fal.ai '+res.status);}
+  const d=await res.json();
+  const ir=await fetch(d.images[0].url);const blob=await ir.blob();
+  return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
+}
+
+async function callHFImg(pd,key){
+  const res=await fetch('https://api-inference.huggingface.co/models/'+imgModel,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({inputs:pd.prompt,parameters:{negative_prompt:pd.neg,num_inference_steps:20}})
+  });
+  if(!res.ok)throw new Error('HuggingFace '+res.status);
+  const blob=await res.blob();
+  return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
+}
+
+async function generateImage(beat,sceneN,totalN){
+  const key=(localStorage.getItem('asimg_'+imgProvider)||'').trim();
+  if(!key)throw new Error('API Key de imagem não configurada!');
+  const pd=buildImgPrompt(beat);
+  let b64;
+  if(imgProvider==='together')b64=await callTogetherImg(pd,key);
+  else if(imgProvider==='fal')b64=await callFalImg(pd,key);
+  else b64=await callHFImg(pd,key);
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const t=document.createElement('canvas');t.width=CW;t.height=CH;
+      const c=t.getContext('2d');c.drawImage(img,0,0,CW,CH);
+      c.fillStyle='rgba(0,0,0,.65)';c.fillRect(0,0,70,18);
+      c.fillStyle='#e8c840';c.font='bold 8px monospace';c.fillText('F'+sceneN+'/'+totalN,4,12);
+      res(t.toDataURL());
+    };
+    img.onerror=()=>res(errFrame('Img '+sceneN));
+    img.src=b64;
+  });
+}
+
+// ═══════════════════════════════════════════
+// SVG → CANVAS
+// ═══════════════════════════════════════════
+function fixSVG(raw){
+  let s=raw.trim();
+  if(!s.startsWith('<svg'))s=`<svg xmlns="http://www.w3.org/2000/svg" width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}">${s}</svg>`;
+  if(!s.includes('xmlns'))s=s.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+  const rh=(r,g,b)=>'#'+[r,g,b].map(v=>parseInt(v).toString(16).padStart(2,'0')).join('');
+  s=s.replace(/fill="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`fill="${rh(r,g,b)}" fill-opacity="${a}"`);
+  s=s.replace(/stroke="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`stroke="${rh(r,g,b)}" stroke-opacity="${a}"`);
+  s=s.replace(/stop-color="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`stop-color="${rh(r,g,b)}" stop-opacity="${a}"`);
+  s=s.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/\son\w+="[^"]*"/g,'');
+  return s;
+}
+
+function svgToCanvas(svgStr){
+  return new Promise(res=>{
+    const svg=fixSVG(svgStr);
+    const draw=img=>{const t=document.createElement('canvas');t.width=CW;t.height=CH;const c=t.getContext('2d');c.fillStyle='#1a1a2e';c.fillRect(0,0,CW,CH);c.drawImage(img,0,0,CW,CH);return t.toDataURL();};
+    const tryURL=()=>new Promise((ok,no)=>{
+      const u=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+      const img=new Image();const t=setTimeout(()=>{URL.revokeObjectURL(u);no();},6000);
+      img.onload=()=>{clearTimeout(t);URL.revokeObjectURL(u);ok(draw(img));};
+      img.onerror=()=>{clearTimeout(t);URL.revokeObjectURL(u);no();};img.src=u;
+    });
+    const tryEncode=()=>new Promise((ok,no)=>{
+      const img=new Image();const t=setTimeout(()=>no(),6000);
+      img.onload=()=>{clearTimeout(t);ok(draw(img));};img.onerror=()=>{clearTimeout(t);no();};
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    });
+    const tryParse=()=>new Promise(ok=>{
+      try{
+        const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+        const el=doc.querySelector('svg');if(!el){ok(blank());return;}
+        const u=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(el)],{type:'image/svg+xml'}));
+        const img=new Image();
+        img.onload=()=>{URL.revokeObjectURL(u);ok(draw(img));};
+        img.onerror=()=>{URL.revokeObjectURL(u);ok(blank());};img.src=u;
+      }catch{ok(blank());}
+    });
+    tryURL().catch(()=>tryEncode()).catch(()=>tryParse()).then(d=>res(d)).catch(()=>res(blank()));
+  });
+}
+
+function parseResp(raw){
+  raw=raw.replace(/```[\w]*\n?/g,'').replace(/```/g,'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+  // Try direct JSON parse
+  try{
+    const s=raw.indexOf('{');const e=raw.lastIndexOf('}');
+    if(s>=0&&e>s){
+      const j=JSON.parse(raw.slice(s,e+1));
+      if(j.svg)return[j];
+      if(j.frames&&j.frames.length)return j.frames;
+    }
+  }catch(_){}
+  // Extract SVGs manually
+  const result=[],dm=[...raw.matchAll(/"dialogue"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+  let p=0,idx=0;
+  while(true){
+    const ss=raw.indexOf('<svg',p);if(ss<0)break;
+    const se=raw.indexOf('</svg>',ss);if(se<0)break;
+    const sv=raw.slice(ss,se+6).replace(/\\n/g,' ').replace(/\\t/g,' ').replace(/\\"/g,'"').replace(/\\\//g,'/');
+    result.push({svg:sv,dialogue:dm[idx]?.[1]?.replace(/\\n/g,' ')||''});
+    p=se+6;idx++;
+  }
+  if(result.length)return result;
+  throw new Error('Nenhum SVG na resposta — verifique sua API key');
+}
+
+function errFrame(msg){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  const c=t.getContext('2d');
+  c.fillStyle='#1a0a1e';c.fillRect(0,0,CW,CH);
+  c.strokeStyle='#f8717155';c.lineWidth=1;c.strokeRect(8,8,CW-16,CH-16);
+  c.fillStyle='#f87171';c.font='bold 12px sans-serif';c.textAlign='center';
+  c.fillText('⚠ '+msg,CW/2,CH/2);
+  c.fillStyle='#4a4a68';c.font='10px sans-serif';c.fillText('Verifique a API key e tente novamente',CW/2,CH/2+18);
+  return t.toDataURL();
+}
+
+// ═══════════════════════════════════════════
+// MAIN GENERATION
+// ═══════════════════════════════════════════
+async function startGen(){
+  const scene=document.getElementById('sceneInput').value.trim();
+  if(!scene){toast('✍️ Descreva a cena primeiro!');return;}
+
+  if(genMode==='image'){await startImgGen(scene);return;}
+
+  const key=(localStorage.getItem('as_'+provider)||'').trim();
+  if(!key){
+    toast('🔑 Configure a API Key em "MOTOR DE IA"!');
+    document.getElementById('svgKeyBox').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const btn=document.getElementById('genBtn');
+  const sp=document.getElementById('spinEl');
+  const fill=document.getElementById('pfill');
+  const ptxt=document.getElementById('ptxt');
+  const binfo=document.getElementById('binfo');
+
+  btn.disabled=true;if(sp)sp.style.display='inline-block';
+
+  const total=Math.ceil(filmDur/4);
+  frames=[];cur=0;frameDialogues=[];moodScores=[];
+  const beats=makeBeats(scene,total);
+  let storyCtx='';
+
+  try{
+    for(let i=0;i<total;i++){
+      binfo.textContent=`Cena ${i+1}/${total} — gerando SVG...`;
+      ptxt.textContent=`⏳ Frame ${i+1} de ${total}`;
+      fill.style.width=((i/total)*90)+'%';
+      fill.className='pfill';
+
+      try{
+        const prompt=buildPrompt(beats[i],storyCtx,i+1,total);
+        const raw=await callAI(prompt,key);
+        const parsed=parseResp(raw);
+        for(const fd of parsed){
+          const du=await svgToCanvas(fd.svg||'');
+          frames.push(du);frameDialogues.push(fd.dialogue||'');
+        }
+        storyCtx+=' C'+(i+1)+':'+beats[i].slice(0,35);
+      }catch(e){
+        console.error('Cena '+(i+1)+':',e.message);
+        frames.push(errFrame('Cena '+(i+1)));
+        frameDialogues.push('');
+        // Show the error in ptxt
+        ptxt.textContent='⚠ C'+(i+1)+': '+e.message.slice(0,50);
+      }
+      cur=frames.length-1;loadF(cur);renderStrip();updHUD();updStats();
+    }
+    fill.style.width='100%';
+    ptxt.textContent='✅ '+frames.length+' frames prontos!';
+    binfo.textContent='▶ PLAY para assistir 🎌';
+    cur=0;loadF(0);renderStrip();updHUD();updStats();
+    toast('🎌 Anime pronto! '+frames.length+' frames');
+    setTimeout(()=>{fill.style.width='0%';ptxt.textContent='';binfo.textContent='';},7000);
+  }catch(e){
+    ptxt.textContent='❌ '+e.message;fill.style.width='0%';
+    toast('Erro: '+e.message.slice(0,60));
+    console.error(e);
+  }
+  btn.disabled=false;if(sp)sp.style.display='none';
+}
+
+async function startImgGen(scene){
+  const key=(localStorage.getItem('asimg_'+imgProvider)||'').trim();
+  if(!key){
+    toast('🔑 Configure a API Key de imagem!');
+    document.getElementById('imgProv').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const btn=document.getElementById('genBtn');
+  const sp=document.getElementById('spinEl');
+  const fill=document.getElementById('pfill');
+  const ptxt=document.getElementById('ptxt');
+  const binfo=document.getElementById('binfo');
+
+  btn.disabled=true;if(sp)sp.style.display='inline-block';
+  const total=Math.ceil(filmDur/4);
+  frames=[];cur=0;frameDialogues=[];moodScores=[];
+  const beats=makeBeats(scene,total);
+  const dialogues=['Isso não acabou!','Ninguém pode me parar!','Vou proteger tudo!','Este poder é absurdo!','Prepare-se para o fim!','Nunca desistirei!','A batalha começa agora!','Sentirei o meu poder!'];
+
+  try{
+    for(let i=0;i<total;i++){
+      binfo.textContent=`Gerando imagem ${i+1}/${total}...`;
+      ptxt.textContent=`🖼 Frame ${i+1} de ${total}`;
+      fill.style.width=((i/total)*90)+'%';
+      fill.className='pfill img';
+      try{
+        const b64=await generateImage(beats[i],i+1,total);
+        frames.push(b64);frameDialogues.push(dialogues[i%dialogues.length]);
+      }catch(e){
+        console.error('Img '+(i+1)+':',e);
+        frames.push(errFrame(e.message.slice(0,30)));frameDialogues.push('');
+        ptxt.textContent='⚠ '+e.message.slice(0,50);
+      }
+      cur=frames.length-1;loadF(cur);renderStrip();updHUD();updStats();
+    }
+    fill.style.width='100%';
+    ptxt.textContent='✅ '+frames.length+' imagens prontas!';
+    binfo.textContent='▶ PLAY para assistir 🎌';
+    cur=0;loadF(0);renderStrip();updHUD();updStats();
+    toast('🖼 '+frames.length+' imagens geradas!');
+    setTimeout(()=>{fill.style.width='0%';ptxt.textContent='';binfo.textContent='';},7000);
+  }catch(e){
+    ptxt.textContent='❌ '+e.message;fill.style.width='0%';
+    toast('Erro: '+e.message.slice(0,60));
+  }
+  btn.disabled=false;if(sp)sp.style.display='none';
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function expPNGs(){if(!frames.length){toast('Sem frames!');return;}frames.forEach((f,i)=>{const a=document.createElement('a');a.href=f;a.download='anime_'+String(i+1).padStart(3,'0')+'.png';a.click();});toast(frames.length+' PNGs exportados!');}
+function savePrj(){if(!frames.length){toast('Sem frames!');return;}const b=new Blob([JSON.stringify({frames,frameDialogues,fps,genMode,moodScores})],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='animestudio.json';a.click();toast('Projeto salvo!');}
+function loadPrj(){document.getElementById('prjInput').click();}
+function loadPrjFile(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      frames=d.frames||[];frameDialogues=d.frameDialogues||[];fps=d.fps||4;moodScores=d.moodScores||[];
+      if(d.genMode)setMode(d.genMode);
+      document.getElementById('fpsSlider').value=fps;document.getElementById('fpsLbl').textContent=fps;
+      cur=0;loadF(0);renderStrip();updHUD();updStats();
+      toast('Projeto carregado! '+frames.length+' frames');
+    }catch(ex){toast('Erro ao carregar: '+ex.message);}
+  };r.readAsText(f);
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastT;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),4000);}
+
+// ═══════════════════════════════════════════
+// ══════════════ VR MODE ═══════════════════
+// ═══════════════════════════════════════════
+let vrActive=false,vrGyroOn=false,vrHandOn=false,vrPlayingLocal=false;
+let vrRot={x:0,y:0},vrRotOffset={x:0,y:0};
+let vrHandStream=null,vrHandCtx=null;
+let vrAnimFrame=null,vrFPSCount=0,vrFPSTime=0,vrFPSDisplay=0;
+let handLandmarks=null,gestureTimer=null,lastGesture='';
+
+const VR_W=CW*1.4,VR_H=CH*1.4; // larger render for VR
+
+function enterVR(){
+  if(!frames||frames.length===0){toast('⚠ Gere um anime primeiro!');return;}
+  const overlay=document.getElementById('vrOverlay');
+  overlay.classList.add('show');
+  vrActive=true;
+  setupVRCanvases();
+  startVRGyro();
+  startVRLoop();
+  toast('🥽 VR Mode ativo! Gire o celular para mover a câmera');
+}
+
+function exitVR(){
+  vrActive=false;
+  document.getElementById('vrOverlay').classList.remove('show');
+  stopVRGyro();
+  stopVRHand();
+  if(vrAnimFrame)cancelAnimationFrame(vrAnimFrame);
+  vrAnimFrame=null;
+  if(vrPlayingLocal&&playing)togglePlay();
+}
+
+function setupVRCanvases(){
+  const lc=document.getElementById('vrCanvasL');
+  const rc=document.getElementById('vrCanvasR');
+  const eye=document.getElementById('vrLeft');
+  const ew=eye.clientWidth,eh=eye.clientHeight;
+  const sc=Math.min(ew/CW,eh/CH,.95);
+  const dw=Math.round(CW*sc),dh=Math.round(CH*sc);
+  [lc,rc].forEach(c=>{c.width=CW;c.height=CH;c.style.width=dw+'px';c.style.height=dh+'px';});
+
+  // setup hand canvas
+  const hc=document.getElementById('vrHandCanvas');
+  hc.width=document.getElementById('vrScreen').clientWidth;
+  hc.height=document.getElementById('vrScreen').clientHeight;
+  vrHandCtx=hc.getContext('2d');
+}
+
+// ─── GYROSCOPE ────────────────────────────
+function startVRGyro(){
+  if(typeof DeviceOrientationEvent==='undefined'){document.getElementById('vrStatus').textContent='⚠ GYRO N/A';return;}
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(s=>{
+      if(s==='granted'){window.addEventListener('deviceorientation',onGyro);vrGyroOn=true;document.getElementById('vrGyroBtn').classList.add('on');}
+      else{toast('Permissão de giroscópio negada');}
+    }).catch(()=>{window.addEventListener('deviceorientation',onGyro);vrGyroOn=true;});
+  }else{
+    window.addEventListener('deviceorientation',onGyro);
+    vrGyroOn=true;
+    document.getElementById('vrGyroBtn').classList.add('on');
+  }
+}
+function stopVRGyro(){window.removeEventListener('deviceorientation',onGyro);vrGyroOn=false;document.getElementById('vrGyroBtn').classList.remove('on');}
+function toggleVRGyro(){vrGyroOn?stopVRGyro():startVRGyro();}
+
+let gyroBase={beta:null,gamma:null};
+function onGyro(e){
+  if(gyroBase.beta===null){gyroBase.beta=e.beta;gyroBase.gamma=e.gamma;}
+  const db=(e.beta-gyroBase.beta)*0.012;
+  const dg=(e.gamma-gyroBase.gamma)*0.012;
+  vrRot.x=Math.max(-0.4,Math.min(0.4,db));
+  vrRot.y=Math.max(-0.6,Math.min(0.6,dg));
+}
+
+// ─── HAND TRACKING ────────────────────────
+async function startVRHand(){
+  if(vrHandOn)return;
+  document.getElementById('vrHandBtn').textContent='📷 Abrindo câmera...';
+  try{
+    vrHandStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});
+    // Load MediaPipe Hands via CDN
+    await loadMediaPipe();
+    vrHandOn=true;
+    document.getElementById('vrHandBtn').classList.add('on');
+    document.getElementById('vrHandBtn').textContent='✋ MÃOS ON';
+    toast('✋ Hand tracking ativo!');
+  }catch(e){
+    toast('⚠ Câmera: '+e.message.slice(0,40));
+    document.getElementById('vrHandBtn').textContent='✋ MÃOS';
+  }
+}
+
+function stopVRHand(){
+  if(vrHandStream){vrHandStream.getTracks().forEach(t=>t.stop());vrHandStream=null;}
+  vrHandOn=false;
+  document.getElementById('vrHandBtn').classList.remove('on');
+  document.getElementById('vrHandBtn').textContent='✋ MÃOS';
+  handLandmarks=null;
+  if(vrHandCtx){vrHandCtx.clearRect(0,0,vrHandCtx.canvas.width,vrHandCtx.canvas.height);}
+}
+
+function toggleVRHand(){vrHandOn?stopVRHand():startVRHand();}
+
+let mpHands=null,mpVid=null;
+async function loadMediaPipe(){
+  if(mpHands)return;
+  // Use MediaPipe Hands from CDN
+  const script1=document.createElement('script');
+  script1.src='https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js';
+  document.head.appendChild(script1);
+  await new Promise(r=>script1.onload=r);
+
+  const script2=document.createElement('script');
+  script2.src='https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js';
+  document.head.appendChild(script2);
+  await new Promise(r=>script2.onload=r);
+
+  mpHands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/'+f});
+  mpHands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});
+  mpHands.onResults(onHandResults);
+
+  mpVid=document.createElement('video');
+  mpVid.srcObject=vrHandStream;mpVid.autoplay=true;mpVid.muted=true;mpVid.playsInline=true;
+  await new Promise(r=>mpVid.onloadedmetadata=r);
+
+  const cam=new Camera(mpVid,{onFrame:async()=>{await mpHands.send({image:mpVid});},width:320,height:240});
+  cam.start();
+}
+
+function onHandResults(results){
+  handLandmarks=results.multiHandLandmarks||[];
+  const hc=document.getElementById('vrHandCanvas');
+  if(!vrHandCtx||!hc)return;
+  vrHandCtx.clearRect(0,0,hc.width,hc.height);
+
+  handLandmarks.forEach((lm,hi)=>{
+    // Draw dots
+    lm.forEach((pt,li)=>{
+      const x=pt.x*hc.width;const y=pt.y*hc.height;
+      vrHandCtx.beginPath();
+      vrHandCtx.arc(x,y,li===0?8:5,0,Math.PI*2);
+      vrHandCtx.fillStyle=hi===0?'rgba(100,200,255,.85)':'rgba(255,150,100,.85)';
+      vrHandCtx.fill();
+    });
+    // Draw connections
+    const conn=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+    vrHandCtx.strokeStyle=hi===0?'rgba(100,200,255,.5)':'rgba(255,150,100,.5)';
+    vrHandCtx.lineWidth=2;
+    conn.forEach(([a,b])=>{
+      vrHandCtx.beginPath();
+      vrHandCtx.moveTo(lm[a].x*hc.width,lm[a].y*hc.height);
+      vrHandCtx.lineTo(lm[b].x*hc.width,lm[b].y*hc.height);
+      vrHandCtx.stroke();
+    });
+    // Detect gestures
+    detectGesture(lm,hi);
+  });
+}
+
+function detectGesture(lm,hi){
+  // OPEN HAND = play/pause (all fingers extended)
+  const fingers=[
+    lm[8].y<lm[6].y, // index
+    lm[12].y<lm[10].y, // middle
+    lm[16].y<lm[14].y, // ring
+    lm[20].y<lm[18].y  // pinky
+  ];
+  const openHand=fingers.every(Boolean);
+  const fist=fingers.every(v=>!v);
+  const pointUp=fingers[0]&&!fingers[1]&&!fingers[2]&&!fingers[3]; // index only
+  const twoFingers=fingers[0]&&fingers[1]&&!fingers[2]&&!fingers[3]; // peace sign
+
+  const g=openHand?'open':fist?'fist':pointUp?'point':twoFingers?'two':'';
+  if(g&&g!==lastGesture){
+    lastGesture=g;
+    clearTimeout(gestureTimer);
+    gestureTimer=setTimeout(()=>{
+      execGesture(g);
+    },400); // debounce
+  }
+}
+
+function execGesture(g){
+  const hint=document.getElementById('gestureHint');
+  const msgs={open:'✋ PLAY/PAUSE',fist:'✊ PRÓXIMO FRAME',point:'☝ FRAME ANTERIOR',two:'✌ SAIR DO VR'};
+  if(msgs[g]){
+    hint.textContent=msgs[g];hint.classList.add('show');
+    setTimeout(()=>hint.classList.remove('show'),1800);
+  }
+  if(g==='open'){toggleVRPlay();}
+  else if(g==='fist'){cur=(cur+1)%frames.length;vrSyncFrame();}
+  else if(g==='point'){cur=(cur-1+frames.length)%frames.length;vrSyncFrame();}
+  else if(g==='two'){exitVR();}
+}
+
+// ─── VR RENDER LOOP ────────────────────────
+function startVRLoop(){
+  if(vrAnimFrame)cancelAnimationFrame(vrAnimFrame);
+  let lastTime=0;
+  function loop(ts){
+    if(!vrActive)return;
+    // FPS counter
+    vrFPSCount++;
+    if(ts-vrFPSTime>1000){vrFPSDisplay=vrFPSCount;vrFPSCount=0;vrFPSTime=ts;document.getElementById('vrFPS').textContent=vrFPSDisplay+' FPS · '+(vrGyroOn?'GYRO ON':'NO GYRO');}
+    vrRenderFrame();
+    vrAnimFrame=requestAnimationFrame(loop);
+  }
+  vrAnimFrame=requestAnimationFrame(loop);
+}
+
+function vrSyncFrame(){
+  if(!frames[cur])return;
+  const img=new Image();
+  img.onload=()=>{
+    ['vrCanvasL','vrCanvasR'].forEach((id,eye)=>{
+      const c=document.getElementById(id);if(!c)return;
+      const ctx2=c.getContext('2d');
+      // Apply VR perspective shift (stereoscopic offset)
+      const shift=(eye===0?-0.025:0.025)*CW;
+      const tx=vrRot.y*80+shift;
+      const ty=vrRot.x*50;
+      const sc=1.05+Math.abs(vrRot.x)*.1;
+      ctx2.clearRect(0,0,CW,CH);
+      ctx2.save();
+      ctx2.translate(CW/2,CH/2);
+      ctx2.scale(sc,sc);
+      ctx2.translate(-CW/2+tx,-CH/2+ty);
+      ctx2.drawImage(img,0,0,CW,CH);
+      ctx2.restore();
+      // Vignette
+      const vig=ctx2.createRadialGradient(CW/2,CH/2,CH*.25,CW/2,CH/2,CH*.75);
+      vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.6)');
+      ctx2.fillStyle=vig;ctx2.fillRect(0,0,CW,CH);
+      // Color shift for depth
+      if(eye===0){ctx2.fillStyle='rgba(255,50,50,.04)';ctx2.fillRect(0,0,CW,CH);}
+      else{ctx2.fillStyle='rgba(50,50,255,.04)';ctx2.fillRect(0,0,CW,CH);}
+    });
+  };
+  img.src=frames[cur];
+}
+
+function vrRenderFrame(){vrSyncFrame();}
+
+function toggleVRPlay(){
+  vrPlayingLocal=!vrPlayingLocal;
+  const btn=document.getElementById('vrPlayBtn');
+  if(vrPlayingLocal){
+    btn.textContent='⏸ PAUSE';btn.classList.add('on');
+    if(!playing)togglePlay();
+  }else{
+    btn.textContent='▶ PLAY';btn.classList.remove('on');
+    if(playing)togglePlay();
+  }
+}
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();loadKey();
+setTimeout(()=>{drawMoodChart();},300);
+window.addEventListener('resize',()=>setTimeout(()=>{drawMoodChart();if(vrActive)setupVRCanvases();},100));
+</script>
+</body>
+</html>

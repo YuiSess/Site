@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnimeStudio PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#060610;--surface:#0d0d1a;--panel:#0f0f1d;--border:#1a1a2e;
+  --accent:#e8c840;--accent2:#ff6b35;--blue:#4fc3f7;--purple:#a855f7;
+  --text:#eeeef5;--muted:#4a4a68;--green:#4ade80;--pink:#f472b6;--cyan:#22d3ee;
+}
+body{background:var(--bg);font-family:'Rajdhani',sans-serif;color:var(--text);height:100vh;overflow:hidden;}
+/* HEADER */
+header{height:46px;padding:0 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:rgba(10,10,22,.97);backdrop-filter:blur(12px);flex-shrink:0;position:relative;z-index:100;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:5px;background:linear-gradient(90deg,#e8c840,#ff6b35,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-size:.58rem;color:var(--muted);font-weight:700;letter-spacing:3px;}
+.hbadge{padding:2px 9px;border-radius:20px;font-size:.55rem;font-weight:700;letter-spacing:1px;border:1px solid currentColor;cursor:pointer;}
+.hbadge.yellow{color:var(--accent);border-color:var(--accent);background:#e8c84010;}
+.hbadge.purple{color:var(--purple);border-color:var(--purple);background:#a855f710;}
+.hbadge.cyan{color:var(--cyan);border-color:var(--cyan);background:#22d3ee10;}
+/* LAYOUT */
+.app{display:grid;grid-template-columns:1fr 310px;height:calc(100vh - 46px);}
+/* VIEWER */
+.viewer{display:flex;flex-direction:column;background:#000;border-right:1px solid var(--border);position:relative;}
+.vstage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at center,#0a0a1a,#020208);}
+#mainCanvas{display:block;}
+#onionCanvas{position:absolute;pointer-events:none;}
+.bar-top,.bar-bot{position:absolute;left:0;right:0;height:0;background:#000;transition:height .4s;z-index:5;}
+.bar-top{top:0;}.bar-bot{bottom:0;}
+#subOverlay{position:absolute;bottom:50px;left:0;right:0;text-align:center;z-index:10;pointer-events:none;opacity:0;transition:opacity .3s;}
+#subText{display:inline-block;background:rgba(0,0,0,.88);color:#fff;font-size:14px;padding:5px 20px;border-radius:3px;max-width:92%;line-height:1.5;border-left:3px solid var(--accent);}
+#hudFrame{position:absolute;top:9px;left:10px;background:rgba(0,0,0,.75);color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:4px;z-index:10;border:1px solid #e8c84030;}
+#hudMode{position:absolute;top:9px;right:10px;background:rgba(0,0,0,.75);color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:.58rem;padding:3px 8px;border-radius:4px;z-index:10;border:1px solid #22d3ee30;}
+/* CTRL BAR */
+.ctrl-bar{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:5px 9px;display:flex;gap:6px;align-items:center;}
+.cbtn{padding:5px 13px;border:none;border-radius:6px;font-weight:700;font-size:.78rem;cursor:pointer;font-family:'Rajdhani',sans-serif;transition:all .15s;}
+.cbtn-play{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;}
+.cbtn-play.stop{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;}
+.cbtn-sm{padding:5px 8px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;font-size:.7rem;cursor:pointer;font-weight:700;transition:all .12s;}
+.cbtn-sm:hover,.cbtn-sm.on{border-color:var(--accent);color:var(--accent);}
+.fps-row{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--muted);font-weight:700;}
+.fps-row input{width:50px;accent-color:var(--accent);}
+.fstrip-wrap{flex:1;overflow:hidden;}
+.fstrip{display:flex;gap:3px;overflow-x:auto;padding:2px 0;}
+.fstrip::-webkit-scrollbar{height:3px;}.fstrip::-webkit-scrollbar-thumb{background:var(--border);}
+.fth{flex-shrink:0;width:38px;height:28px;border:2px solid var(--border);border-radius:3px;cursor:pointer;background:#111;overflow:hidden;position:relative;transition:border-color .1s;}
+.fth.on{border-color:var(--accent);}
+.fth img{width:100%;height:100%;object-fit:cover;}
+.fth .fn{position:absolute;bottom:0;right:1px;font-size:.34rem;font-weight:700;color:#fff;text-shadow:0 0 3px #000;}
+/* PANEL */
+.rpanel{overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.rpanel::-webkit-scrollbar{width:3px;}.rpanel::-webkit-scrollbar-thumb{background:var(--border);}
+.sec{padding:11px 11px 9px;border-bottom:1px solid var(--border);}
+.stitle{font-size:.56rem;font-weight:700;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:4px;}
+.stitle em{color:var(--accent);font-style:normal;}
+/* BIG TOGGLE BUTTONS */
+.big-grid{display:grid;gap:5px;margin-bottom:8px;}
+.big-grid.col2{grid-template-columns:1fr 1fr;}
+.big-grid.col3{grid-template-columns:1fr 1fr 1fr;}
+.bigbtn{padding:9px 4px;border:2px solid var(--border);border-radius:9px;background:transparent;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:1.5px;cursor:pointer;transition:all .18s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;}
+.bigbtn .ico{font-size:1.1rem;}
+.bigbtn.on-yellow{border-color:var(--accent)!important;background:#e8c84020!important;color:var(--accent)!important;}
+.bigbtn.on-purple{border-color:var(--purple)!important;background:#a855f720!important;color:var(--purple)!important;}
+.bigbtn.on-blue{border-color:var(--blue)!important;background:#4fc3f720!important;color:var(--blue)!important;}
+.bigbtn.on-cyan{border-color:var(--cyan)!important;background:#22d3ee20!important;color:var(--cyan)!important;}
+/* INPUTS */
+.keybox{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 9px;margin-top:5px;transition:border-color .2s;}
+.keybox.active{border-color:#e8c84040;}
+.keybox-lbl{font-size:.5rem;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase;}
+.keybox-row{display:flex;align-items:center;gap:3px;}
+.keybox input{flex:1;background:transparent;border:none;font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--text);outline:none;min-width:0;}
+.keybox button{background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--muted);padding:0 2px;}
+.keybox-hint{font-size:.48rem;color:var(--muted);margin-top:3px;}
+.keybox-hint a{color:var(--accent);text-decoration:none;}
+.model-row{display:none;gap:3px;margin:4px 0;}
+.model-row.vis{display:flex;}
+.mpb{flex:1;padding:4px 3px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.mpb.on{border-color:var(--accent);color:var(--accent);background:#e8c84010;}
+/* TEXTAREA */
+.sinput{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--text);resize:none;height:78px;line-height:1.4;}
+.sinput:focus{outline:none;border-color:var(--accent);}
+/* CHAR FIELDS */
+.cfield{display:flex;gap:5px;align-items:center;margin-bottom:4px;}
+.cfield-lbl{font-size:.52rem;color:var(--muted);font-weight:700;width:55px;flex-shrink:0;letter-spacing:.5px;text-transform:uppercase;}
+.cfield input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-family:'Rajdhani',sans-serif;font-size:.7rem;color:var(--text);}
+.cfield input:focus{outline:none;border-color:var(--blue);}
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0 5px;}
+.tag{padding:3px 8px;background:transparent;border:1px solid var(--border);border-radius:12px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .12s;}
+.tag:hover{color:var(--text);border-color:#555;}
+.tag.on{color:#000;background:var(--accent);border-color:transparent;}
+/* DUR */
+.dur-row{display:flex;gap:3px;margin-bottom:4px;}
+.durbtn{flex:1;padding:5px 2px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.durbtn.on{border-color:var(--blue);color:var(--blue);background:#4fc3f710;}
+/* REF */
+.refup{display:flex;align-items:center;gap:7px;padding:6px 8px;border:1.5px dashed var(--border);border-radius:7px;cursor:pointer;transition:all .15s;margin:5px 0;}
+.refup:hover{border-color:var(--accent);}
+.refup.loaded{border-color:var(--green);border-style:solid;}
+.refprev{width:28px;height:28px;object-fit:cover;border-radius:3px;display:none;}
+.refup.loaded .refprev{display:block;}
+.reftxt{font-size:.6rem;font-weight:700;color:var(--muted);}
+.refup.loaded .reftxt{color:var(--green);}
+/* GEN BTN */
+.genbtn{width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;position:relative;overflow:hidden;}
+.genbtn:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 4px 18px #e8c84040;}
+.genbtn:disabled{opacity:.35;cursor:wait;transform:none;}
+.genbtn.img-mode{background:linear-gradient(135deg,var(--purple),var(--pink));}
+.spin{width:13px;height:13px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:sp .5s linear infinite;display:none;flex-shrink:0;}
+@keyframes sp{to{transform:rotate(360deg);}}
+/* PROGRESS */
+.pbar-wrap{margin-top:6px;}
+.pbar{height:4px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .4s;border-radius:3px;}
+.pfill.img{background:linear-gradient(90deg,var(--purple),var(--pink));}
+.ptxt{font-size:.6rem;font-weight:700;color:var(--accent2);min-height:14px;margin-top:3px;text-align:center;}
+.binfo{font-size:.55rem;color:var(--muted);text-align:center;margin-top:1px;}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:5px 0;}
+.stat-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 3px;text-align:center;}
+.stat-val{font-family:'Share Tech Mono',monospace;font-size:.9rem;font-weight:700;}
+.stat-lbl{font-size:.45rem;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
+#moodChart{width:100%;height:40px;display:block;margin:4px 0;}
+/* SETTINGS TOG */
+.setting{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:.68rem;font-weight:600;color:var(--muted);}
+.tog{width:30px;height:16px;background:var(--border);border-radius:8px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.tog.on{background:var(--accent);}
+.tog::after{content:'';position:absolute;width:8px;height:8px;background:white;border-radius:50%;top:2px;left:2px;transition:left .2s;}
+.tog.on::after{left:18px;}
+/* EXPORT */
+.expgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.ebtn{padding:6px 3px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:.65rem;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;}
+.ebtn:hover{border-color:var(--accent);color:var(--accent);}
+/* AR BUTTONS */
+.ar-row{display:flex;gap:3px;margin-bottom:5px;}
+.arbtn{flex:1;padding:4px 2px;background:transparent;border:1px solid var(--border);border-radius:5px;font-size:.58rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;font-family:'Rajdhani',sans-serif;}
+.arbtn.on{border-color:var(--cyan);color:var(--cyan);background:#22d3ee10;}
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);font-size:.8rem;font-weight:700;padding:8px 20px;border-radius:22px;box-shadow:0 4px 24px rgba(0,0,0,.8);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;border:1px solid var(--border);white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* ═══════════════════════════════════════════
+   VR MODE
+═══════════════════════════════════════════ */
+#vrOverlay{position:fixed;inset:0;z-index:500;display:none;background:#000;flex-direction:column;}
+#vrOverlay.show{display:flex;}
+/* SPLIT SCREEN */
+#vrScreen{flex:1;display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden;}
+.vr-eye{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#000;}
+.vr-eye:first-child{border-right:3px solid #000;}
+.vr-canvas-wrap{position:relative;transform-origin:center center;}
+/* VR UI */
+#vrHUD{position:absolute;top:0;left:0;right:0;height:36px;background:linear-gradient(180deg,rgba(0,0,0,.8),transparent);display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:10;pointer-events:none;}
+#vrStatus{font-family:'Share Tech Mono',monospace;font-size:.62rem;color:#00ff88;letter-spacing:2px;}
+#vrFPS{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:#4fc3f7;}
+/* CENTER LINE */
+#vrCenter{position:absolute;left:50%;top:0;bottom:0;width:3px;background:linear-gradient(180deg,transparent,#00000044,transparent);transform:translateX(-50%);pointer-events:none;z-index:20;}
+/* RETICLE */
+.vr-reticle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:15;}
+.vr-reticle svg{opacity:.7;}
+/* HAND OVERLAY */
+#vrHandCanvas{position:absolute;inset:0;pointer-events:none;z-index:30;}
+/* VR CONTROLS BAR */
+#vrControls{height:44px;background:rgba(0,0,0,.9);border-top:1px solid #111;display:flex;align-items:center;justify-content:center;gap:14px;padding:0 14px;flex-shrink:0;}
+.vr-cbtn{padding:6px 14px;background:transparent;border:1px solid #333;border-radius:16px;color:#aaa;font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:2px;cursor:pointer;transition:all .15s;}
+.vr-cbtn:hover,.vr-cbtn.on{border-color:var(--accent);color:var(--accent);}
+.vr-cbtn.exit{border-color:#f87171;color:#f87171;}
+/* GESTURE INDICATOR */
+#gestureHint{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);border:1px solid #a855f744;border-radius:20px;padding:4px 16px;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--purple);letter-spacing:2px;pointer-events:none;z-index:40;opacity:0;transition:opacity .3s;}
+#gestureHint.show{opacity:1;}
+/* VR HAND SKELETON */
+.hand-dot{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>ANIMESTUDIO</h1>
+  <div class="hsub">PRO</div>
+  <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+    <span class="hbadge yellow" id="badgeSVG">🎨 SVG</span>
+    <span class="hbadge purple" id="badgeIMG" style="display:none;">🖼 IMG</span>
+    <span class="hbadge cyan" onclick="enterVR()" style="cursor:pointer;font-size:.62rem;padding:3px 11px;">🥽 VR MODE</span>
+    <span class="hbadge" style="color:#4ade80;border-color:#4ade80;background:#4ade8010;font-size:.52rem;padding:3px 9px;" title="Modo Raciocínio PRO — coordenadas precisas, anatomia real, zero palito">🎯 MODO PRO</span>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app">
+  <!-- VIEWER -->
+  <div class="viewer">
+    <div class="vstage" id="vstage">
+      <div class="bar-top" id="barTop"></div>
+      <canvas id="onionCanvas"></canvas>
+      <canvas id="mainCanvas"></canvas>
+      <div id="hudFrame">FRAME 1/1</div>
+      <div id="hudMode">PRONTO</div>
+      <div id="subOverlay"><span id="subText"></span></div>
+      <div class="bar-bot" id="barBot"></div>
+    </div>
+    <div class="ctrl-bar">
+      <button class="cbtn cbtn-play" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
+      <button class="cbtn-sm" id="cinBtn" onclick="toggleCinema()">🎬</button>
+      <div class="fps-row">
+        <span>FPS</span>
+        <input type="range" min="0.1" max="18" step="0.1" value="0.1" id="fpsSlider" oninput="setFPS(this.value)">
+        <span id="fpsLbl">0.1</span>
+      </div>
+      <div class="fstrip-wrap"><div class="fstrip" id="fstrip"></div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="rpanel">
+
+    <!-- IA SECTION -->
+    <div class="sec">
+      <div class="stitle"><em>⚡</em> MOTOR DE IA</div>
+      <!-- SVG vs IMAGE -->
+      <div class="big-grid col2" style="margin-bottom:9px;">
+        <button class="bigbtn on-yellow" id="modeSVG" onclick="setMode('svg')">
+          <span class="ico">🎨</span>SVG ANIME
+        </button>
+        <button class="bigbtn" id="modeIMG" onclick="setMode('image')">
+          <span class="ico">🖼</span>IMAGEM IA
+        </button>
+      </div>
+
+      <!-- SVG PROVIDERS -->
+      <div id="svgProv">
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:2px;margin-bottom:5px;">IA PARA SVG:</div>
+        <div class="big-grid col3">
+          <button class="bigbtn on-yellow" id="provClaude" onclick="setProv('claude')">
+            <span class="ico">🟣</span>CLAUDE
+          </button>
+          <button class="bigbtn" id="provGemini" onclick="setProv('gemini')">
+            <span class="ico">🔵</span>GEMINI
+          </button>
+          <button class="bigbtn" id="provGroq" onclick="setProv('groq')">
+            <span class="ico">🟡</span>GROQ
+          </button>
+        </div>
+        <div class="model-row" id="geminiMR">
+          <button class="mpb on" id="gmFlash" onclick="setGM('gemini-2.0-flash')">⚡ Flash</button>
+          <button class="mpb" id="gmPro" onclick="setGM('gemini-2.5-pro-preview-05-06')">💎 Pro</button>
+        </div>
+        <div class="model-row" id="groqMR">
+          <button class="mpb on" id="gqFast" onclick="setGQ('meta-llama/llama-4-scout-17b-16e-instruct')">⚡ Llama4</button>
+          <button class="mpb" id="gqDeep" onclick="setGQ('deepseek-r1-distill-llama-70b')">🧠 Deep</button>
+        </div>
+        <div class="keybox" id="svgKeyBox">
+          <div class="keybox-lbl" id="keyLbl">🔑 Anthropic API Key</div>
+          <div class="keybox-row">
+            <input type="password" id="keyInput" placeholder="sk-ant-api03-..." oninput="saveKey(this)" autocomplete="off">
+            <button onclick="toggleKV('keyInput')">👁</button>
+          </div>
+          <div class="keybox-hint" id="keyHint">
+            Cole sua chave · <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMAGE PROVIDERS -->
+      <div id="imgProv" style="display:none;">
+        <div style="background:#a855f718;border:1px solid #a855f730;border-radius:6px;padding:5px 8px;font-size:.6rem;color:var(--purple);font-weight:700;margin-bottom:7px;text-align:center;">
+          🖼 GERAÇÃO DE IMAGEM REAL
+        </div>
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:2px;margin-bottom:5px;">SERVIÇO:</div>
+        <div class="big-grid col3">
+          <button class="bigbtn on-purple" id="imgProvT" onclick="setImgProv('together')">
+            <span class="ico">⚡</span>TOGETHER
+          </button>
+          <button class="bigbtn" id="imgProvF" onclick="setImgProv('fal')">
+            <span class="ico">🌟</span>FAL.AI
+          </button>
+          <button class="bigbtn" id="imgProvH" onclick="setImgProv('hf')">
+            <span class="ico">🤗</span>HF
+          </button>
+        </div>
+        <div class="model-row vis" id="togetherMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'black-forest-labs/FLUX.1-schnell-Free')">FLUX Free</button>
+          <button class="mpb" onclick="setImgM(this,'black-forest-labs/FLUX.1-schnell')">FLUX Pro</button>
+          <button class="mpb" onclick="setImgM(this,'Kvikontent/flux-anime')">Flux Anime</button>
+          <button class="mpb" onclick="setImgM(this,'Lykon/dreamshaper-xl-turbo')">Dreamshaper</button>
+        </div>
+        <div class="model-row" id="falMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'fal-ai/fast-anime-diffusion')">Fast Anime</button>
+          <button class="mpb" onclick="setImgM(this,'fal-ai/stable-diffusion-xl')">SDXL</button>
+        </div>
+        <div class="model-row" id="hfMR" style="flex-wrap:wrap;gap:3px;margin-bottom:5px;">
+          <button class="mpb on" onclick="setImgM(this,'Ojimi/anime-pastel-dream')">Pastel</button>
+          <button class="mpb" onclick="setImgM(this,'dreamlike-art/dreamlike-anime-1.0')">Dreamlike</button>
+        </div>
+        <div class="keybox">
+          <div class="keybox-lbl" id="imgKeyLbl">🔑 Together API Key</div>
+          <div class="keybox-row">
+            <input type="password" id="imgKeyInput" placeholder="together_..." oninput="saveImgKey(this)" autocomplete="off">
+            <button onclick="toggleKV('imgKeyInput')">👁</button>
+          </div>
+          <div class="keybox-hint">Grátis em <a href="https://api.together.xyz" target="_blank" style="color:var(--purple);">api.together.xyz</a></div>
+        </div>
+        <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin:6px 0 3px;">📐 RESOLUÇÃO:</div>
+        <div class="ar-row">
+          <button class="arbtn on" onclick="setAR(this,'768x512')">16:9</button>
+          <button class="arbtn" onclick="setAR(this,'512x512')">1:1</button>
+          <button class="arbtn" onclick="setAR(this,'512x768')">9:16</button>
+          <button class="arbtn" onclick="setAR(this,'1024x576')">HD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE -->
+    <div class="sec">
+      <div class="stitle"><em>📝</em> CENA — DESCREVA COM DETALHES</div>
+      <textarea class="sinput" id="sceneInput" placeholder="Ex: guerreiro jovem, cabelo branco longo, olhos amarelos felinos, kimono preto com detalhes dourados, katana brilhante, enfrenta dragão negro, cidade destruída, relâmpagos roxos..."></textarea>
+
+      <div style="font-size:.5rem;color:var(--accent2);font-weight:700;letter-spacing:2px;margin:7px 0 5px;text-transform:uppercase;">👤 Detalhes do Personagem</div>
+      <div class="cfield"><span class="cfield-lbl">Gênero</span>
+        <div style="display:flex;gap:4px;flex:1;">
+          <button class="mpb on" id="genderM" onclick="setGender('male',this)" style="flex:1;padding:4px 3px;font-size:.6rem;">♂ Homem</button>
+          <button class="mpb" id="genderF" onclick="setGender('female',this)" style="flex:1;padding:4px 3px;font-size:.6rem;">♀ Mulher</button>
+          <button class="mpb" id="genderN" onclick="setGender('neutral',this)" style="flex:1;padding:4px 3px;font-size:.6rem;">⚬ Neutro</button>
+        </div>
+      </div>
+      <div class="cfield"><span class="cfield-lbl">Cabelo</span><input id="charHair" placeholder="branco longo com mechas" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Olhos</span><input id="charEyes" placeholder="amarelos felinos brilhantes" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Roupa</span><input id="charClothes" placeholder="kimono preto detalhe dourado" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Corpo</span><input id="charBody" placeholder="atlético 1.80m musculoso" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Arma</span><input id="charWeapon" placeholder="katana brilhante com runas" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Especial</span><input id="charSpecial" placeholder="aura de energia azul" type="text"></div>
+
+      <div style="font-size:.5rem;color:var(--accent2);font-weight:700;letter-spacing:2px;margin:7px 0 5px;text-transform:uppercase;">🌆 Ambiente</div>
+      <div class="cfield"><span class="cfield-lbl">Cenário</span><input id="envScene" placeholder="cidade japonesa medieval" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Clima</span><input id="envWeather" placeholder="tempestade relâmpagos roxos" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Hora</span><input id="envTime" placeholder="noite, entardecer" type="text"></div>
+      <div class="cfield"><span class="cfield-lbl">Mood</span><input id="envMood" placeholder="épico tenso melancólico" type="text"></div>
+
+      <label class="refup" id="refLabel" for="refInput">
+        <img class="refprev" id="refPrev" src="" alt="">
+        <div><div class="reftxt" id="refTxt">📎 Imagem de referência (opcional)</div></div>
+        <input type="file" id="refInput" accept="image/*" style="display:none" onchange="loadRef(this)">
+      </label>
+      <button id="refClearBtn" onclick="clearRef()" style="display:none;width:100%;padding:3px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:.56rem;cursor:pointer;margin-bottom:5px;">✕ Remover referência</button>
+
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">⏱ DURAÇÃO:</div>
+      <div class="dur-row">
+        <button class="durbtn" onclick="setDur(this,15)">15s</button>
+        <button class="durbtn on" onclick="setDur(this,30)">30s</button>
+        <button class="durbtn" onclick="setDur(this,50)">50s ⭐</button>
+        <button class="durbtn" onclick="setDur(this,90)">90s</button>
+      </div>
+      <div id="durInfo" style="font-size:.54rem;color:var(--muted);text-align:center;margin-top:2px;"></div>
+    </div>
+
+    <!-- STYLE -->
+    <div class="sec">
+      <div class="stitle"><em>🎨</em> ESTILO</div>
+      <div class="tags">
+        <span class="tag on" data-sk="anime_film" onclick="setSt(this,'anime_film')">🎌 Anime HD</span>
+        <span class="tag" data-sk="shonen" onclick="setSt(this,'shonen')">⚡ Shōnen</span>
+        <span class="tag" data-sk="seinen" onclick="setSt(this,'seinen')">🌑 Seinen</span>
+        <span class="tag" data-sk="ghibli" onclick="setSt(this,'ghibli')">🍃 Ghibli</span>
+        <span class="tag" data-sk="cyberpunk" onclick="setSt(this,'cyberpunk')">🔮 Cyber</span>
+        <span class="tag" data-sk="dark_fantasy" onclick="setSt(this,'dark_fantasy')">⚔ Dark</span>
+      </div>
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">CÂMERA:</div>
+      <div class="tags">
+        <span class="tag on" data-ck="dynamic" onclick="setCam(this,'dynamic')">📹 Dinâmica</span>
+        <span class="tag" data-ck="fixed" onclick="setCam(this,'fixed')">🎯 Fixa</span>
+        <span class="tag" data-ck="zoom" onclick="setCam(this,'zoom')">🔭 Zoom</span>
+        <span class="tag" data-ck="orbit" onclick="setCam(this,'orbit')">🌀 Órbita</span>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="sec">
+      <button class="genbtn" id="genBtn" onclick="startGen()">
+        <span class="spin" id="spinEl"></span>🎬 GERAR ANIME
+      </button>
+      <div class="pbar-wrap">
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+        <div class="ptxt" id="ptxt"></div>
+        <div class="binfo" id="binfo"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sec">
+      <div class="stitle"><em>📊</em> STATS</div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" style="color:var(--accent)" id="stFrames">0</div><div class="stat-lbl">FRAMES</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:var(--blue)" id="stDur">0s</div><div class="stat-lbl">DURAÇÃO</div></div>
+        <div class="stat-box"><div class="stat-val" style="color:var(--purple)" id="stMode">SVG</div><div class="stat-lbl">MODO</div></div>
+      </div>
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:2px;">INTENSIDADE DA CENA</div>
+      <canvas id="moodChart"></canvas>
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="sec">
+      <div class="stitle"><em>⚙️</em> OPÇÕES</div>
+      <div class="setting"><span>🔊 Voz nas legendas</span><div class="tog on" id="voiceTog" onclick="this.classList.toggle('on');voiceOn=this.classList.contains('on')"></div></div>
+      <div class="setting"><span>👻 Onion skin</span><div class="tog" id="onionTog" onclick="toggleOnion(this)"></div></div>
+      <div class="setting"><span>🔁 Loop</span><div class="tog on" id="loopTog" onclick="this.classList.toggle('on');loopOn=this.classList.contains('on')"></div></div>
+
+      <!-- VOICE TYPE -->
+      <div style="font-size:.5rem;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin:8px 0 4px;text-transform:uppercase;">🎙 TIPO DE VOZ:</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:4px;">
+        <button class="vtbtn mpb on" data-vt="auto" onclick="setVoiceType('auto')" style="padding:4px 2px;font-size:.55rem;">🤖 Auto</button>
+        <button class="vtbtn mpb" data-vt="male" onclick="setVoiceType('male')" style="padding:4px 2px;font-size:.55rem;">♂ Homem</button>
+        <button class="vtbtn mpb" data-vt="female" onclick="setVoiceType('female')" style="padding:4px 2px;font-size:.55rem;">♀ Mulher</button>
+        <button class="vtbtn mpb" data-vt="child" onclick="setVoiceType('child')" style="padding:4px 2px;font-size:.55rem;">👦 Criança</button>
+        <button class="vtbtn mpb" data-vt="robot" onclick="setVoiceType('robot')" style="padding:4px 2px;font-size:.55rem;">🤖 Robô</button>
+        <button class="vtbtn mpb" data-vt="narrator" onclick="setVoiceType('narrator')" style="padding:4px 2px;font-size:.55rem;">📖 Narrador</button>
+      </div>
+
+      <!-- CLEAR CANVAS -->
+      <button onclick="clearCanvas()" style="width:100%;margin-top:6px;padding:7px;background:transparent;border:1px solid #f87171;border-radius:7px;color:#f87171;font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:2px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='#f8717118'" onmouseout="this.style.background='transparent'">🗑 LIMPAR CENA ATUAL</button>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="sec">
+      <div class="stitle"><em>💾</em> EXPORTAR / PROJETOS</div>
+      <!-- saved projects list -->
+      <div id="projectsList" style="margin-bottom:6px;max-height:90px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
+      <div class="expgrid">
+        <button class="ebtn" onclick="expPNGs()">🖼 PNGs</button>
+        <button class="ebtn" onclick="savePrjNamed()">💾 Salvar Projeto</button>
+        <button class="ebtn" onclick="loadPrj()">📂 Abrir</button>
+        <button class="ebtn" onclick="enterVR()">🥽 VR Mode</button>
+      </div>
+      <input type="file" id="prjInput" accept=".json" style="display:none" onchange="loadPrjFile(this)">
+    </div>
+
+  </div><!-- /rpanel -->
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     VR OVERLAY
+═══════════════════════════════════════════ -->
+<div id="vrOverlay">
+  <div id="vrHUD">
+    <div id="vrStatus">● VR ATIVO</div>
+    <div id="vrFPS">60 FPS · GYRO ON</div>
+  </div>
+
+  <div id="vrScreen">
+    <!-- LEFT EYE -->
+    <div class="vr-eye" id="vrLeft">
+      <div class="vr-canvas-wrap" id="vrWrapL">
+        <canvas id="vrCanvasL"></canvas>
+      </div>
+      <div class="vr-reticle">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="10" fill="none" stroke="white" stroke-width="1" opacity=".5"/>
+          <circle cx="14" cy="14" r="2" fill="white" opacity=".8"/>
+          <line x1="14" y1="2" x2="14" y2="8" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="14" y1="20" x2="14" y2="26" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="2" y1="14" x2="8" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="20" y1="14" x2="26" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+    <!-- RIGHT EYE -->
+    <div class="vr-eye" id="vrRight">
+      <div class="vr-canvas-wrap" id="vrWrapR">
+        <canvas id="vrCanvasR"></canvas>
+      </div>
+      <div class="vr-reticle">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="10" fill="none" stroke="white" stroke-width="1" opacity=".5"/>
+          <circle cx="14" cy="14" r="2" fill="white" opacity=".8"/>
+          <line x1="14" y1="2" x2="14" y2="8" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="14" y1="20" x2="14" y2="26" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="2" y1="14" x2="8" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+          <line x1="20" y1="14" x2="26" y2="14" stroke="white" stroke-width="1" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+
+    <div id="vrCenter"></div>
+    <canvas id="vrHandCanvas"></canvas>
+
+    <div id="gestureHint">✋ ABRA A MÃO PARA PLAY</div>
+  </div>
+
+  <div id="vrControls">
+    <button class="vr-cbtn on" id="vrGyroBtn" onclick="toggleVRGyro()">📱 GIROSCÓPIO</button>
+    <button class="vr-cbtn" id="vrHandBtn" onclick="toggleVRHand()">✋ MÃOS</button>
+    <button class="vr-cbtn" id="vrPlayBtn" onclick="toggleVRPlay()">▶ PLAY</button>
+    <button class="vr-cbtn exit" onclick="exitVR()">✕ SAIR</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CORE STATE
+// ═══════════════════════════════════════════
+const CW=540,CH=380;
+let frames=[],cur=0,fps=0.1;
+let playing=false,playIv=null;
+let loopOn=true,voiceOn=true,onionOn=false,cinemaOn=false;
+let provider='claude',gModel='gemini-2.0-flash',gqModel='meta-llama/llama-4-scout-17b-16e-instruct';
+let refImgData=null,filmDur=30,aiSt='anime_film',aiCam='dynamic';
+let frameDialogues=[],moodScores=[];
+let genMode='svg',imgProvider='together',imgModel='black-forest-labs/FLUX.1-schnell-Free',imgAR='768x512';
+let charGender='male'; // 'male' | 'female' | 'neutral'
+let voiceType='auto'; // auto|male|female|child|robot|narrator
+let projectCount=0; // auto-increment project saves
+
+// ── GENDER selector ──
+function setGender(g,el){
+  charGender=g;
+  document.querySelectorAll('#genderM,#genderF,#genderN').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ── VOICE TYPE selector ──
+function setVoiceType(v){
+  voiceType=v;
+  document.querySelectorAll('.vtbtn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.vtbtn[data-vt="'+v+'"]')?.classList.add('on');
+}
+
+const cv=document.getElementById('mainCanvas');
+const ctx=cv.getContext('2d');
+const oc=document.getElementById('onionCanvas');
+const octx=oc.getContext('2d');
+cv.width=CW;cv.height=CH;oc.width=CW;oc.height=CH;
+
+// ═══════════════════════════════════════════
+// INIT & RESIZE
+// ═══════════════════════════════════════════
+function resizeCanvas(){
+  const s=document.getElementById('vstage');
+  const sw=s.clientWidth,sh=s.clientHeight;
+  const sc=Math.min(sw/CW,sh/CH,1);
+  const dw=Math.round(CW*sc),dh=Math.round(CH*sc);
+  cv.style.cssText=`display:block;width:${dw}px;height:${dh}px;`;
+  oc.style.cssText=`position:absolute;width:${dw}px;height:${dh}px;left:${Math.round((sw-dw)/2)}px;top:${Math.round((sh-dh)/2)}px;pointer-events:none;opacity:${onionOn?.18:0};`;
+}
+window.addEventListener('resize',resizeCanvas);
+
+function blank(){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  const c=t.getContext('2d');
+  const g=c.createLinearGradient(0,0,0,CH);g.addColorStop(0,'#0a0a1e');g.addColorStop(1,'#1a0a2e');
+  c.fillStyle=g;c.fillRect(0,0,CW,CH);
+  c.fillStyle='#e8c840';c.font='bold 14px Rajdhani,sans-serif';c.textAlign='center';
+  c.fillText('✦ ANIMESTUDIO PRO ✦',CW/2,CH/2-12);
+  c.fillStyle='#4a4a68';c.font='11px Rajdhani,sans-serif';
+  c.fillText('Descreva sua cena e clique GERAR',CW/2,CH/2+10);
+  return t.toDataURL();
+}
+
+function init(){
+  frames=[blank()];cur=0;frameDialogues=[''];
+  loadF(0);renderStrip();updHUD();
+  setTimeout(resizeCanvas,60);updDurInfo();updStats();
+  setTimeout(renderProjectsList,200);
+}
+
+function loadF(i){
+  const img=new Image();
+  img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0,CW,CH);drawOnion();};
+  img.onerror=()=>{ctx.fillStyle='#1a0a2e';ctx.fillRect(0,0,CW,CH);};
+  img.src=frames[i];
+}
+function drawOnion(){
+  octx.clearRect(0,0,CW,CH);
+  if(!onionOn||cur===0)return;
+  const img=new Image();img.onload=()=>octx.drawImage(img,0,0);img.src=frames[cur-1];
+}
+function toggleOnion(el){el.classList.toggle('on');onionOn=el.classList.contains('on');resizeCanvas();drawOnion();}
+
+function renderStrip(){
+  const s=document.getElementById('fstrip');s.innerHTML='';
+  frames.forEach((f,i)=>{
+    const d=document.createElement('div');d.className='fth'+(i===cur?' on':'');
+    d.onclick=()=>{if(!playing){cur=i;loadF(i);renderStrip();updHUD();}};
+    const img=document.createElement('img');img.src=f;
+    const n=document.createElement('span');n.className='fn';n.textContent=i+1;
+    d.append(img,n);s.appendChild(d);
+  });
+  const a=s.querySelectorAll('.fth')[cur];
+  if(a)a.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
+}
+function updHUD(){
+  document.getElementById('hudFrame').textContent='FRAME '+(cur+1)+'/'+frames.length;
+}
+function updStats(){
+  document.getElementById('stFrames').textContent=frames.length||0;
+  document.getElementById('stDur').textContent=Math.round((frames.length||0)/fps)+'s';
+  document.getElementById('stMode').textContent=genMode.toUpperCase();
+  drawMoodChart();
+}
+
+// ═══════════════════════════════════════════
+// MOOD CHART
+// ═══════════════════════════════════════════
+function drawMoodChart(){
+  const canvas=document.getElementById('moodChart');
+  canvas.width=canvas.offsetWidth||280;canvas.height=40;
+  const c=canvas.getContext('2d');
+  c.fillStyle='#0a0a14';c.fillRect(0,0,canvas.width,canvas.height);
+  if(moodScores.length<2){
+    c.fillStyle='#2a2a3e';c.font='9px Rajdhani,sans-serif';c.textAlign='center';
+    c.fillText('Gere um anime para ver a timeline',canvas.width/2,20);return;
+  }
+  [.25,.5,.75].forEach(y=>{c.strokeStyle='#1a1a2e';c.lineWidth=1;c.beginPath();c.moveTo(0,y*canvas.height);c.lineTo(canvas.width,y*canvas.height);c.stroke();});
+  c.beginPath();
+  const grd=c.createLinearGradient(0,0,canvas.width,0);
+  grd.addColorStop(0,'#4fc3f7');grd.addColorStop(.5,'#e8c840');grd.addColorStop(1,'#ff6b35');
+  c.strokeStyle=grd;c.lineWidth=2;
+  moodScores.forEach((v,i)=>{
+    const x=(i/(moodScores.length-1))*canvas.width;
+    const y=canvas.height-(v*canvas.height*.8)-canvas.height*.1;
+    i===0?c.moveTo(x,y):c.lineTo(x,y);
+  });
+  c.stroke();
+  if(frames.length>1){
+    const mx=(cur/(frames.length-1))*canvas.width;
+    c.strokeStyle='#ffffff55';c.lineWidth=1;c.setLineDash([2,2]);c.beginPath();c.moveTo(mx,0);c.lineTo(mx,canvas.height);c.stroke();c.setLineDash([]);
+  }
+}
+
+// ═══════════════════════════════════════════
+// MODE / PROVIDER SWITCHING
+// ═══════════════════════════════════════════
+function activateBtn(id,cls){
+  const el=document.getElementById(id);if(!el)return;
+  el.className=el.className.replace(/on-\w+/,'').trim()+' '+cls;
+}
+function deactivateBtn(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.className=el.className.replace(/on-\w+/,'').trim();
+}
+
+function setMode(m){
+  genMode=m;
+  if(m==='svg'){activateBtn('modeSVG','on-yellow');deactivateBtn('modeIMG');}
+  else{activateBtn('modeIMG','on-purple');deactivateBtn('modeSVG');}
+  document.getElementById('svgProv').style.display=m==='svg'?'block':'none';
+  document.getElementById('imgProv').style.display=m==='image'?'block':'none';
+  document.getElementById('badgeSVG').style.display=m==='svg'?'inline':'none';
+  document.getElementById('badgeIMG').style.display=m==='image'?'inline':'none';
+  const gb=document.getElementById('genBtn');
+  if(gb){
+    gb.className=gb.className.replace('img-mode','').trim();
+    if(m==='image')gb.classList.add('img-mode');
+    document.getElementById('spinEl').style.display='none';
+    gb.innerHTML=(m==='image'
+      ?'<span class="spin" id="spinEl"></span>🖼 GERAR IMAGEM IA'
+      :'<span class="spin" id="spinEl"></span>🎬 GERAR ANIME SVG');
+  }
+  document.getElementById('hudMode').textContent=m==='svg'?'SVG MODE':'IMAGE MODE';
+  updDurInfo();updStats();
+}
+
+function setProv(p){
+  provider=p;
+  ['Claude','Gemini','Groq'].forEach(n=>{
+    const id='prov'+n;const el=document.getElementById(id);if(!el)return;
+    el.className=el.className.replace(/on-\w+/,'').trim();
+  });
+  activateBtn('prov'+p.charAt(0).toUpperCase()+p.slice(1),'on-yellow');
+  document.getElementById('geminiMR').classList.toggle('vis',p==='gemini');
+  document.getElementById('groqMR').classList.toggle('vis',p==='groq');
+  const lbl=document.getElementById('keyLbl');
+  const inp=document.getElementById('keyInput');
+  const hint=document.getElementById('keyHint');
+  if(p==='claude'){
+    if(lbl)lbl.textContent='🔑 Anthropic API Key';
+    if(inp)inp.placeholder='sk-ant-api03-...';
+    if(hint)hint.innerHTML='<a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a>';
+  }else if(p==='gemini'){
+    if(lbl)lbl.textContent='🔑 Google Gemini Key';
+    if(inp)inp.placeholder='AIzaSy...';
+    if(hint)hint.innerHTML='<a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent);">aistudio.google.com</a>';
+  }else{
+    if(lbl)lbl.textContent='🔑 Groq API Key';
+    if(inp)inp.placeholder='gsk_...';
+    if(hint)hint.innerHTML='<a href="https://console.groq.com" target="_blank" style="color:var(--accent);">console.groq.com</a>';
+  }
+  loadKey();
+}
+
+function setGM(m){gModel=m;document.getElementById('gmFlash').classList.toggle('on',m.includes('flash'));document.getElementById('gmPro').classList.toggle('on',m.includes('pro'));}
+function setGQ(m){gqModel=m;document.getElementById('gqFast').classList.toggle('on',m.includes('scout'));document.getElementById('gqDeep').classList.toggle('on',m.includes('deepseek'));}
+
+function setImgProv(p){
+  imgProvider=p;
+  ['T','F','H'].forEach(n=>deactivateBtn('imgProv'+n));
+  const map={together:'T',fal:'F',hf:'H'};
+  activateBtn('imgProv'+map[p],'on-purple');
+  document.getElementById('togetherMR').classList.toggle('vis',p==='together');
+  document.getElementById('falMR').classList.toggle('vis',p==='fal');
+  document.getElementById('hfMR').classList.toggle('vis',p==='hf');
+  const lbl=document.getElementById('imgKeyLbl');
+  const inp=document.getElementById('imgKeyInput');
+  if(p==='together'){if(lbl)lbl.textContent='🔑 Together API Key';if(inp)inp.placeholder='together_...';}
+  else if(p==='fal'){if(lbl)lbl.textContent='🔑 fal.ai API Key';if(inp)inp.placeholder='fal_...';}
+  else{if(lbl)lbl.textContent='🔑 HuggingFace Token';if(inp)inp.placeholder='hf_...';}
+}
+
+function setImgM(el,m){
+  imgModel=m;
+  el.closest('.model-row').querySelectorAll('.mpb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+function setAR(el,ar){imgAR=ar;document.querySelectorAll('.arbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setSt(el,s){aiSt=s;document.querySelectorAll('.tag[data-sk]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setCam(el,c){aiCam=c;document.querySelectorAll('.tag[data-ck]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// KEY MANAGEMENT
+function isKeyOK(p,v){if(p==='claude')return v.startsWith('sk-ant-');if(p==='gemini')return v.startsWith('AIza');if(p==='groq')return v.startsWith('gsk_');return v.length>8;}
+function saveKey(el){const v=el.value.trim();localStorage.setItem('as_'+provider,v);const box=el.closest('.keybox');if(box)box.style.borderColor=isKeyOK(provider,v)?'var(--green)':'var(--border)';}
+function saveImgKey(el){const v=el.value.trim();localStorage.setItem('asimg_'+imgProvider,v);const box=el.closest('.keybox');if(box)box.style.borderColor=v.length>8?'var(--green)':'var(--border)';}
+function toggleKV(id){const el=document.getElementById(id);if(el)el.type=el.type==='password'?'text':'password';}
+function loadKey(){
+  const k=localStorage.getItem('as_'+provider)||'';
+  const el=document.getElementById('keyInput');
+  if(el){el.value=k;const box=el.closest('.keybox');if(box)box.style.borderColor=isKeyOK(provider,k)?'var(--green)':'var(--border)';}
+}
+
+// DURATION
+function setDur(el,d){filmDur=d;document.querySelectorAll('.durbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');updDurInfo();}
+function updDurInfo(){
+  const n=Math.ceil(filmDur/4);
+  const cost=genMode==='image'?'~$'+((n*0.012).toFixed(2)):'~'+Math.round(n*18)+'s';
+  document.getElementById('durInfo').textContent=`${n} cenas · ${n} chamadas · ${cost}`;
+}
+
+// ═══════════════════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════════════════
+function speak(txt){
+  if(!voiceOn||!txt)return;
+  const sy=window.speechSynthesis;if(!sy)return;if(sy.speaking)sy.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang='pt-BR';
+  const vs=sy.getVoices();
+  const ptVoices=vs.filter(x=>x.lang.startsWith('pt'));
+  const allVoices=vs;
+
+  const vt=voiceType==='auto'?(charGender==='female'?'female':charGender==='male'?'male':'male'):voiceType;
+
+  if(vt==='female'){
+    u.rate=0.92;u.pitch=1.4;
+    const fv=ptVoices.find(x=>/female|feminina|woman|girl/i.test(x.name))||ptVoices[0]||allVoices[0];
+    if(fv)u.voice=fv;
+  } else if(vt==='child'){
+    u.rate=1.05;u.pitch=1.8;
+    const cv=ptVoices.find(x=>/female|feminina/i.test(x.name))||ptVoices[0]||allVoices[0];
+    if(cv)u.voice=cv;
+  } else if(vt==='robot'){
+    u.rate=0.70;u.pitch=0.4;
+    const rv=allVoices.find(x=>/english/i.test(x.lang))||allVoices[0];
+    if(rv)u.voice=rv;
+    u.text=txt; // robot: speak in monotone
+  } else if(vt==='narrator'){
+    u.rate=0.78;u.pitch=0.75;
+    const nv=ptVoices.find(x=>/male|masculin/i.test(x.name))||ptVoices[ptVoices.length-1]||allVoices[0];
+    if(nv)u.voice=nv;
+  } else {
+    // male (default)
+    u.rate=0.88;u.pitch=0.88;
+    const mv=ptVoices.find(x=>/male|masculin/i.test(x.name))||ptVoices[ptVoices.length>1?1:0]||allVoices[0];
+    if(mv)u.voice=mv;
+  }
+  sy.speak(u);
+}
+function showSub(txt){
+  const o=document.getElementById('subOverlay'),t=document.getElementById('subText');
+  if(o&&t){if(txt){t.textContent=txt;o.style.opacity='1';}else{o.style.opacity='0';}}
+}
+function togglePlay(){
+  playing=!playing;
+  const btn=document.getElementById('playBtn');
+  if(playing){
+    btn.textContent='⏹ STOP';btn.classList.add('stop');
+    oc.style.opacity='0';let i=cur;
+    const step=()=>{
+      if(!frames[i])return;
+      const img=new Image();
+      img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0,CW,CH);};
+      img.src=frames[i];cur=i;updHUD();
+      document.querySelectorAll('.fth').forEach((t,ti)=>t.classList.toggle('on',ti===i));
+      const d=frameDialogues[i]||'';
+      showSub(d);
+      // Only speak when dialogue changes (new scene)
+      if(d && d!==frameDialogues[Math.max(0,i-1)])speak(d);
+      drawMoodChart();
+      // also update VR if active
+      if(vrActive)vrSyncFrame();
+      i=(i+1)%frames.length;
+      if(!loopOn&&i===0){setTimeout(()=>{if(playing)togglePlay();},1200);return;}
+    };
+    step();playIv=setInterval(step,1000/fps);
+  }else{
+    btn.textContent='▶ PLAY';btn.classList.remove('stop');
+    clearInterval(playIv);try{window.speechSynthesis?.cancel();}catch(e){}showSub('');
+    oc.style.opacity=onionOn?'.18':'0';loadF(cur);renderStrip();
+  }
+}
+function setFPS(v){fps=parseFloat(v);document.getElementById('fpsLbl').textContent=parseFloat(v).toFixed(1);updStats();if(playing){clearInterval(playIv);playing=false;togglePlay();}}
+function toggleCinema(){
+  cinemaOn=!cinemaOn;
+  document.getElementById('barTop').style.height=cinemaOn?'40px':'0';
+  document.getElementById('barBot').style.height=cinemaOn?'40px':'0';
+  document.getElementById('cinBtn').classList.toggle('on',cinemaOn);
+}
+
+// REF IMAGE
+function loadRef(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    refImgData=e.target.result;
+    document.getElementById('refLabel').classList.add('loaded');
+    document.getElementById('refPrev').src=refImgData;
+    document.getElementById('refTxt').textContent='✅ '+file.name.slice(0,22);
+    document.getElementById('refClearBtn').style.display='block';
+    toast('Referência carregada! 🎨');
+  };r.readAsDataURL(file);
+}
+function clearRef(){
+  refImgData=null;
+  document.getElementById('refLabel').classList.remove('loaded');
+  document.getElementById('refPrev').src='';
+  document.getElementById('refTxt').textContent='📎 Imagem de referência (opcional)';
+  document.getElementById('refClearBtn').style.display='none';
+  document.getElementById('refInput').value='';
+}
+
+// ═══════════════════════════════════════════
+// CHAR DETAILS HELPER
+// ═══════════════════════════════════════════
+function getCD(){
+  const ids=['charHair','charEyes','charClothes','charBody','charWeapon','charSpecial','envScene','envWeather','envTime','envMood'];
+  const lbls=['CABELO','OLHOS','ROUPA','CORPO','ARMA','ESPECIAL','CENÁRIO','CLIMA','HORÁRIO','MOOD'];
+  return ids.map((id,i)=>{const v=(document.getElementById(id)||{}).value||'';return v?lbls[i]+': '+v:'';}).filter(Boolean).join(' | ');
+}
+
+function getHairColor(){
+  const v=((document.getElementById('charHair')||{}).value||'').toLowerCase();
+  if(v.includes('branco')||v.includes('prata')||v.includes('prateado'))return 'White/silver: fills #F0F0F8 #E0E0F0, stroke #aaa, highlight #fff';
+  if(v.includes('preto'))return 'Black: fills #0a0a18 #1a1a2e, shine #4a4a88';
+  if(v.includes('loiro')||v.includes('amarelo'))return 'Blonde: fills #F5D060 #E8C040, highlight #FFF0A0';
+  if(v.includes('vermelho')||v.includes('ruivo')||v.includes('laranja'))return 'Red: fills #C02020 #A01010, highlight #FF4040';
+  if(v.includes('azul'))return 'Blue: fills #2233CC #1122AA, highlight #88aaFF';
+  if(v.includes('roxo'))return 'Purple: fills #6622AA #441188, highlight #aa66FF';
+  if(v.includes('rosa'))return 'Pink: fills #FF80A0 #E06080, highlight #FFB0C8';
+  if(v.includes('verde'))return 'Green: fills #228822 #114411, highlight #66FF66';
+  return 'Use hair color from description. Multiple strand paths with gradient';
+}
+
+// ═══════════════════════════════════════════
+// PROMPT BUILDER
+// ═══════════════════════════════════════════
+// CHARACTER RENDERER — draws everything on canvas2d
+// IA only provides scene JSON, JS does all drawing
+// ═══════════════════════════════════════════
+
+// ── Colour palette builder from user inputs ──
+function getCharColors(){
+  const hair=(document.getElementById('charHair')||{}).value||'';
+  const eyes=(document.getElementById('charEyes')||{}).value||'';
+  const clothes=(document.getElementById('charClothes')||{}).value||'';
+
+  const h=hair.toLowerCase();
+  let hairMain='#1a0a00',hairHi='#4a3a20';
+  if(h.includes('branco')||h.includes('prata')){hairMain='#d8d8f0';hairHi='#ffffff';}
+  else if(h.includes('preto')){hairMain='#0a0a18';hairHi='#3a3a88';}
+  else if(h.includes('loiro')||h.includes('amarelo')){hairMain='#d4a820';hairHi='#ffe060';}
+  else if(h.includes('vermelho')||h.includes('ruivo')){hairMain='#8a1010';hairHi='#dd3030';}
+  else if(h.includes('azul')){hairMain='#1030aa';hairHi='#4488ff';}
+  else if(h.includes('roxo')){hairMain='#5a1898';hairHi='#bb44ff';}
+  else if(h.includes('rosa')){hairMain='#cc4488';hairHi='#ff99cc';}
+  else if(h.includes('verde')){hairMain='#1a6620';hairHi='#44dd44';}
+
+  const e=eyes.toLowerCase();
+  let irisColor='#2244aa';
+  if(e.includes('amarelo')||e.includes('dourado')){irisColor='#ddaa00';}
+  else if(e.includes('vermelho')){irisColor='#cc2020';}
+  else if(e.includes('verde')){irisColor='#22aa44';}
+  else if(e.includes('roxo')){irisColor='#8833cc';}
+  else if(e.includes('cinza')){irisColor='#778899';}
+  else if(e.includes('preto')){irisColor='#222233';}
+  else if(e.includes('laranja')){irisColor='#dd7700';}
+  else if(e.includes('rosa')){irisColor='#ee44aa';}
+
+  const c=clothes.toLowerCase();
+  let clothMain='#1a1a2e',clothHi='#3a3a5e',clothShadow='#0a0a18';
+  if(c.includes('branco')){clothMain='#e8e8f8';clothHi='#ffffff';clothShadow='#c0c0d8';}
+  else if(c.includes('vermelho')){clothMain='#8a1818';clothHi='#cc3333';clothShadow='#4a0808';}
+  else if(c.includes('azul')){clothMain='#1a2888';clothHi='#4466cc';clothShadow='#0a1040';}
+  else if(c.includes('verde')){clothMain='#1a5520';clothHi='#339944';clothShadow='#0a2810';}
+  else if(c.includes('amarelo')){clothMain='#aa8800';clothHi='#ffdd00';clothShadow='#664400';}
+  else if(c.includes('roxo')){clothMain='#4a1880';clothHi='#9944cc';clothShadow='#200840';}
+  else if(c.includes('laranja')){clothMain='#aa4400';clothHi='#ff7700';clothShadow='#662200';}
+  else if(c.includes('rosa')){clothMain='#aa3366';clothHi='#ff66aa';clothShadow='#661133';}
+  else if(c.includes('cinza')){clothMain='#555566';clothHi='#9999aa';clothShadow='#222233';}
+  else if(c.includes('preto')){clothMain='#111118';clothHi='#333344';clothShadow='#000008';}
+
+  const clothAccent=(document.getElementById('charClothes')||{}).value||'';
+  let accentColor='#e8c840';
+  if(clothAccent.toLowerCase().includes('dourado')||clothAccent.toLowerCase().includes('ouro'))accentColor='#ffd700';
+  else if(clothAccent.toLowerCase().includes('prata'))accentColor='#c0c0c0';
+  else if(clothAccent.toLowerCase().includes('azul'))accentColor='#4488ff';
+  else if(clothAccent.toLowerCase().includes('vermelho'))accentColor='#ff4444';
+
+  return {hairMain,hairHi,irisColor,clothMain,clothHi,clothShadow,accentColor,
+          skin:'#fddbb4',skinShadow:'#d4956a',skinDark:'#b07040'};
+}
+
+// ── Limb angle convention: 0 = straight DOWN, negative = forward/left, positive = back/right ──
+// Legs pivot at hip, arms pivot at shoulder. sin/cos gives endpoint correctly.
+
+function walkAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:s*0.42,rThigh:-s*0.42,lShin:Math.max(0,-s)*0.5+0.05,rShin:Math.max(0,s)*0.5+0.05,lArm:-s*0.38,rArm:s*0.38,bodyBob:Math.abs(s)*5,lean:0.04};
+}
+function idleAngles(t){
+  const b=Math.sin(t*Math.PI*2)*0.02;
+  return{lThigh:0.04,rThigh:-0.04,lShin:0.08,rShin:0.08,lArm:0.12,rArm:-0.12,bodyBob:Math.abs(b)*60,lean:0};
+}
+function battleAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:0.30+s*0.08,rThigh:-0.20+s*0.06,lShin:0.35,rShin:0.25,lArm:-0.75+s*0.15,rArm:0.55+s*0.12,bodyBob:Math.abs(s)*3,lean:-0.06};
+}
+function runAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:s*0.70,rThigh:-s*0.70,lShin:Math.max(0,-s)*0.85+0.15,rShin:Math.max(0,s)*0.85+0.15,lArm:-s*0.65,rArm:s*0.65,bodyBob:Math.abs(s)*8,lean:0.10};
+}
+function jumpAngles(t){
+  const s=Math.sin(t*Math.PI);
+  return{lThigh:-0.40,rThigh:-0.40,lShin:0.60,rShin:0.60,lArm:-0.60,rArm:-0.60,bodyBob:-s*40,lean:0};
+}
+function danceAngles(t){
+  const s=Math.sin(t*Math.PI*2);const c=Math.cos(t*Math.PI*2);
+  return{lThigh:s*0.35,rThigh:c*0.35,lShin:Math.abs(s)*0.4,rShin:Math.abs(c)*0.4,lArm:-0.80+s*0.30,rArm:0.80+c*0.30,bodyBob:Math.abs(s)*6,lean:s*0.08};
+}
+function attackAngles(t){
+  const s=Math.sin(t*Math.PI*2);const phase=t%1;
+  return{lThigh:0.20,rThigh:-0.20,lShin:0.15,rShin:0.15,lArm:phase<0.5?-1.2:-0.3,rArm:phase<0.5?0.8+s*0.4:0.2,bodyBob:Math.abs(s)*2,lean:phase<0.5?-0.15:0};
+}
+function flyAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:-0.20,rThigh:0.20,lShin:0.10,rShin:0.10,lArm:-0.90+s*0.15,rArm:-0.90+s*0.15,bodyBob:s*15,lean:-0.05};
+}
+function sitAngles(t){
+  const b=Math.sin(t*Math.PI)*0.02;
+  return{lThigh:1.2,rThigh:1.2,lShin:-0.9,rShin:-0.9,lArm:0.3,rArm:-0.3,bodyBob:b*5+60,lean:0.05};
+}
+function crouchAngles(t){
+  const b=Math.sin(t*Math.PI*2)*0.01;
+  return{lThigh:0.75,rThigh:0.75,lShin:0.50,rShin:0.50,lArm:-0.4,rArm:0.4,bodyBob:b*10+50,lean:0.1};
+}
+function kneelAngles(t){
+  const b=Math.sin(t*Math.PI*2)*0.01;
+  return{lThigh:1.4,rThigh:0.3,lShin:-1.0,rShin:0.2,lArm:0.25,rArm:-0.25,bodyBob:b*3+70,lean:0.03};
+}
+function spinAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:s*0.50,rThigh:-s*0.50,lShin:Math.abs(s)*0.3,rShin:Math.abs(s)*0.3,lArm:-0.70,rArm:0.70,bodyBob:Math.abs(s)*4,lean:s*0.12};
+}
+function castAngles(t){
+  const s=Math.sin(t*Math.PI*2);
+  return{lThigh:0.05,rThigh:-0.05,lShin:0.06,rShin:0.06,lArm:-1.10+s*0.1,rArm:-1.10+s*0.1,bodyBob:s*3,lean:-0.05};
+}
+function dodgeAngles(t){
+  const s=Math.sin(t*Math.PI*4);
+  return{lThigh:s*0.60,rThigh:-s*0.60,lShin:Math.abs(s)*0.5,rShin:Math.abs(s)*0.5,lArm:s*0.5,rArm:-s*0.5,bodyBob:Math.abs(s)*6,lean:s*0.20};
+}
+function celebrateAngles(t){
+  const s=Math.sin(t*Math.PI*2);const c=Math.cos(t*Math.PI*2);
+  return{lThigh:s*0.25,rThigh:-s*0.25,lShin:Math.abs(s)*0.2,rShin:Math.abs(s)*0.2,lArm:-1.0+s*0.2,rArm:-1.0+c*0.2,bodyBob:Math.abs(s)*8,lean:0};
+}
+// ── draw a limb segment
+// angle=0 → straight DOWN. Uses sin/cos: endpoint = (x+sin(a)*len, y+cos(a)*len)
+function drawLimb(c,x,y,angle,len,wTop,wBot,fillCol,strokeCol,sw){
+  c.save();
+  c.translate(x,y);
+  c.rotate(angle);
+  c.beginPath();
+  c.moveTo(-wTop/2,0);
+  c.bezierCurveTo(-wTop/2,len*0.35,-wBot/2,len*0.65,-wBot/2,len);
+  c.lineTo(wBot/2,len);
+  c.bezierCurveTo(wBot/2,len*0.65,wTop/2,len*0.35,wTop/2,0);
+  c.closePath();
+  c.fillStyle=fillCol;c.fill();
+  c.strokeStyle=strokeCol;c.lineWidth=sw;c.lineJoin='round';c.stroke();
+  c.restore();
+  return{x:x+Math.sin(angle)*len, y:y+Math.cos(angle)*len, angle};
+}
+
+// ── draw foot / shoe ──
+function drawFoot(c,x,y,facing,col,sw){
+  // facing: 1=right, -1=left
+  c.save();
+  c.translate(x,y);
+  c.beginPath();
+  c.moveTo(0,0);
+  c.bezierCurveTo(facing*4,2,facing*18,6,facing*24,4);
+  c.bezierCurveTo(facing*26,2,facing*26,-2,facing*22,-4);
+  c.bezierCurveTo(facing*16,-6,facing*4,-4,0,-2);
+  c.closePath();
+  c.fillStyle='#111118';
+  c.fill();
+  c.strokeStyle=sw>1?'#000':'#111';
+  c.lineWidth=sw;
+  c.stroke();
+  // shoe highlight
+  c.beginPath();
+  c.moveTo(facing*2,-3);
+  c.bezierCurveTo(facing*8,-5,facing*16,-5,facing*20,-2);
+  c.strokeStyle='#ffffff';
+  c.lineWidth=1;
+  c.globalAlpha=0.25;
+  c.stroke();
+  c.globalAlpha=1;
+  c.restore();
+}
+
+// ── draw hand — angle aware, fingers extend in limb direction ──
+// endAngle is the cumulative limb angle so fingers point the right way
+function drawHand(c,x,y,col,sw,endAngle){
+  endAngle=endAngle||0;
+  c.save();
+  c.translate(x,y);
+  c.rotate(endAngle); // align fingers with limb direction
+  // palm oval — elongated downward (in limb direction)
+  c.beginPath();
+  c.ellipse(0,6,8,11,0,0,Math.PI*2);
+  c.fillStyle=col;c.fill();
+  c.strokeStyle='#1a0a00';c.lineWidth=sw;c.lineJoin='round';c.stroke();
+  // 4 fingers extending downward from palm bottom
+  const fpos=[-5.5,-1.8,1.8,5.5];
+  fpos.forEach(fx=>{
+    c.beginPath();
+    c.moveTo(fx,14);
+    c.bezierCurveTo(fx-1,18,fx+1,20,fx,22);
+    c.strokeStyle='#1a0a00';c.lineWidth=sw+0.5;c.lineCap='round';c.stroke();
+  });
+  // thumb — extends to the side
+  c.beginPath();
+  c.moveTo(-7,4);
+  c.bezierCurveTo(-12,2,-15,6,-14,10);
+  c.strokeStyle='#1a0a00';c.lineWidth=sw+0.5;c.lineCap='round';c.stroke();
+  // knuckle lines on palm
+  c.globalAlpha=0.35;
+  c.strokeStyle='#7a3a10';c.lineWidth=1;
+  fpos.forEach(fx=>{
+    c.beginPath();c.moveTo(fx,12);c.lineTo(fx,14);c.stroke();
+  });
+  c.globalAlpha=1;
+  c.restore();
+}
+
+// ── draw anime eye ──
+function drawEye(c,x,y,irisColor,flip){
+  c.save();
+  c.translate(x,y);
+  if(flip)c.scale(-1,1);
+  // white
+  c.beginPath();
+  c.ellipse(0,0,10,8,0,0,Math.PI*2);
+  c.fillStyle='#ffffff';c.fill();
+  c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.stroke();
+  // iris gradient
+  const ig=c.createRadialGradient(-2,-2,1,0,0,7);
+  ig.addColorStop(0,'#ffffff');
+  ig.addColorStop(0.25,irisColor);
+  ig.addColorStop(1,'#000000');
+  c.beginPath();
+  c.ellipse(0,0,7,7.5,-0.1,0,Math.PI*2);
+  c.fillStyle=ig;c.fill();
+  // pupil
+  c.beginPath();
+  c.ellipse(0,0.5,3.5,4.5,0,0,Math.PI*2);
+  c.fillStyle='#040408';c.fill();
+  // specular main
+  c.beginPath();
+  c.ellipse(-2.5,-2,2.5,2,-0.3,0,Math.PI*2);
+  c.fillStyle='#ffffff';c.fill();
+  // specular small
+  c.beginPath();
+  c.arc(2.5,2,1,0,Math.PI*2);
+  c.fillStyle='#ffffff';c.fill();
+  // upper eyelid
+  c.beginPath();
+  c.moveTo(-10,-2);
+  c.bezierCurveTo(-6,-9,6,-9,10,-2);
+  c.strokeStyle='#0a0a14';c.lineWidth=2.5;c.stroke();
+  // lashes
+  [[-8,-4],[-5,-8],[0,-9],[5,-8],[8,-4]].forEach(([lx,ly])=>{
+    c.beginPath();c.moveTo(lx,-1);c.lineTo(lx+ly*0.3,ly-2);
+    c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.lineCap='round';c.stroke();
+  });
+  c.restore();
+}
+
+// ── draw full anime head ──
+function drawHead(c,x,y,col,skinS,hairMain,hairHi,irisColor,emotion,scaleX){
+  scaleX=scaleX||1;
+  c.save();
+  c.translate(x,y);
+
+  // Ear
+  c.beginPath();
+  c.ellipse(-24*scaleX,8,5,9,0.2,0,Math.PI*2);
+  c.fillStyle=col;c.fill();c.strokeStyle='#1a0a00';c.lineWidth=1.5;c.stroke();
+
+  // Head shape — oval with tapered jaw
+  c.beginPath();
+  c.moveTo(0,-30);
+  c.bezierCurveTo(28*scaleX,-30,32*scaleX,-10,30*scaleX,8);
+  c.bezierCurveTo(28*scaleX,22,18*scaleX,32,0,36);
+  c.bezierCurveTo(-18*scaleX,32,-28*scaleX,22,-30*scaleX,8);
+  c.bezierCurveTo(-32*scaleX,-10,-28*scaleX,-30,0,-30);
+  c.fillStyle=col;c.fill();
+  c.strokeStyle='#1a0a00';c.lineWidth=2;c.stroke();
+
+  // Chin shadow
+  c.beginPath();
+  c.moveTo(-14,28);c.bezierCurveTo(-8,34,8,34,14,28);
+  c.strokeStyle=skinS;c.lineWidth=1;c.globalAlpha=0.5;c.stroke();
+  c.globalAlpha=1;
+
+  // HAIR — back layer
+  c.beginPath();
+  c.moveTo(-28*scaleX,2);
+  c.bezierCurveTo(-34*scaleX,-18,-20*scaleX,-44,0,-44);
+  c.bezierCurveTo(20*scaleX,-44,34*scaleX,-18,28*scaleX,2);
+  c.bezierCurveTo(34*scaleX,16,36*scaleX,36,30*scaleX,44);
+  c.lineTo(-30*scaleX,44);
+  c.bezierCurveTo(-36*scaleX,36,-34*scaleX,16,-28*scaleX,2);
+  c.fillStyle=hairMain;c.fill();
+  c.strokeStyle='#0a0a00';c.lineWidth=1.5;c.stroke();
+
+  // Hair top layer
+  c.beginPath();
+  c.moveTo(-26*scaleX,-8);
+  c.bezierCurveTo(-22*scaleX,-40,-10*scaleX,-48,0,-46);
+  c.bezierCurveTo(10*scaleX,-48,22*scaleX,-40,26*scaleX,-8);
+  c.bezierCurveTo(20*scaleX,-4,10*scaleX,0,0,2);
+  c.bezierCurveTo(-10*scaleX,0,-20*scaleX,-4,-26*scaleX,-8);
+  const hg=c.createLinearGradient(0,-46,0,2);
+  hg.addColorStop(0,hairHi);hg.addColorStop(0.5,hairMain);hg.addColorStop(1,hairMain);
+  c.fillStyle=hg;c.fill();
+  c.strokeStyle='#0a0a00';c.lineWidth=1.5;c.stroke();
+
+  // Hair side strands
+  c.beginPath();
+  c.moveTo(-26*scaleX,0);
+  c.bezierCurveTo(-34*scaleX,10,-36*scaleX,28,-32*scaleX,40);
+  c.bezierCurveTo(-28*scaleX,48,-24*scaleX,44,-22*scaleX,30);
+  c.bezierCurveTo(-20*scaleX,18,-20*scaleX,8,-18*scaleX,2);
+  c.fillStyle=hairMain;c.fill();
+  c.strokeStyle='#0a0a00';c.lineWidth=1;c.stroke();
+
+  // Hair highlight streak
+  c.beginPath();
+  c.moveTo(-8*scaleX,-42);c.bezierCurveTo(-4*scaleX,-38,4*scaleX,-36,10*scaleX,-30);
+  c.strokeStyle=hairHi;c.lineWidth=3;c.globalAlpha=0.6;c.lineCap='round';c.stroke();
+  c.globalAlpha=1;
+
+  // Flyaway strands
+  c.strokeStyle=hairMain;c.lineWidth=1.5;c.lineCap='round';
+  [[28*scaleX,-10,38*scaleX,-20],[22*scaleX,-28,30*scaleX,-40],[-30*scaleX,-14,-40*scaleX,-24]].forEach(([x1,y1,x2,y2])=>{
+    c.beginPath();c.moveTo(x1,y1);c.bezierCurveTo(x1+(x2-x1)*0.3,y1-6,x2-(x2-x1)*0.3,y2+4,x2,y2);c.stroke();
+  });
+
+  // Eyes
+  drawEye(c,-14,4,irisColor,false);
+  drawEye(c,14,4,irisColor,true);
+
+  // Eyebrows
+  const browY=emotion==='angry'?-12:-14;
+  c.lineWidth=3;c.lineCap='round';c.strokeStyle=hairMain;
+  // left brow
+  c.beginPath();
+  if(emotion==='angry'){c.moveTo(-22,browY+3);c.bezierCurveTo(-16,browY-2,-8,browY,-4,browY+1);}
+  else{c.moveTo(-22,browY);c.bezierCurveTo(-16,browY-4,-8,browY-3,-4,browY);}
+  c.stroke();
+  // right brow
+  c.beginPath();
+  if(emotion==='angry'){c.moveTo(4,browY+1);c.bezierCurveTo(8,browY,-16*0.5+16,browY-2,22,browY+3);}
+  else{c.moveTo(4,browY);c.bezierCurveTo(8,browY-3,16,browY-4,22,browY);}
+  c.stroke();
+
+  // Nose
+  c.beginPath();
+  c.moveTo(-4,16);c.bezierCurveTo(-2,20,2,20,4,16);
+  c.strokeStyle=skinS;c.lineWidth=1.5;c.globalAlpha=0.7;c.stroke();
+  c.globalAlpha=1;
+  // nostrils
+  c.fillStyle=skinS;c.globalAlpha=0.5;
+  c.beginPath();c.arc(-5,19,1.5,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(5,19,1.5,0,Math.PI*2);c.fill();
+  c.globalAlpha=1;
+
+  // Mouth
+  c.beginPath();
+  if(emotion==='angry'){
+    c.moveTo(-10,27);c.bezierCurveTo(-6,24,6,24,10,27);
+    c.strokeStyle='#7a1010';c.lineWidth=2;c.stroke();
+    // teeth flash
+    c.beginPath();c.moveTo(-7,27);c.lineTo(7,27);
+    c.strokeStyle='#ffffff';c.lineWidth=1.5;c.globalAlpha=0.8;c.stroke();c.globalAlpha=1;
+  } else if(emotion==='determined'){
+    c.moveTo(-8,26);c.bezierCurveTo(-3,28,3,28,8,26);
+    c.strokeStyle='#7a3020';c.lineWidth=2;c.stroke();
+  } else {
+    c.moveTo(-7,25);c.bezierCurveTo(-3,29,3,29,7,25);
+    c.strokeStyle='#7a3020';c.lineWidth=2;c.stroke();
+  }
+
+  c.restore();
+}
+
+// ── draw torso + clothes (gender-aware) ──
+function drawTorso(c,x,y,clothMain,clothHi,clothShadow,accentColor,lean,gender){
+  gender=gender||'male';
+  c.save();c.translate(x,y);c.rotate(lean||0);
+
+  if(gender==='female'){
+    // ── FEMALE BODY ──
+    // Hourglass figure: wider hips, narrower waist, defined bust
+    // Body base
+    c.beginPath();
+    c.moveTo(-20,-42);                             // left shoulder
+    c.bezierCurveTo(-28,-30,-18,0,-14,20);         // left side: curves inward at waist
+    c.bezierCurveTo(-16,32,-22,42,-18,52);         // hip flare left
+    c.lineTo(18,52);
+    c.bezierCurveTo(22,42,16,32,14,20);            // hip flare right
+    c.bezierCurveTo(18,0,28,-30,20,-42);           // right side
+    c.bezierCurveTo(12,-50,0,-52,-12,-50);         // shoulder top
+    c.closePath();
+    c.fillStyle='#fddbb4';c.fill();
+
+    // Clothing (dress/top)
+    c.beginPath();
+    c.moveTo(-20,-42);
+    c.bezierCurveTo(-26,-22,-16,2,-12,22);
+    c.lineTo(-20,52);c.lineTo(20,52);
+    c.bezierCurveTo(16,2,26,-22,20,-42);
+    c.bezierCurveTo(12,-48,0,-50,-12,-48);
+    c.closePath();
+    c.fillStyle=clothMain;c.fill();
+    c.strokeStyle='#0a0a14';c.lineWidth=2;c.stroke();
+
+    // Waist emphasis (belt/seam)
+    c.beginPath();
+    c.moveTo(-14,18);c.bezierCurveTo(-8,22,8,22,14,18);
+    c.strokeStyle=clothShadow;c.lineWidth=2;c.globalAlpha=0.8;c.stroke();
+    c.globalAlpha=1;
+
+    // Bust shape (2 subtle arcs)
+    c.beginPath();
+    c.arc(-9,-18,9,0.3,Math.PI-0.3);
+    c.strokeStyle=clothShadow;c.lineWidth=1.5;c.globalAlpha=0.55;c.stroke();
+    c.beginPath();
+    c.arc(9,-18,9,0.3,Math.PI-0.3);
+    c.stroke();
+    c.globalAlpha=1;
+
+    // Collar / neckline V
+    c.beginPath();
+    c.moveTo(-12,-44);c.lineTo(0,-36);c.lineTo(12,-44);
+    c.fillStyle=accentColor;c.globalAlpha=0.85;c.fill();
+    c.strokeStyle='#0a0a00';c.lineWidth=1;c.stroke();
+    c.globalAlpha=1;
+
+    // Clothing folds
+    c.strokeStyle=clothShadow;c.lineWidth=1.2;c.globalAlpha=0.45;
+    c.beginPath();c.moveTo(-10,-22);c.bezierCurveTo(-12,0,-14,18,-12,36);c.stroke();
+    c.beginPath();c.moveTo(10,-22);c.bezierCurveTo(12,0,14,18,12,36);c.stroke();
+    c.globalAlpha=1;
+
+    // Hip band / skirt line
+    c.beginPath();
+    c.rect(-20,30,40,8);
+    c.fillStyle=clothShadow;c.fill();c.strokeStyle='#0a0a00';c.lineWidth=1.5;c.stroke();
+    c.beginPath();c.rect(-5,32,10,4);c.fillStyle=accentColor;c.fill();c.stroke();
+
+  } else {
+    // ── MALE / NEUTRAL BODY ──
+    // Broader shoulders, tapered waist
+    c.beginPath();
+    c.moveTo(-26,-40);
+    c.bezierCurveTo(-30,-20,-28,0,-22,20);
+    c.bezierCurveTo(-18,36,-14,46,-10,50);
+    c.lineTo(10,50);
+    c.bezierCurveTo(14,46,18,36,22,20);
+    c.bezierCurveTo(28,0,30,-20,26,-40);
+    c.bezierCurveTo(16,-48,0,-50,-16,-48);
+    c.closePath();
+    c.fillStyle='#fddbb4';c.fill();
+
+    // Clothing
+    c.beginPath();
+    c.moveTo(-26,-40);
+    c.bezierCurveTo(-30,-10,-28,10,-22,28);
+    c.lineTo(-24,50);c.lineTo(24,50);
+    c.bezierCurveTo(28,10,30,-10,26,-40);
+    c.bezierCurveTo(14,-46,0,-48,-14,-46);
+    c.closePath();
+    c.fillStyle=clothMain;c.fill();
+    c.strokeStyle='#0a0a14';c.lineWidth=2;c.stroke();
+
+    // Shading folds
+    c.strokeStyle=clothShadow;c.lineWidth=1.2;c.globalAlpha=0.6;
+    c.beginPath();c.moveTo(-18,-20);c.bezierCurveTo(-20,0,-22,20,-20,36);c.stroke();
+    c.beginPath();c.moveTo(18,-20);c.bezierCurveTo(20,0,22,20,20,36);c.stroke();
+    c.beginPath();c.moveTo(-12,-30);c.bezierCurveTo(0,-34,12,-30,14,-22);c.stroke();
+    c.globalAlpha=1;
+
+    // Collar
+    c.beginPath();
+    c.moveTo(-14,-44);c.bezierCurveTo(-8,-48,8,-48,14,-44);
+    c.bezierCurveTo(8,-40,0,-38,0,-36);
+    c.bezierCurveTo(0,-38,-8,-40,-14,-44);
+    c.fillStyle=accentColor;c.fill();c.strokeStyle='#0a0a00';c.lineWidth=1;c.stroke();
+
+    // Belt
+    c.beginPath();c.rect(-24,28,48,10);
+    c.fillStyle=clothShadow;c.fill();c.strokeStyle='#0a0a00';c.lineWidth=1.5;c.stroke();
+    c.beginPath();c.rect(-5,30,10,6);c.fillStyle=accentColor;c.fill();c.stroke();
+  }
+
+  c.restore();
+}
+
+// ── MAIN FRAME RENDERER ──
+// sceneData: {bg, bgColor1, bgColor2, bgColor3, ground, groundColor,
+//             action:'walk'|'run'|'idle'|'battle'|'jump',
+//             effects:[], dialogue, scrollX, emotion}
+function renderAnimeFrame(c,sceneData,walkT,charCols){
+  const W=CW,H=CH;
+  c.clearRect(0,0,W,H);
+
+  // ── BACKGROUND ──
+  const bg1=sceneData.bgColor1||'#0a0838';
+  const bg2=sceneData.bgColor2||'#1a1060';
+  const bg3=sceneData.bgColor3||'#3a1830';
+  const gr=c.createLinearGradient(0,0,0,H);
+  gr.addColorStop(0,bg1);gr.addColorStop(0.55,bg2);gr.addColorStop(1,bg3);
+  c.fillStyle=gr;c.fillRect(0,0,W,H);
+
+  // Background elements (paralax: elements scroll with scene)
+  const sx=sceneData.scrollX||0;
+  if(sceneData.bgElements){
+    sceneData.bgElements.forEach(el=>{
+      drawBgElement(c,el,sx,W,H);
+    });
+  }
+
+  // Ground
+  const groundY=Math.round(H*0.80);
+  const gc1=sceneData.groundColor||'#1a1228';
+  const gc2=sceneData.groundColor2||'#2a1838';
+  const gg=c.createLinearGradient(0,groundY,0,H);
+  gg.addColorStop(0,gc1);gg.addColorStop(1,gc2);
+  c.fillStyle=gg;
+  c.beginPath();
+  c.moveTo(0,groundY);c.lineTo(W,groundY);c.lineTo(W,H);c.lineTo(0,H);c.closePath();
+  c.fill();
+  // Ground line
+  c.beginPath();c.moveTo(0,groundY);c.lineTo(W,groundY);
+  c.strokeStyle=sceneData.groundLineColor||'#3a2848';c.lineWidth=2;c.stroke();
+  // Ground texture lines
+  c.globalAlpha=0.2;c.lineWidth=1;
+  for(let i=0;i<6;i++){
+    const ty=groundY+20+i*18;
+    c.beginPath();c.moveTo(0,ty);c.lineTo(W,ty);c.stroke();
+  }
+  c.globalAlpha=1;
+
+  // Ground shadow under character
+  c.beginPath();
+  c.ellipse(W/2,groundY+4,44,7,0,0,Math.PI*2);
+  c.fillStyle='#000000';c.globalAlpha=0.35;c.fill();c.globalAlpha=1;
+
+  // ── WALK CYCLE ──
+  const action=sceneData.action||'walk';
+  let angles;
+  if(action==='run')angles=runAngles(walkT);
+  else if(action==='battle')angles=battleAngles(walkT);
+  else if(action==='idle')angles=idleAngles(walkT);
+  else if(action==='jump')angles=jumpAngles(walkT);
+  else if(action==='dance')angles=danceAngles(walkT);
+  else if(action==='attack')angles=attackAngles(walkT);
+  else if(action==='fly')angles=flyAngles(walkT);
+  else if(action==='sit')angles=sitAngles(walkT);
+  else if(action==='crouch')angles=crouchAngles(walkT);
+  else if(action==='kneel')angles=kneelAngles(walkT);
+  else if(action==='spin')angles=spinAngles(walkT);
+  else if(action==='cast')angles=castAngles(walkT);
+  else if(action==='dodge')angles=dodgeAngles(walkT);
+  else if(action==='celebrate')angles=celebrateAngles(walkT);
+  else angles=walkAngles(walkT);
+
+  const charX=W/2;
+  // torsoY: feet at groundY, legs total = thighLen(72)+shinLen(62)=134px, hip at top of legs
+  // torso center roughly 50px above hip pivot
+  const legTotal=134;
+  const torsoY=groundY - angles.bodyBob - legTotal - 10;
+
+  // ── LEGS ──
+  const thighLen=72,shinLen=62;
+  const legW1=22,legW2=18,shinW1=18,shinW2=12;
+  // Hips: at bottom of torso (torsoY is torso CENTER, torso height ~100px so bottom at +50)
+  const hipL={x:charX-16,y:torsoY+50};
+  const hipR={x:charX+16,y:torsoY+50};
+
+  // Draw back leg first then front leg for proper overlap
+  // angle=0 → straight down. Positive lThigh → leg swings back-right (visible behind body)
+
+  // RIGHT LEG (drawn first = behind)
+  const rThighEnd=drawLimb(c,hipR.x,hipR.y, angles.rThigh, thighLen,
+    legW1,legW2, charCols.clothShadow,'#0a0a14',2);
+  c.beginPath();c.arc(rThighEnd.x,rThighEnd.y,9,0,Math.PI*2);
+  c.fillStyle=charCols.clothShadow;c.fill();c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.stroke();
+  const rShinAngle=angles.rThigh+angles.rShin;
+  const rAnkle=drawLimb(c,rThighEnd.x,rThighEnd.y, rShinAngle, shinLen,
+    shinW1,shinW2, charCols.skinShadow,'#0a0a14',1.5);
+  drawFoot(c,rAnkle.x,rAnkle.y,1,charCols.clothShadow,1.5);
+
+  // LEFT LEG (drawn second = front)
+  const lThighEnd=drawLimb(c,hipL.x,hipL.y, angles.lThigh, thighLen,
+    legW1,legW2, charCols.clothMain,'#0a0a14',2);
+  c.beginPath();c.arc(lThighEnd.x,lThighEnd.y,9,0,Math.PI*2);
+  c.fillStyle=charCols.clothMain;c.fill();c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.stroke();
+  const lShinAngle=angles.lThigh+angles.lShin;
+  const lAnkle=drawLimb(c,lThighEnd.x,lThighEnd.y, lShinAngle, shinLen,
+    shinW1,shinW2, charCols.skin,'#0a0a14',1.5);
+  drawFoot(c,lAnkle.x,lAnkle.y,-1,charCols.clothShadow,1.5);
+
+  // ── TORSO ──
+  c.save();c.translate(charX,torsoY);
+  drawTorso(c,0,0,charCols.clothMain,charCols.clothHi,charCols.clothShadow,charCols.accentColor,angles.lean,sceneData.gender||charGender);
+  c.restore();
+
+  // ── ARMS ──
+  const armLen=52,foreLen=44;
+  const armW1=16,armW2=13,foreW1=13,foreW2=9;
+  // Shoulders at torso top — torso top is at torsoY-50
+  const shoulderL={x:charX-32,y:torsoY-42};
+  const shoulderR={x:charX+32,y:torsoY-42};
+
+  // Arms swing: angle=0 → straight down. Negative = forward, positive = back
+  const lArmAngle = angles.lArm;   // upper arm
+  const rArmAngle = angles.rArm;
+  const lForeAngle = lArmAngle + (lArmAngle < 0 ? 0.3 : -0.3); // forearm bends slightly
+  const rForeAngle = rArmAngle + (rArmAngle < 0 ? 0.3 : -0.3);
+
+  // Left arm (back arm — drawn first)
+  const lElbow=drawLimb(c,shoulderL.x,shoulderL.y, lArmAngle, armLen,
+    armW1,armW2, charCols.clothMain,'#0a0a14',2);
+  c.beginPath();c.arc(lElbow.x,lElbow.y,8,0,Math.PI*2);
+  c.fillStyle=charCols.clothMain;c.fill();c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.stroke();
+  const lWrist=drawLimb(c,lElbow.x,lElbow.y, lForeAngle, foreLen,
+    foreW1,foreW2, charCols.skin,'#0a0a14',1.5);
+  drawHand(c,lWrist.x,lWrist.y,charCols.skin,1.5,lForeAngle);
+
+  // Right arm (front arm)
+  const rElbow=drawLimb(c,shoulderR.x,shoulderR.y, rArmAngle, armLen,
+    armW1,armW2, charCols.clothMain,'#0a0a14',2);
+  c.beginPath();c.arc(rElbow.x,rElbow.y,8,0,Math.PI*2);
+  c.fillStyle=charCols.clothMain;c.fill();c.strokeStyle='#0a0a14';c.lineWidth=1.5;c.stroke();
+  const rWrist=drawLimb(c,rElbow.x,rElbow.y, rForeAngle, foreLen,
+    foreW1,foreW2, charCols.skin,'#0a0a14',1.5);
+  drawHand(c,rWrist.x,rWrist.y,charCols.skin,1.5,rForeAngle);
+
+  // ── HEAD ──
+  const emotion=sceneData.emotion||'determined';
+  // Head sits on top of torso — torso top at torsoY-50, neck ~20px, head center ~30px above neck
+  drawHead(c,charX,torsoY-80,charCols.skin,charCols.skinShadow,
+           charCols.hairMain,charCols.hairHi,charCols.irisColor,emotion,1);
+
+  // ── SPECIAL EFFECTS ──
+  if(sceneData.effects){
+    sceneData.effects.forEach(ef=>drawEffect(c,ef,charX,torsoY,walkT,W,H));
+  }
+
+  // ── SUBTITLE ──
+  if(sceneData.dialogue){
+    c.fillStyle='#000000';c.globalAlpha=0.82;
+    c.fillRect(0,H-38,W,38);
+    c.globalAlpha=1;
+    // accent bar
+    c.fillStyle=charCols.accentColor;
+    c.fillRect(0,H-38,4,38);
+    c.fillStyle='#ffffff';
+    c.font='bold 14px "Segoe UI",Arial,sans-serif';
+    c.textAlign='center';
+    c.shadowColor='#000000';c.shadowBlur=4;
+    c.fillText(sceneData.dialogue,W/2,H-14);
+    c.shadowBlur=0;
+  }
+
+  // Frame counter
+  c.fillStyle=charCols.accentColor;
+  c.font='bold 9px monospace';c.textAlign='left';
+  c.fillText('F'+(sceneData.frameN||1)+'/'+( sceneData.totalN||1),6,14);
+}
+
+function drawBgElement(c,el,scrollX,W,H){
+  // el: {type:'mountain'|'building'|'tree'|'cloud'|'moon'|'star'|'torii', x,y,w,h,color,speed}
+  const px=((el.x - scrollX*el.speed)%W + W*2)%W; // parallax wrap
+  c.save();c.translate(px,el.y);
+  c.fillStyle=el.color||'#2a1a3a';
+  switch(el.type){
+    case 'mountain':
+      c.beginPath();c.moveTo(0,el.h);c.lineTo(el.w/2,-el.h*0.8);c.lineTo(el.w,el.h);c.closePath();
+      c.fill();
+      // snow cap
+      c.beginPath();c.moveTo(el.w/2,-el.h*0.8);c.lineTo(el.w*0.38,-el.h*0.35);c.lineTo(el.w*0.62,-el.h*0.35);c.closePath();
+      c.fillStyle='#e8e8f8';c.globalAlpha=0.7;c.fill();c.globalAlpha=1;
+      break;
+    case 'building':
+      c.fillRect(0,0,el.w,-el.h);
+      // windows
+      c.fillStyle='#ffee88';c.globalAlpha=0.6;
+      for(let wy=6;wy<el.h-10;wy+=16){
+        for(let wx=5;wx<el.w-10;wx+=14){
+          if(Math.random()>0.4)c.fillRect(wx,-wy,8,10);
+        }
+      }
+      c.globalAlpha=1;
+      break;
+    case 'tree':
+      // trunk
+      c.fillStyle='#4a2a10';c.fillRect(-5,0,10,-el.h*0.5);
+      // canopy
+      c.fillStyle=el.color;
+      c.beginPath();c.arc(0,-el.h*0.6,el.w/2,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(-el.w*0.25,-el.h*0.75,el.w*0.38,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(el.w*0.25,-el.h*0.75,el.w*0.38,0,Math.PI*2);c.fill();
+      break;
+    case 'cloud':
+      c.globalAlpha=0.65;
+      c.beginPath();c.arc(0,0,el.h,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(el.w*0.4,-el.h*0.3,el.h*0.8,0,Math.PI*2);c.fill();
+      c.beginPath();c.arc(-el.w*0.35,-el.h*0.2,el.h*0.7,0,Math.PI*2);c.fill();
+      c.globalAlpha=1;
+      break;
+    case 'moon':
+      c.beginPath();c.arc(0,0,el.h,0,Math.PI*2);
+      c.fillStyle='#fff8d0';c.fill();
+      // crater
+      c.beginPath();c.arc(el.h*0.3,el.h*0.2,el.h*0.2,0,Math.PI*2);
+      c.fillStyle='#eedc90';c.globalAlpha=0.4;c.fill();c.globalAlpha=1;
+      break;
+    case 'star':
+      c.beginPath();c.arc(0,0,el.h,0,Math.PI*2);
+      c.fillStyle='#ffffff';c.globalAlpha=0.8;c.fill();c.globalAlpha=1;
+      break;
+    case 'torii':
+      c.fillStyle=el.color||'#cc2200';
+      // posts
+      c.fillRect(-el.w/2,-el.h,8,el.h);c.fillRect(el.w/2-8,-el.h,8,el.h);
+      // top bars
+      c.fillRect(-el.w/2-8,-el.h,el.w+16,10);
+      c.fillRect(-el.w/2+4,-el.h+14,el.w-8,8);
+      break;
+    case 'sakura':
+      c.fillStyle=el.color||'#ffaacc';c.globalAlpha=0.7;
+      c.beginPath();c.arc(0,0,el.h,0,Math.PI*2);c.fill();
+      c.globalAlpha=1;
+      break;
+    default:
+      c.fillRect(0,0,el.w,-el.h);
+  }
+  c.restore();
+}
+
+function drawEffect(c,ef,cx,cy,t,W,H){
+  // ef: {type:'aura'|'sparks'|'speedlines'|'slash'|'smoke'|'rain'|'petals', color, intensity}
+  const col=ef.color||'#4488ff';
+  c.save();
+  switch(ef.type){
+    case 'aura':{
+      const ag=c.createRadialGradient(cx,cy-50,10,cx,cy-50,120);
+      const hexToRgba=(hex,a)=>{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;};
+      ag.addColorStop(0,hexToRgba(col,0.3));
+      ag.addColorStop(1,'rgba(0,0,0,0)');
+      // simpler approach
+      c.globalAlpha=0.18+Math.sin(t*Math.PI*6)*0.06;
+      c.beginPath();c.ellipse(cx,cy-50,80+Math.sin(t*Math.PI*4)*6,140+Math.cos(t*Math.PI*3)*8,0,0,Math.PI*2);
+      c.fillStyle=col;c.fill();
+      c.globalAlpha=1;
+      break;
+    }
+    case 'sparks':{
+      for(let i=0;i<8;i++){
+        const a=i/8*Math.PI*2+t*Math.PI*4;
+        const r=50+Math.sin(t*Math.PI*8+i)*20;
+        const px=cx+Math.cos(a)*r;
+        const py=(cy-80)+Math.sin(a)*r*0.6;
+        c.beginPath();c.arc(px,py,2+Math.random()*2,0,Math.PI*2);
+        c.fillStyle=col;c.globalAlpha=0.6+Math.random()*0.3;c.fill();
+      }
+      c.globalAlpha=1;
+      break;
+    }
+    case 'speedlines':{
+      c.globalAlpha=0.15;c.strokeStyle=col;c.lineWidth=1;
+      for(let i=0;i<16;i++){
+        const a=i/16*Math.PI*2;
+        const r1=80,r2=W*0.7;
+        c.beginPath();
+        c.moveTo(cx+Math.cos(a)*r1,cy-60+Math.sin(a)*r1*0.5);
+        c.lineTo(cx+Math.cos(a)*r2,cy-60+Math.sin(a)*r2*0.5);
+        c.stroke();
+      }
+      c.globalAlpha=1;
+      break;
+    }
+    case 'rain':{
+      c.strokeStyle='#88aacc';c.lineWidth=1;c.globalAlpha=0.4;
+      for(let i=0;i<30;i++){
+        const rx=(i*97+t*W*30)%W;
+        const ry=(i*137+t*H*15)%H;
+        c.beginPath();c.moveTo(rx,ry);c.lineTo(rx-3,ry+14);c.stroke();
+      }
+      c.globalAlpha=1;
+      break;
+    }
+    case 'petals':{
+      c.fillStyle=col||'#ffaacc';
+      for(let i=0;i<10;i++){
+        const px=(i*113+t*W*8)%W;
+        const py=(i*79+t*H*4)%(H*0.85);
+        c.globalAlpha=0.6;
+        c.save();c.translate(px,py);c.rotate(t*Math.PI*3+i);
+        c.beginPath();c.ellipse(0,0,5,3,0,0,Math.PI*2);c.fill();
+        c.restore();
+      }
+      c.globalAlpha=1;
+      break;
+    }
+    case 'slash':{
+      const sa=Math.PI*0.25+Math.sin(t*Math.PI*6)*0.2;
+      c.strokeStyle=col;c.lineWidth=4;c.globalAlpha=0.7;c.lineCap='round';
+      c.beginPath();
+      c.moveTo(cx-60*Math.cos(sa),(cy-60)-60*Math.sin(sa));
+      c.lineTo(cx+60*Math.cos(sa),(cy-60)+60*Math.sin(sa));
+      c.stroke();
+      c.lineWidth=2;c.globalAlpha=0.4;
+      c.beginPath();
+      c.moveTo(cx-45*Math.cos(sa+0.2),(cy-70)-45*Math.sin(sa+0.2));
+      c.lineTo(cx+45*Math.cos(sa+0.2),(cy-70)+45*Math.sin(sa+0.2));
+      c.stroke();
+      c.globalAlpha=1;
+      break;
+    }
+  }
+  c.restore();
+}
+
+// ═══════════════════════════════════════════
+// AI SCENE PLANNER — asks AI only for scene JSON
+// ═══════════════════════════════════════════
+function buildScenePlanPrompt(userDescription,charDetails,sceneN,totalN,storyCtx,gender){
+  return `You are an anime scene director. Plan scene ${sceneN}/${totalN} for this anime:
+"${userDescription}"
+Character: ${charDetails||'anime protagonist'} | Gender: ${gender||'male'}
+Story so far: ${storyCtx||'beginning'}
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "dialogue": "frase de impacto em português (máx 8 palavras)",
+  "emotion": "determined|angry|calm|sad|surprised|happy",
+  "action": "walk|run|idle|battle|jump|dance|attack|fly|sit|crouch|kneel|spin|cast|dodge|celebrate",
+  "gender": "${gender||'male'}",
+  "bgColor1": "#hexcolor (sky top)",
+  "bgColor2": "#hexcolor (sky mid)",
+  "bgColor3": "#hexcolor (sky bottom/horizon)",
+  "groundColor": "#hexcolor",
+  "groundColor2": "#hexcolor",
+  "groundLineColor": "#hexcolor",
+  "effects": [
+    {"type": "aura|sparks|speedlines|rain|petals|slash", "color": "#hexcolor"}
+  ],
+  "bgElements": [
+    {"type": "mountain|building|tree|cloud|moon|star|torii|sakura", "x": 0, "y": 200, "w": 120, "h": 140, "color": "#hexcolor", "speed": 0.3}
+  ],
+  "sceneDescription": "one sentence describing what happens in this scene"
+}
+
+Rules:
+- bgElements: 5-8 elements placed across x: 0 to 540, y is the bottom of the element (ground level is y≈304)
+- Vary element types to build a rich environment matching the scene mood
+- speed: 0.1 (far bg) to 0.8 (near fg) for parallax
+- effects: 1-3 effects matching action/mood
+- Colors must match the scene atmosphere of "${userDescription}"
+- action must match what the character is doing in this scene moment
+- gender field must always be "${gender||'male'}" (copy exactly as given)`;
+}
+
+// ═══════════════════════════════════════════
+// AI CALLS — now returning scene JSON
+// ═══════════════════════════════════════════
+async function callClaude(prompt,key){
+  const uc=[];
+  uc.push({type:'text',text:prompt});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-opus-4-5',max_tokens:2000,
+      system:'You are an anime scene director. Output ONLY valid JSON with no markdown, no explanation, no preamble. The JSON must be parseable by JSON.parse().',
+      messages:[{role:'user',content:uc}]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Claude erro '+res.status);}
+  return (await res.json()).content?.map(cc=>cc.text||'').join('')||'';
+}
+
+async function callGemini(prompt,key){
+  const parts=[{text:'Output ONLY valid JSON, no markdown. '+prompt}];
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:2000,temperature:0.7}})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Gemini erro '+res.status);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+async function callGroq(prompt,key){
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:gqModel,messages:[
+      {role:'system',content:'Anime scene director. Output ONLY valid JSON, no markdown, no explanation.'},
+      {role:'user',content:prompt}
+    ],max_tokens:2000,temperature:0.7})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Groq erro '+res.status);
+  return (d.choices?.[0]?.message?.content||'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+}
+
+async function callAI(prompt,key){
+  if(provider==='claude')return callClaude(prompt,key);
+  if(provider==='gemini')return callGemini(prompt,key);
+  return callGroq(prompt,key);
+}
+
+function parseSceneJSON(raw){
+  raw=raw.replace(/```[\w]*\n?/g,'').replace(/```/g,'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+  const s=raw.indexOf('{');const e=raw.lastIndexOf('}');
+  if(s>=0&&e>s){
+    try{return JSON.parse(raw.slice(s,e+1));}catch(ex){}
+  }
+  throw new Error('JSON inválido na resposta da IA');
+}
+
+function canvasToDataURL(t){return t.toDataURL();}
+
+// frames per scene: how many animation frames to generate per AI scene
+const FRAMES_PER_SCENE=8;
+
+// ═══════════════════════════════════════════
+// MAIN GENERATION — new pipeline
+// ═══════════════════════════════════════════
+async function startGen(){
+  const scene=document.getElementById('sceneInput').value.trim();
+  if(!scene){toast('✍️ Descreva a cena primeiro!');return;}
+  if(genMode==='image'){await startImgGen(scene);return;}
+
+  const key=(localStorage.getItem('as_'+provider)||'').trim();
+  if(!key){
+    toast('🔑 Configure a API Key em "MOTOR DE IA"!');
+    document.getElementById('svgKeyBox').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  // ── CLEAR CANVAS before new generation ──
+  clearCanvas(true);
+
+  const btn=document.getElementById('genBtn');
+  const sp=document.getElementById('spinEl');
+  const fill=document.getElementById('pfill');
+  const ptxt=document.getElementById('ptxt');
+  const binfo=document.getElementById('binfo');
+
+  btn.disabled=true;if(sp)sp.style.display='inline-block';
+  frames=[];cur=0;frameDialogues=[];moodScores=[];
+
+  const charCols=getCharColors();
+  const cd=getCD();
+  const totalScenes=Math.ceil(filmDur/4);
+  let storyCtx='';
+  let globalScrollX=0;
+
+  try{
+    for(let si=0;si<totalScenes;si++){
+      binfo.textContent=`Cena ${si+1}/${totalScenes} — planejando...`;
+      ptxt.textContent=`🎬 Cena ${si+1} de ${totalScenes}`;
+      fill.style.width=((si/totalScenes)*90)+'%';
+
+      let sceneData;
+      try{
+        const prompt=buildScenePlanPrompt(scene,cd,si+1,totalScenes,storyCtx,charGender);
+        const raw=await callAI(prompt,key);
+        sceneData=parseSceneJSON(raw);
+        // Ensure gender is set from global state if AI didn't return it
+        if(!sceneData.gender)sceneData.gender=charGender;
+        storyCtx+=` C${si+1}:${sceneData.sceneDescription||scene.slice(0,30)}`;
+      }catch(e){
+        console.warn('Scene plan failed, using defaults:',e.message);
+        sceneData=defaultScene(si,totalScenes,scene);
+        sceneData.gender=charGender;
+      }
+
+      const scrollSpeed=sceneData.action==='run'?18:sceneData.action==='walk'?9:sceneData.action==='fly'?12:0;
+
+      for(let fi=0;fi<FRAMES_PER_SCENE;fi++){
+        const walkT=(fi % FRAMES_PER_SCENE) / FRAMES_PER_SCENE;
+        const t=document.createElement('canvas');
+        t.width=CW;t.height=CH;
+        const cc=t.getContext('2d');
+        sceneData.scrollX=globalScrollX;
+        sceneData.frameN=si*FRAMES_PER_SCENE+fi+1;
+        sceneData.totalN=totalScenes*FRAMES_PER_SCENE;
+        renderAnimeFrame(cc,sceneData,walkT,charCols);
+        frames.push(canvasToDataURL(t));
+        frameDialogues.push(sceneData.dialogue||'');
+        moodScores.push(0.5+Math.sin(si/totalScenes*Math.PI)*0.4);
+        globalScrollX+=scrollSpeed;
+      }
+
+      cur=frames.length-1;loadF(cur);renderStrip();updHUD();updStats();
+    }
+
+    fill.style.width='100%';
+    ptxt.textContent='✅ '+frames.length+' frames prontos!';
+    binfo.textContent='▶ PLAY para ver a animação 🎌';
+    cur=0;loadF(0);renderStrip();updHUD();updStats();
+    toast('🎌 Anime pronto! '+frames.length+' frames');
+
+    // ── AUTO-SAVE as Projeto #N ──
+    autoSaveProject(scene);
+
+    setTimeout(()=>{fill.style.width='0%';ptxt.textContent='';binfo.textContent='';},7000);
+  }catch(e){
+    ptxt.textContent='❌ '+e.message;fill.style.width='0%';
+    toast('Erro: '+e.message.slice(0,60));
+    console.error(e);
+  }
+  btn.disabled=false;if(sp)sp.style.display='none';
+}
+
+function defaultScene(si,total,desc){
+  const prog=si/total;
+  return{
+    dialogue:['A jornada começa!','Avançando sem parar...','O destino me chama!','Nada vai me deter!','Este é meu caminho!'][si%5],
+    emotion:prog>0.6?'angry':prog>0.3?'determined':'calm',
+    action:prog>0.5?'run':'walk',
+    bgColor1:'#0a0828',bgColor2:'#1a1060',bgColor3:'#3a1020',
+    groundColor:'#1a0a28',groundColor2:'#2a1040',groundLineColor:'#4a2060',
+    effects:[{type:'aura',color:'#6644ff'}],
+    bgElements:[
+      {type:'moon',x:80,y:80,w:40,h:30,color:'#fff8d0',speed:0.05},
+      {type:'mountain',x:0,y:280,w:200,h:160,color:'#1a0a38',speed:0.1},
+      {type:'mountain',x:160,y:280,w:180,h:130,color:'#221040',speed:0.12},
+      {type:'mountain',x:320,y:280,w:220,h:150,color:'#1a0a38',speed:0.1},
+      {type:'cloud',x:100,y:80,w:80,h:25,color:'#2a1a4a',speed:0.07},
+      {type:'cloud',x:340,y:60,w:90,h:20,color:'#2a1a4a',speed:0.06},
+      {type:'star',x:50,y:30,w:2,h:2,color:'#ffffff',speed:0.02},
+      {type:'star',x:200,y:50,w:2,h:2,color:'#ffffff',speed:0.02},
+      {type:'star',x:400,y:40,w:2,h:2,color:'#ffffff',speed:0.02},
+    ],
+    sceneDescription:desc.slice(0,40)
+  };
+}
+
+function makeBeats(scene,n){
+  const beats=[];
+  for(let i=0;i<n;i++){
+    const prog=i/n;
+    const beat=prog<0.2?'opening scene, '+scene:prog<0.5?'mid action, '+scene:prog<0.8?'climax, '+scene:'resolution, '+scene;
+    beats.push(beat);
+  }
+  return beats;
+}
+
+async function startImgGen(scene){
+  const key=(localStorage.getItem('asimg_'+imgProvider)||'').trim();
+  if(!key){toast('🔑 Configure a API Key de imagem!');return;}
+  const btn=document.getElementById('genBtn');
+  const sp=document.getElementById('spinEl');
+  const fill=document.getElementById('pfill');
+  const ptxt=document.getElementById('ptxt');
+  const binfo=document.getElementById('binfo');
+  btn.disabled=true;if(sp)sp.style.display='inline-block';
+  const total=Math.ceil(filmDur/4);
+  frames=[];cur=0;frameDialogues=[];moodScores=[];
+  const beats=makeBeats(scene,total);
+  const dialogues=['Isso não acabou!','Ninguém pode me parar!','Vou proteger tudo!','Este poder é absurdo!','Prepare-se para o fim!','Nunca desistirei!'];
+  try{
+    for(let i=0;i<total;i++){
+      binfo.textContent=`Gerando imagem ${i+1}/${total}...`;
+      ptxt.textContent=`🖼 Frame ${i+1} de ${total}`;
+      fill.style.width=((i/total)*90)+'%';
+      fill.className='pfill img';
+      try{
+        const cd=getCD();
+        const styleMap={anime_film:'masterpiece anime film, Attack on Titan Demon Slayer',shonen:'masterpiece shonen anime Naruto style',seinen:'masterpiece seinen anime Berserk style',ghibli:'masterpiece Studio Ghibli style',cyberpunk:'masterpiece cyberpunk anime neon',dark_fantasy:'masterpiece dark fantasy anime'};
+        const sm=styleMap[aiSt]||'masterpiece anime';
+        const pd={prompt:`${sm}, ${beats[i]}, ${cd}, full body, expressive anime face, detailed hair, 8k`,neg:'bad anatomy, stick figure, chibi, blurry, text, watermark'};
+        let b64;
+        if(imgProvider==='together')b64=await callTogetherImg(pd,key);
+        else if(imgProvider==='fal')b64=await callFalImg(pd,key);
+        else b64=await callHFImg(pd,key);
+        const img=await new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=b64;});
+        const t=document.createElement('canvas');t.width=CW;t.height=CH;
+        const cc=t.getContext('2d');cc.drawImage(img,0,0,CW,CH);
+        frames.push(t.toDataURL());frameDialogues.push(dialogues[i%dialogues.length]);
+      }catch(e){frames.push(errFrame(e.message.slice(0,30)));frameDialogues.push('');}
+      moodScores.push(0.5);
+      cur=frames.length-1;loadF(cur);renderStrip();updHUD();updStats();
+    }
+    fill.style.width='100%';ptxt.textContent='✅ '+frames.length+' imagens prontas!';
+    binfo.textContent='▶ PLAY 🎌';cur=0;loadF(0);renderStrip();updHUD();updStats();
+    toast('🖼 '+frames.length+' imagens!');
+    setTimeout(()=>{fill.style.width='0%';ptxt.textContent='';binfo.textContent='';},7000);
+  }catch(e){ptxt.textContent='❌ '+e.message;fill.style.width='0%';}
+  btn.disabled=false;if(sp)sp.style.display='none';
+}
+
+function errFrame(msg){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  const c=t.getContext('2d');c.fillStyle='#1a0a1e';c.fillRect(0,0,CW,CH);
+  c.fillStyle='#f87171';c.font='bold 12px sans-serif';c.textAlign='center';
+  c.fillText('⚠ '+msg,CW/2,CH/2);
+  return t.toDataURL();
+}
+
+function callTogetherImg(pd,key){
+  const[w,h]=imgAR.split('x').map(Number);
+  return fetch('https://api.together.xyz/v1/images/generations',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:imgModel,prompt:pd.prompt,negative_prompt:pd.neg,width:w,height:h,steps:4,n:1,response_format:'b64_json'})
+  }).then(r=>r.json()).then(d=>'data:image/jpeg;base64,'+d.data[0].b64_json);
+}
+function callFalImg(pd,key){
+  const[w,h]=imgAR.split('x').map(Number);
+  return fetch('https://fal.run/'+imgModel,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Key '+key},
+    body:JSON.stringify({prompt:pd.prompt,negative_prompt:pd.neg,image_size:{width:w,height:h},num_inference_steps:4,num_images:1})
+  }).then(r=>r.json()).then(d=>fetch(d.images[0].url)).then(r=>r.blob())
+    .then(b=>new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.readAsDataURL(b);}));
+}
+function callHFImg(pd,key){
+  return fetch('https://api-inference.huggingface.co/models/'+imgModel,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({inputs:pd.prompt,parameters:{negative_prompt:pd.neg,num_inference_steps:20}})
+  }).then(r=>r.blob())
+    .then(b=>new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.readAsDataURL(b);}));
+}
+
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function expPNGs(){if(!frames.length){toast('Sem frames!');return;}frames.forEach((f,i)=>{const a=document.createElement('a');a.href=f;a.download='anime_'+String(i+1).padStart(3,'0')+'.png';a.click();});toast(frames.length+' PNGs exportados!');}
+
+// ── PROJECT SYSTEM ──
+function getProjects(){
+  try{return JSON.parse(localStorage.getItem('as_projects')||'[]');}catch(e){return [];}
+}
+function saveProjects(list){
+  // Keep only last 10 projects, store only metadata + frames (cap at ~5MB)
+  localStorage.setItem('as_projects',JSON.stringify(list.slice(-10)));
+}
+
+function autoSaveProject(sceneName){
+  projectCount++;
+  const projects=getProjects();
+  const id=Date.now();
+  const name='Projeto #'+projectCount+' — '+(sceneName||'Anime').slice(0,28);
+  projects.push({id,name,frames,frameDialogues,fps,genMode,moodScores,gender:charGender,date:new Date().toLocaleString('pt-BR')});
+  saveProjects(projects);
+  renderProjectsList();
+  toast('💾 '+name+' salvo!');
+}
+
+function savePrjNamed(){
+  if(!frames.length){toast('Sem frames para salvar!');return;}
+  const nm=prompt('Nome do projeto:','Anime '+(getProjects().length+1))?.trim();
+  if(!nm)return;
+  const projects=getProjects();
+  const id=Date.now();
+  projects.push({id,name:nm,frames,frameDialogues,fps,genMode,moodScores,gender:charGender,date:new Date().toLocaleString('pt-BR')});
+  saveProjects(projects);
+  renderProjectsList();
+  toast('💾 "'+nm+'" salvo!');
+}
+
+function renderProjectsList(){
+  const list=document.getElementById('projectsList');if(!list)return;
+  const projects=getProjects();
+  if(!projects.length){list.innerHTML='<div style="font-size:.52rem;color:var(--muted);text-align:center;padding:4px;">Nenhum projeto salvo</div>';return;}
+  list.innerHTML=projects.slice().reverse().map((p,ri)=>{
+    const i=projects.length-1-ri; // real index
+    return `<div style="display:flex;align-items:center;gap:4px;padding:3px 5px;background:var(--bg);border:1px solid var(--border);border-radius:5px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.58rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+        <div style="font-size:.44rem;color:var(--muted);">${p.date} · ${(p.frames||[]).length} frames</div>
+      </div>
+      <button onclick="loadProjectById(${p.id})" style="flex-shrink:0;padding:2px 6px;background:none;border:1px solid var(--blue);border-radius:4px;color:var(--blue);font-size:.5rem;font-weight:700;cursor:pointer;">▶ Abrir</button>
+      <button onclick="deleteProjectById(${p.id})" style="flex-shrink:0;padding:2px 6px;background:none;border:1px solid var(--muted);border-radius:4px;color:var(--muted);font-size:.5rem;font-weight:700;cursor:pointer;">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function loadProjectById(id){
+  const projects=getProjects();
+  const p=projects.find(x=>x.id===id);
+  if(!p){toast('Projeto não encontrado!');return;}
+  frames=p.frames||[];frameDialogues=p.frameDialogues||[];fps=p.fps||4;moodScores=p.moodScores||[];
+  if(p.gender){charGender=p.gender;document.querySelectorAll('#genderM,#genderF,#genderN').forEach(b=>b.classList.remove('on'));const gmap={male:'genderM',female:'genderF',neutral:'genderN'};document.getElementById(gmap[charGender]||'genderM')?.classList.add('on');}
+  if(p.genMode)setMode(p.genMode);
+  document.getElementById('fpsSlider').value=fps;document.getElementById('fpsLbl').textContent=fps;
+  cur=0;loadF(0);renderStrip();updHUD();updStats();
+  toast('📂 "'+p.name+'" carregado! '+frames.length+' frames');
+}
+
+function deleteProjectById(id){
+  const projects=getProjects().filter(x=>x.id!==id);
+  saveProjects(projects);
+  renderProjectsList();
+  toast('🗑 Projeto removido');
+}
+
+function loadPrj(){document.getElementById('prjInput').click();}
+function loadPrjFile(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      frames=d.frames||[];frameDialogues=d.frameDialogues||[];fps=d.fps||4;moodScores=d.moodScores||[];
+      if(d.genMode)setMode(d.genMode);
+      document.getElementById('fpsSlider').value=fps;document.getElementById('fpsLbl').textContent=fps;
+      cur=0;loadF(0);renderStrip();updHUD();updStats();
+      toast('Projeto carregado! '+frames.length+' frames');
+    }catch(ex){toast('Erro ao carregar: '+ex.message);}
+  };r.readAsText(f);
+}
+
+// ── CLEAR CANVAS ──
+function clearCanvas(silent){
+  if(playing)togglePlay();
+  frames=[blank()];cur=0;frameDialogues=[''];moodScores=[];
+  loadF(0);renderStrip();updHUD();updStats();
+  try{window.speechSynthesis?.cancel();}catch(e){}
+  showSub('');
+  if(!silent)toast('🗑 Cena limpa — pronto para novo prompt!');
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastT;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),4000);}
+
+// ═══════════════════════════════════════════
+// ══════════════ VR MODE ═══════════════════
+// ═══════════════════════════════════════════
+let vrActive=false,vrGyroOn=false,vrHandOn=false,vrPlayingLocal=false;
+let vrRot={x:0,y:0},vrRotOffset={x:0,y:0};
+let vrHandStream=null,vrHandCtx=null;
+let vrAnimFrame=null,vrFPSCount=0,vrFPSTime=0,vrFPSDisplay=0;
+let handLandmarks=null,gestureTimer=null,lastGesture='';
+
+const VR_W=CW*1.4,VR_H=CH*1.4; // larger render for VR
+
+function enterVR(){
+  if(!frames||frames.length===0){toast('⚠ Gere um anime primeiro!');return;}
+  const overlay=document.getElementById('vrOverlay');
+  overlay.classList.add('show');
+  vrActive=true;
+  setupVRCanvases();
+  startVRGyro();
+  startVRLoop();
+  toast('🥽 VR Mode ativo! Gire o celular para mover a câmera');
+}
+
+function exitVR(){
+  vrActive=false;
+  document.getElementById('vrOverlay').classList.remove('show');
+  stopVRGyro();
+  stopVRHand();
+  if(vrAnimFrame)cancelAnimationFrame(vrAnimFrame);
+  vrAnimFrame=null;
+  if(vrPlayingLocal&&playing)togglePlay();
+}
+
+function setupVRCanvases(){
+  const lc=document.getElementById('vrCanvasL');
+  const rc=document.getElementById('vrCanvasR');
+  const eye=document.getElementById('vrLeft');
+  const ew=eye.clientWidth,eh=eye.clientHeight;
+  const sc=Math.min(ew/CW,eh/CH,.95);
+  const dw=Math.round(CW*sc),dh=Math.round(CH*sc);
+  [lc,rc].forEach(c=>{c.width=CW;c.height=CH;c.style.width=dw+'px';c.style.height=dh+'px';});
+
+  // setup hand canvas
+  const hc=document.getElementById('vrHandCanvas');
+  hc.width=document.getElementById('vrScreen').clientWidth;
+  hc.height=document.getElementById('vrScreen').clientHeight;
+  vrHandCtx=hc.getContext('2d');
+}
+
+// ─── GYROSCOPE ────────────────────────────
+function startVRGyro(){
+  if(typeof DeviceOrientationEvent==='undefined'){document.getElementById('vrStatus').textContent='⚠ GYRO N/A';return;}
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){
+    DeviceOrientationEvent.requestPermission().then(s=>{
+      if(s==='granted'){window.addEventListener('deviceorientation',onGyro);vrGyroOn=true;document.getElementById('vrGyroBtn').classList.add('on');}
+      else{toast('Permissão de giroscópio negada');}
+    }).catch(()=>{window.addEventListener('deviceorientation',onGyro);vrGyroOn=true;});
+  }else{
+    window.addEventListener('deviceorientation',onGyro);
+    vrGyroOn=true;
+    document.getElementById('vrGyroBtn').classList.add('on');
+  }
+}
+function stopVRGyro(){window.removeEventListener('deviceorientation',onGyro);vrGyroOn=false;document.getElementById('vrGyroBtn').classList.remove('on');}
+function toggleVRGyro(){vrGyroOn?stopVRGyro():startVRGyro();}
+
+let gyroBase={beta:null,gamma:null};
+function onGyro(e){
+  if(gyroBase.beta===null){gyroBase.beta=e.beta;gyroBase.gamma=e.gamma;}
+  const db=(e.beta-gyroBase.beta)*0.012;
+  const dg=(e.gamma-gyroBase.gamma)*0.012;
+  vrRot.x=Math.max(-0.4,Math.min(0.4,db));
+  vrRot.y=Math.max(-0.6,Math.min(0.6,dg));
+}
+
+// ─── HAND TRACKING ────────────────────────
+async function startVRHand(){
+  if(vrHandOn)return;
+  document.getElementById('vrHandBtn').textContent='📷 Abrindo câmera...';
+  try{
+    vrHandStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240}});
+    // Load MediaPipe Hands via CDN
+    await loadMediaPipe();
+    vrHandOn=true;
+    document.getElementById('vrHandBtn').classList.add('on');
+    document.getElementById('vrHandBtn').textContent='✋ MÃOS ON';
+    toast('✋ Hand tracking ativo!');
+  }catch(e){
+    toast('⚠ Câmera: '+e.message.slice(0,40));
+    document.getElementById('vrHandBtn').textContent='✋ MÃOS';
+  }
+}
+
+function stopVRHand(){
+  if(vrHandStream){vrHandStream.getTracks().forEach(t=>t.stop());vrHandStream=null;}
+  vrHandOn=false;
+  document.getElementById('vrHandBtn').classList.remove('on');
+  document.getElementById('vrHandBtn').textContent='✋ MÃOS';
+  handLandmarks=null;
+  if(vrHandCtx){vrHandCtx.clearRect(0,0,vrHandCtx.canvas.width,vrHandCtx.canvas.height);}
+}
+
+function toggleVRHand(){vrHandOn?stopVRHand():startVRHand();}
+
+let mpHands=null,mpVid=null;
+async function loadMediaPipe(){
+  if(mpHands)return;
+  // Use MediaPipe Hands from CDN
+  const script1=document.createElement('script');
+  script1.src='https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js';
+  document.head.appendChild(script1);
+  await new Promise(r=>script1.onload=r);
+
+  const script2=document.createElement('script');
+  script2.src='https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js';
+  document.head.appendChild(script2);
+  await new Promise(r=>script2.onload=r);
+
+  mpHands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/'+f});
+  mpHands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.5});
+  mpHands.onResults(onHandResults);
+
+  mpVid=document.createElement('video');
+  mpVid.srcObject=vrHandStream;mpVid.autoplay=true;mpVid.muted=true;mpVid.playsInline=true;
+  await new Promise(r=>mpVid.onloadedmetadata=r);
+
+  const cam=new Camera(mpVid,{onFrame:async()=>{await mpHands.send({image:mpVid});},width:320,height:240});
+  cam.start();
+}
+
+function onHandResults(results){
+  handLandmarks=results.multiHandLandmarks||[];
+  const hc=document.getElementById('vrHandCanvas');
+  if(!vrHandCtx||!hc)return;
+  vrHandCtx.clearRect(0,0,hc.width,hc.height);
+
+  handLandmarks.forEach((lm,hi)=>{
+    // Draw dots
+    lm.forEach((pt,li)=>{
+      const x=pt.x*hc.width;const y=pt.y*hc.height;
+      vrHandCtx.beginPath();
+      vrHandCtx.arc(x,y,li===0?8:5,0,Math.PI*2);
+      vrHandCtx.fillStyle=hi===0?'rgba(100,200,255,.85)':'rgba(255,150,100,.85)';
+      vrHandCtx.fill();
+    });
+    // Draw connections
+    const conn=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+    vrHandCtx.strokeStyle=hi===0?'rgba(100,200,255,.5)':'rgba(255,150,100,.5)';
+    vrHandCtx.lineWidth=2;
+    conn.forEach(([a,b])=>{
+      vrHandCtx.beginPath();
+      vrHandCtx.moveTo(lm[a].x*hc.width,lm[a].y*hc.height);
+      vrHandCtx.lineTo(lm[b].x*hc.width,lm[b].y*hc.height);
+      vrHandCtx.stroke();
+    });
+    // Detect gestures
+    detectGesture(lm,hi);
+  });
+}
+
+function detectGesture(lm,hi){
+  // OPEN HAND = play/pause (all fingers extended)
+  const fingers=[
+    lm[8].y<lm[6].y, // index
+    lm[12].y<lm[10].y, // middle
+    lm[16].y<lm[14].y, // ring
+    lm[20].y<lm[18].y  // pinky
+  ];
+  const openHand=fingers.every(Boolean);
+  const fist=fingers.every(v=>!v);
+  const pointUp=fingers[0]&&!fingers[1]&&!fingers[2]&&!fingers[3]; // index only
+  const twoFingers=fingers[0]&&fingers[1]&&!fingers[2]&&!fingers[3]; // peace sign
+
+  const g=openHand?'open':fist?'fist':pointUp?'point':twoFingers?'two':'';
+  if(g&&g!==lastGesture){
+    lastGesture=g;
+    clearTimeout(gestureTimer);
+    gestureTimer=setTimeout(()=>{
+      execGesture(g);
+    },400); // debounce
+  }
+}
+
+function execGesture(g){
+  const hint=document.getElementById('gestureHint');
+  const msgs={open:'✋ PLAY/PAUSE',fist:'✊ PRÓXIMO FRAME',point:'☝ FRAME ANTERIOR',two:'✌ SAIR DO VR'};
+  if(msgs[g]){
+    hint.textContent=msgs[g];hint.classList.add('show');
+    setTimeout(()=>hint.classList.remove('show'),1800);
+  }
+  if(g==='open'){toggleVRPlay();}
+  else if(g==='fist'){cur=(cur+1)%frames.length;vrSyncFrame();}
+  else if(g==='point'){cur=(cur-1+frames.length)%frames.length;vrSyncFrame();}
+  else if(g==='two'){exitVR();}
+}
+
+// ─── VR RENDER LOOP ────────────────────────
+function startVRLoop(){
+  if(vrAnimFrame)cancelAnimationFrame(vrAnimFrame);
+  let lastTime=0;
+  function loop(ts){
+    if(!vrActive)return;
+    // FPS counter
+    vrFPSCount++;
+    if(ts-vrFPSTime>1000){vrFPSDisplay=vrFPSCount;vrFPSCount=0;vrFPSTime=ts;document.getElementById('vrFPS').textContent=vrFPSDisplay+' FPS · '+(vrGyroOn?'GYRO ON':'NO GYRO');}
+    vrRenderFrame();
+    vrAnimFrame=requestAnimationFrame(loop);
+  }
+  vrAnimFrame=requestAnimationFrame(loop);
+}
+
+function vrSyncFrame(){
+  if(!frames[cur])return;
+  const img=new Image();
+  img.onload=()=>{
+    ['vrCanvasL','vrCanvasR'].forEach((id,eye)=>{
+      const c=document.getElementById(id);if(!c)return;
+      const ctx2=c.getContext('2d');
+      // Apply VR perspective shift (stereoscopic offset)
+      const shift=(eye===0?-0.025:0.025)*CW;
+      const tx=vrRot.y*80+shift;
+      const ty=vrRot.x*50;
+      const sc=1.05+Math.abs(vrRot.x)*.1;
+      ctx2.clearRect(0,0,CW,CH);
+      ctx2.save();
+      ctx2.translate(CW/2,CH/2);
+      ctx2.scale(sc,sc);
+      ctx2.translate(-CW/2+tx,-CH/2+ty);
+      ctx2.drawImage(img,0,0,CW,CH);
+      ctx2.restore();
+      // Vignette
+      const vig=ctx2.createRadialGradient(CW/2,CH/2,CH*.25,CW/2,CH/2,CH*.75);
+      vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.6)');
+      ctx2.fillStyle=vig;ctx2.fillRect(0,0,CW,CH);
+      // Color shift for depth
+      if(eye===0){ctx2.fillStyle='rgba(255,50,50,.04)';ctx2.fillRect(0,0,CW,CH);}
+      else{ctx2.fillStyle='rgba(50,50,255,.04)';ctx2.fillRect(0,0,CW,CH);}
+    });
+  };
+  img.src=frames[cur];
+}
+
+function vrRenderFrame(){vrSyncFrame();}
+
+function toggleVRPlay(){
+  vrPlayingLocal=!vrPlayingLocal;
+  const btn=document.getElementById('vrPlayBtn');
+  if(vrPlayingLocal){
+    btn.textContent='⏸ PAUSE';btn.classList.add('on');
+    if(!playing)togglePlay();
+  }else{
+    btn.textContent='▶ PLAY';btn.classList.remove('on');
+    if(playing)togglePlay();
+  }
+}
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();loadKey();
+setTimeout(()=>{drawMoodChart();},300);
+window.addEventListener('resize',()=>setTimeout(()=>{drawMoodChart();if(vrActive)setupVRCanvases();},100));
+</script>
+</body>
+</html>

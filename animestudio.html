@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnimeStudio — Criador de Anime IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080810;--surface:#10101a;--panel:#14141f;--border:#1e1e30;
+  --accent:#e8c840;--accent2:#ff6b35;--blue:#4fc3f7;
+  --text:#eeeef5;--muted:#5a5a78;--green:#4ade80;
+}
+body{background:var(--bg);font-family:'Rajdhani',sans-serif;color:var(--text);min-height:100vh;overflow:hidden;}
+header{height:48px;padding:0 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub{font-size:.7rem;color:var(--muted);font-weight:600;letter-spacing:2px;}
+.hbadge{padding:2px 10px;border-radius:20px;font-size:.6rem;font-weight:700;letter-spacing:1px;border:1px solid var(--accent);color:var(--accent);}
+.app{display:grid;grid-template-columns:1fr 300px;height:calc(100vh - 48px);}
+.viewer{display:flex;flex-direction:column;background:#000;border-right:1px solid var(--border);}
+.vstage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#05050d;}
+#mainCanvas{display:block;max-width:100%;max-height:100%;}
+#onionCanvas{position:absolute;pointer-events:none;opacity:.18;}
+.bar-top,.bar-bot{position:absolute;left:0;right:0;height:0;background:#000;transition:height .4s;z-index:5;}
+.bar-top{top:0;}.bar-bot{bottom:0;}
+#subOverlay{position:absolute;bottom:48px;left:0;right:0;text-align:center;z-index:10;pointer-events:none;transition:opacity .3s;opacity:0;}
+#subText{display:inline-block;background:rgba(0,0,0,.8);color:#fff;font-family:'Noto Sans JP',sans-serif;font-size:15px;padding:5px 20px;border-radius:4px;max-width:90%;line-height:1.5;text-shadow:0 1px 4px #000;}
+#hudFrame{position:absolute;top:10px;left:12px;background:rgba(0,0,0,.65);color:var(--accent);font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;z-index:10;}
+.ctrl-bar{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);padding:6px 12px;display:flex;gap:8px;align-items:center;}
+.cbtn{padding:5px 14px;border:none;border-radius:6px;font-weight:700;font-size:.8rem;cursor:pointer;letter-spacing:.5px;transition:all .15s;}
+.cbtn-play{background:var(--accent);color:#000;}
+.cbtn-play.stop{background:#4fc3f7;}
+.cbtn-sm{padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;font-size:.72rem;cursor:pointer;font-weight:700;}
+.cbtn-sm:hover,.cbtn-sm.on{border-color:var(--accent);color:var(--accent);}
+.fps-row{display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--muted);font-weight:700;}
+.fps-row input{width:50px;accent-color:var(--accent);}
+.fstrip-wrap{flex:1;overflow:hidden;}
+.fstrip{display:flex;gap:3px;overflow-x:auto;padding:2px 0;}
+.fstrip::-webkit-scrollbar{height:3px;}.fstrip::-webkit-scrollbar-thumb{background:var(--border);}
+.fth{flex-shrink:0;width:38px;height:28px;border:2px solid var(--border);border-radius:3px;cursor:pointer;background:#111;overflow:hidden;position:relative;}
+.fth.on{border-color:var(--accent);}
+.fth img{width:100%;height:100%;object-fit:cover;}
+.fth .fn{position:absolute;bottom:0;right:1px;font-size:.38rem;font-weight:700;color:#fff;text-shadow:0 0 3px #000;}
+.rpanel{overflow-y:auto;background:var(--panel);display:flex;flex-direction:column;}
+.sec{padding:13px 13px 10px;border-bottom:1px solid var(--border);}
+.stitle{font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.stitle em{color:var(--accent);font-style:normal;}
+.provrow{display:flex;gap:4px;margin-bottom:7px;}
+.pb{flex:1;padding:4px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:.62rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;}
+.pb.on{border-color:var(--accent);color:var(--text);background:#e8c84015;}
+.keyrow{display:flex;align-items:center;gap:4px;margin-bottom:7px;}
+.keyrow input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.72rem;color:var(--text);min-width:0;}
+.keyrow input:focus{outline:none;border-color:var(--accent);}
+.keyrow input.ok{border-color:var(--green);}
+.keytog{background:none;border:none;cursor:pointer;font-size:.8rem;color:var(--muted);}
+.model-row{display:none;gap:3px;margin-bottom:6px;}
+.model-row.vis{display:flex;}
+.sinput{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--text);resize:none;height:68px;line-height:1.4;}
+.sinput:focus{outline:none;border-color:var(--accent);}
+.refup{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;transition:all .15s;margin:6px 0;}
+.refup:hover{border-color:var(--accent);}
+.refup.loaded{border-color:var(--green);border-style:solid;}
+.refprev{width:30px;height:30px;object-fit:cover;border-radius:4px;display:none;}
+.refup.loaded .refprev{display:block;}
+.reftxt{font-size:.62rem;font-weight:700;color:var(--muted);line-height:1.4;}
+.refup.loaded .reftxt{color:var(--green);}
+.dur-row{display:flex;gap:5px;margin-bottom:5px;}
+.durbtn{flex:1;padding:5px 3px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:.62rem;font-weight:700;cursor:pointer;color:var(--muted);text-align:center;transition:all .12s;}
+.durbtn.on{border-color:var(--blue);color:var(--blue);background:#4fc3f710;}
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0 6px;}
+.tag{padding:3px 8px;background:transparent;border:1px solid var(--border);border-radius:12px;font-size:.6rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .12s;}
+.tag:hover{color:var(--text);border-color:#555;}
+.tag.on{color:#000;border-color:transparent;background:var(--accent);}
+.genbtn{width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .12s;margin-top:4px;}
+.genbtn:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px);}
+.genbtn:disabled{opacity:.4;cursor:wait;transform:none;}
+.spin{width:14px;height:14px;border:2px solid rgba(0,0,0,.25);border-top-color:#000;border-radius:50%;animation:sp .5s linear infinite;display:none;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.pbar-wrap{margin-top:7px;}
+.pbar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .3s;border-radius:3px;}
+.ptxt{font-size:.63rem;font-weight:700;color:var(--accent2);min-height:15px;margin-top:4px;text-align:center;}
+.binfo{font-size:.58rem;color:var(--muted);text-align:center;margin-top:2px;}
+.setting{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:.7rem;font-weight:600;color:var(--muted);}
+.tog{width:32px;height:17px;background:var(--border);border-radius:9px;cursor:pointer;position:relative;transition:background .2s;}
+.tog.on{background:var(--accent);}
+.tog::after{content:'';position:absolute;width:9px;height:9px;background:white;border-radius:50%;top:2px;left:2px;transition:left .2s;}
+.tog.on::after{left:19px;}
+.expgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.ebtn{padding:7px 4px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;font-size:.68rem;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;}
+.ebtn:hover{border-color:var(--accent);color:var(--accent);}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);color:var(--text);font-size:.82rem;font-weight:700;padding:9px 20px;border-radius:24px;box-shadow:0 4px 24px rgba(0,0,0,.7);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;border:1px solid var(--border);}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<header>
+  <h1>ANIMESTUDIO</h1>
+  <div class="sub">CRIADOR DE ANIME IA</div>
+  <div style="margin-left:auto;"><span class="hbadge">🎬 FILME MODE</span></div>
+</header>
+
+<div class="app">
+  <div class="viewer">
+    <div class="vstage" id="vstage">
+      <div class="bar-top" id="barTop"></div>
+      <canvas id="onionCanvas"></canvas>
+      <canvas id="mainCanvas"></canvas>
+      <div id="hudFrame">FRAME 1/1</div>
+      <div id="subOverlay"><span id="subText"></span></div>
+      <div class="bar-bot" id="barBot"></div>
+    </div>
+    <div class="ctrl-bar">
+      <button class="cbtn cbtn-play" id="playBtn" onclick="togglePlay()">▶ PLAY</button>
+      <button class="cbtn-sm" id="cinBtn" onclick="toggleCinema()" title="Modo Cinema">🎬</button>
+      <div class="fps-row">
+        <span>FPS</span>
+        <input type="range" min="1" max="18" value="4" id="fpsSlider" oninput="setFPS(this.value)">
+        <span id="fpsLbl">4</span>
+      </div>
+      <div class="fstrip-wrap">
+        <div class="fstrip" id="fstrip"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rpanel">
+    <div class="sec">
+      <div class="stitle"><em>⚡</em> IA &amp; CHAVE</div>
+      <div class="provrow">
+        <button class="pb on" id="provClaude" onclick="setProv('claude')">🟣 Claude</button>
+        <button class="pb" id="provGemini" onclick="setProv('gemini')">🔵 Gemini</button>
+        <button class="pb" id="provGroq" onclick="setProv('groq')">🟡 Groq</button>
+      </div>
+      <div class="model-row" id="geminiModelRow">
+        <button class="pb on" id="gmFlash" onclick="setGM('gemini-2.0-flash')">⚡ Flash</button>
+        <button class="pb" id="gmPro" onclick="setGM('gemini-2.5-pro-preview-05-06')">💎 Pro</button>
+      </div>
+      <div class="model-row" id="groqModelRow">
+        <button class="pb on" id="gqFast" onclick="setGQ('meta-llama/llama-4-scout-17b-16e-instruct')">⚡ Llama4</button>
+        <button class="pb" id="gqDeep" onclick="setGQ('deepseek-r1-distill-llama-70b')">🧠 Deep</button>
+      </div>
+      <div class="keyrow">
+        <span style="font-size:.6rem;font-weight:700;color:var(--muted);white-space:nowrap;" id="keyLbl">🔑 Anthropic:</span>
+        <input type="password" id="keyInput" placeholder="sk-ant-..." oninput="saveKey(this)" autocomplete="off">
+        <button class="keytog" onclick="toggleKV()">👁</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stitle"><em>🎭</em> CENA / HISTÓRIA</div>
+      <textarea class="sinput" id="sceneInput" placeholder="Ex: guerreiro de cabelo branco enfrenta um dragão numa cidade em chamas, trovões, chuva, câmera dramática..."></textarea>
+
+      <label class="refup" id="refLabel" for="refInput">
+        <img class="refprev" id="refPrev" src="" alt="">
+        <div>
+          <div class="reftxt" id="refTxt">📎 Imagem de referência do personagem (opcional)</div>
+          <div style="font-size:.52rem;color:var(--muted);margin-top:1px;">A IA vai copiar o estilo da imagem</div>
+        </div>
+        <input type="file" id="refInput" accept="image/*" style="display:none" onchange="loadRef(this)">
+      </label>
+      <button id="refClearBtn" onclick="clearRef()" style="display:none;width:100%;padding:3px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:.58rem;cursor:pointer;margin-bottom:6px;">✕ Remover referência</button>
+
+      <div style="font-size:.58rem;font-weight:700;color:var(--muted);margin-bottom:4px;letter-spacing:1px;">⏱ DURAÇÃO:</div>
+      <div class="dur-row">
+        <button class="durbtn" data-d="15" onclick="setDur(this,15)">15s</button>
+        <button class="durbtn on" data-d="30" onclick="setDur(this,30)">30s</button>
+        <button class="durbtn" data-d="50" onclick="setDur(this,50)">50s ⭐</button>
+        <button class="durbtn" data-d="90" onclick="setDur(this,90)">90s</button>
+      </div>
+      <div id="durInfo" style="font-size:.58rem;color:var(--muted);text-align:center;margin-top:2px;margin-bottom:2px;"></div>
+    </div>
+
+    <div class="sec">
+      <div class="stitle"><em>🎨</em> ESTILO</div>
+      <div class="tags">
+        <span class="tag on" data-sk="anime_film" onclick="setSt(this,'anime_film')">🎌 Anime HD</span>
+        <span class="tag" data-sk="shonen" onclick="setSt(this,'shonen')">⚡ Shōnen</span>
+        <span class="tag" data-sk="seinen" onclick="setSt(this,'seinen')">🌑 Seinen</span>
+        <span class="tag" data-sk="ghibli" onclick="setSt(this,'ghibli')">🍃 Ghibli</span>
+        <span class="tag" data-sk="cyberpunk" onclick="setSt(this,'cyberpunk')">🔮 Cyber</span>
+      </div>
+      <div style="font-size:.58rem;font-weight:700;color:var(--muted);margin-bottom:3px;letter-spacing:1px;">CÂMERA:</div>
+      <div class="tags">
+        <span class="tag on" data-ck="dynamic" onclick="setCam(this,'dynamic')">📹 Dinâmica</span>
+        <span class="tag" data-ck="fixed" onclick="setCam(this,'fixed')">🎯 Fixa</span>
+        <span class="tag" data-ck="zoom" onclick="setCam(this,'zoom')">🔭 Zoom in</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <button class="genbtn" id="genBtn" onclick="startGen()">
+        <span class="spin" id="spinEl"></span>
+        🎬 GERAR ANIME
+      </button>
+      <div class="pbar-wrap">
+        <div class="pbar"><div class="pfill" id="pfill"></div></div>
+        <div class="ptxt" id="ptxt"></div>
+        <div class="binfo" id="binfo"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="stitle"><em>⚙️</em> OPÇÕES</div>
+      <div class="setting"><span>🔊 Voz nas legendas</span><div class="tog on" id="voiceTog" onclick="this.classList.toggle('on');voiceOn=this.classList.contains('on')"></div></div>
+      <div class="setting"><span>👻 Onion skin</span><div class="tog" id="onionTog" onclick="toggleOnion(this)"></div></div>
+      <div class="setting"><span>🔁 Loop</span><div class="tog on" id="loopTog" onclick="this.classList.toggle('on');loopOn=this.classList.contains('on')"></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="stitle"><em>💾</em> EXPORTAR</div>
+      <div class="expgrid">
+        <button class="ebtn" onclick="expPNGs()">🖼 PNGs</button>
+        <button class="ebtn" onclick="savePrj()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CW=540,CH=380;
+let frames=[],cur=0,fps=4;
+let playing=false,playIv=null;
+let loopOn=true,voiceOn=true,onionOn=false,cinemaOn=false;
+let provider='claude',gModel='gemini-2.0-flash',gqModel='meta-llama/llama-4-scout-17b-16e-instruct';
+let refImgData=null,filmDur=30,aiSt='anime_film',aiCam='dynamic';
+let frameDialogues=[];
+
+const cv=document.getElementById('mainCanvas'),ctx=cv.getContext('2d');
+const oc=document.getElementById('onionCanvas'),octx=oc.getContext('2d');
+cv.width=CW;cv.height=CH;oc.width=CW;oc.height=CH;
+
+function resizeCanvas(){
+  const s=document.getElementById('vstage');
+  const sw=s.clientWidth,sh=s.clientHeight;
+  const sc=Math.min(sw/CW,sh/CH,1);
+  const dw=Math.round(CW*sc),dh=Math.round(CH*sc);
+  cv.style.cssText=`display:block;width:${dw}px;height:${dh}px;`;
+  oc.style.cssText=`position:absolute;width:${dw}px;height:${dh}px;left:${Math.round((sw-dw)/2)}px;top:${Math.round((sh-dh)/2)}px;pointer-events:none;opacity:${onionOn?.18:0};`;
+}
+window.addEventListener('resize',resizeCanvas);
+
+function blank(){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  t.getContext('2d').fillStyle='#1a1a2e';t.getContext('2d').fillRect(0,0,CW,CH);
+  return t.toDataURL();
+}
+function init(){
+  frames=[blank()];cur=0;frameDialogues=[''];
+  loadF(0);renderStrip();updHUD();
+  setTimeout(resizeCanvas,80);updDurInfo();
+}
+function loadF(i){
+  const img=new Image();
+  img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0);drawOnion();};
+  img.src=frames[i];
+}
+function drawOnion(){
+  octx.clearRect(0,0,CW,CH);
+  if(!onionOn||cur===0)return;
+  const img=new Image();img.onload=()=>octx.drawImage(img,0,0);img.src=frames[cur-1];
+}
+function toggleOnion(el){el.classList.toggle('on');onionOn=el.classList.contains('on');resizeCanvas();drawOnion();}
+
+function renderStrip(){
+  const s=document.getElementById('fstrip');s.innerHTML='';
+  frames.forEach((f,i)=>{
+    const d=document.createElement('div');d.className='fth'+(i===cur?' on':'');
+    d.onclick=()=>{if(!playing){cur=i;loadF(i);renderStrip();updHUD();}};
+    const img=document.createElement('img');img.src=f;
+    const n=document.createElement('span');n.className='fn';n.textContent=i+1;
+    d.append(img,n);s.appendChild(d);
+  });
+  const a=s.querySelectorAll('.fth')[cur];
+  if(a)a.scrollIntoView({behavior:'smooth',inline:'nearest',block:'nearest'});
+}
+function updHUD(){document.getElementById('hudFrame').textContent='FRAME '+(cur+1)+'/'+frames.length;}
+
+// PLAYBACK
+function speak(txt){
+  if(!voiceOn||!txt)return;
+  const sy=window.speechSynthesis;if(sy.speaking)sy.cancel();
+  const u=new SpeechSynthesisUtterance(txt);u.lang='pt-BR';u.rate=0.88;u.pitch=1.05;
+  const vs=sy.getVoices();const v=vs.find(v=>v.lang.startsWith('pt'))||vs[0];
+  if(v)u.voice=v;sy.speak(u);
+}
+function showSub(txt){
+  const o=document.getElementById('subOverlay'),t=document.getElementById('subText');
+  if(txt){t.textContent=txt;o.style.opacity='1';}else{o.style.opacity='0';}
+}
+function togglePlay(){
+  playing=!playing;
+  const btn=document.getElementById('playBtn');
+  if(playing){
+    btn.textContent='⏹ STOP';btn.classList.add('stop');
+    oc.style.opacity='0';
+    let i=cur;
+    const step=()=>{
+      const img=new Image();
+      img.onload=()=>{ctx.clearRect(0,0,CW,CH);ctx.drawImage(img,0,0);};
+      img.src=frames[i];cur=i;updHUD();
+      document.querySelectorAll('.fth').forEach((t,ti)=>t.classList.toggle('on',ti===i));
+      const d=frameDialogues[i]||'';showSub(d);speak(d);
+      i=(i+1)%frames.length;
+      if(!loopOn&&i===0){setTimeout(()=>{if(playing)togglePlay();},1200);return;}
+    };
+    step();playIv=setInterval(step,1000/fps);
+  }else{
+    btn.textContent='▶ PLAY';btn.classList.remove('stop');
+    clearInterval(playIv);window.speechSynthesis?.cancel();showSub('');
+    oc.style.opacity=onionOn?'.18':'0';loadF(cur);renderStrip();
+  }
+}
+function setFPS(v){fps=parseInt(v);document.getElementById('fpsLbl').textContent=v;if(playing){clearInterval(playIv);playing=false;togglePlay();}}
+
+// CINEMA
+function toggleCinema(){
+  cinemaOn=!cinemaOn;
+  document.getElementById('barTop').style.height=cinemaOn?'40px':'0';
+  document.getElementById('barBot').style.height=cinemaOn?'40px':'0';
+  document.getElementById('cinBtn').classList.toggle('on',cinemaOn);
+}
+
+// REF IMAGE
+function loadRef(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    refImgData=e.target.result;
+    document.getElementById('refLabel').classList.add('loaded');
+    document.getElementById('refPrev').src=refImgData;
+    document.getElementById('refTxt').textContent='✅ '+file.name.slice(0,22);
+    document.getElementById('refClearBtn').style.display='block';
+    toast('Referência carregada! 🎨');
+  };r.readAsDataURL(file);
+}
+function clearRef(){
+  refImgData=null;
+  document.getElementById('refLabel').classList.remove('loaded');
+  document.getElementById('refPrev').src='';
+  document.getElementById('refTxt').textContent='📎 Imagem de referência do personagem (opcional)';
+  document.getElementById('refClearBtn').style.display='none';
+  document.getElementById('refInput').value='';
+}
+
+// DURATION
+function setDur(el,d){
+  filmDur=d;document.querySelectorAll('.durbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');updDurInfo();
+}
+function updDurInfo(){
+  const n=Math.ceil(filmDur/4);
+  document.getElementById('durInfo').textContent=`~${n} cenas · ${n} chamadas · ~${Math.round(n*20)}s de geração`;
+}
+
+// STYLE/CAM/PROV
+function setSt(el,s){aiSt=s;document.querySelectorAll('.tag[data-sk]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setCam(el,c){aiCam=c;document.querySelectorAll('.tag[data-ck]').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function setProv(p){
+  provider=p;
+  ['provClaude','provGemini','provGroq'].forEach(id=>document.getElementById(id).classList.toggle('on',id==='prov'+p[0].toUpperCase()+p.slice(1)));
+  document.getElementById('geminiModelRow').classList.toggle('vis',p==='gemini');
+  document.getElementById('groqModelRow').classList.toggle('vis',p==='groq');
+  const lbl=document.getElementById('keyLbl'),inp=document.getElementById('keyInput');
+  if(p==='claude'){lbl.textContent='🔑 Anthropic:';inp.placeholder='sk-ant-...';}
+  else if(p==='gemini'){lbl.textContent='🔑 Gemini:';inp.placeholder='AIzaSy...';}
+  else{lbl.textContent='🔑 Groq:';inp.placeholder='gsk_...';}
+  loadKey();
+}
+function setGM(m){gModel=m;document.getElementById('gmFlash').classList.toggle('on',m.includes('flash'));document.getElementById('gmPro').classList.toggle('on',m.includes('pro'));}
+function setGQ(m){gqModel=m;document.getElementById('gqFast').classList.toggle('on',m.includes('scout'));document.getElementById('gqDeep').classList.toggle('on',m.includes('deepseek'));}
+function isOK(p,v){if(p==='claude')return v.startsWith('sk-ant-');if(p==='gemini')return v.startsWith('AIza');if(p==='groq')return v.startsWith('gsk_');return v.length>8;}
+function saveKey(el){const v=el.value.trim();localStorage.setItem('as2_'+provider,v);el.classList.toggle('ok',isOK(provider,v));}
+function toggleKV(){const el=document.getElementById('keyInput');el.type=el.type==='password'?'text':'password';}
+function loadKey(){const k=localStorage.getItem('as2_'+provider)||'';const el=document.getElementById('keyInput');if(el){el.value=k;el.classList.toggle('ok',isOK(provider,k));}}
+
+// SVG SANITIZER
+function fixSVG(raw){
+  let s=raw.trim();
+  if(!s.startsWith('<svg'))s=`<svg xmlns="http://www.w3.org/2000/svg" width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}">${s}</svg>`;
+  if(!s.includes('xmlns'))s=s.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+  const rh=(r,g,b)=>'#'+[r,g,b].map(v=>parseInt(v).toString(16).padStart(2,'0')).join('');
+  s=s.replace(/fill="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`fill="${rh(r,g,b)}" fill-opacity="${a}"`);
+  s=s.replace(/stroke="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`stroke="${rh(r,g,b)}" stroke-opacity="${a}"`);
+  s=s.replace(/stop-color="rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)"/g,(_,r,g,b,a)=>`stop-color="${rh(r,g,b)}" stop-opacity="${a}"`);
+  s=s.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/\son\w+="[^"]*"/g,'');
+  return s;
+}
+
+// SVG → CANVAS (3 fallbacks)
+function svgToCanvas(svgStr){
+  return new Promise(res=>{
+    const svg=fixSVG(svgStr);
+    const draw=img=>{const t=document.createElement('canvas');t.width=CW;t.height=CH;const c=t.getContext('2d');c.fillStyle='#1a1a2e';c.fillRect(0,0,CW,CH);c.drawImage(img,0,0,CW,CH);return t.toDataURL();};
+    const b1=()=>new Promise((ok,no)=>{
+      const u=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+      const img=new Image();const t=setTimeout(()=>{URL.revokeObjectURL(u);no();},5000);
+      img.onload=()=>{clearTimeout(t);URL.revokeObjectURL(u);ok(draw(img));};img.onerror=()=>{clearTimeout(t);URL.revokeObjectURL(u);no();};img.src=u;
+    });
+    const b2=()=>new Promise((ok,no)=>{
+      const img=new Image();const t=setTimeout(()=>no(),5000);
+      img.onload=()=>{clearTimeout(t);ok(draw(img));};img.onerror=()=>{clearTimeout(t);no();};
+      img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    });
+    const b3=()=>new Promise(ok=>{
+      try{
+        const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+        const el=doc.querySelector('svg');if(!el){ok(blank());return;}
+        const u=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(el)],{type:'image/svg+xml'}));
+        const img=new Image();
+        img.onload=()=>{URL.revokeObjectURL(u);ok(draw(img));};img.onerror=()=>{URL.revokeObjectURL(u);ok(blank());};img.src=u;
+      }catch{ok(blank());}
+    });
+    b1().catch(()=>b2()).catch(()=>b3()).then(d=>res(d)).catch(()=>res(blank()));
+  });
+}
+
+// PARSE RESPONSE
+function parseResp(raw){
+  raw=raw.replace(/```[\w]*\n?/g,'').replace(/```/g,'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+  // Try JSON
+  try{const s=raw.indexOf('{');if(s>=0){const j=JSON.parse(raw.slice(s));if(j.svg)return[j];if(j.frames?.length)return j.frames;}}catch(_){}
+  // Extract SVGs
+  const res=[],dm=[...raw.matchAll(/"dialogue"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+  let p=0,idx=0;
+  while(true){
+    const ss=raw.indexOf('<svg',p);if(ss<0)break;
+    const se=raw.indexOf('</svg>',ss);if(se<0)break;
+    let sv=raw.slice(ss,se+6).replace(/\\n/g,' ').replace(/\\t/g,' ').replace(/\\"/g,'"').replace(/\\\//g,'/');
+    res.push({svg:sv,dialogue:dm[idx]?.[1]?.replace(/\\n/g,' ')||''});
+    p=se+6;idx++;
+  }
+  if(res.length)return res;
+  throw new Error('Nenhum SVG na resposta da IA');
+}
+
+// BUILD PROMPT
+function buildPrompt(beat,ctx,sceneN,totalN){
+  const styles={
+    anime_film:`Professional anime FILM quality (Attack on Titan / Demon Slayer / Jujutsu Kaisen standard):
+- HAIR: many individual strand paths with gradient fills, NOT flat blobs. White hair = multiple paths with light grey gradient + bright white highlights on tips
+- EYES: MANDATORY structure per eye: outer black ellipse → colored iris with radial gradient → white specular dot (cx+3,cy-3) → small dark pupil. Yellow eyes: iris fill="#E8B800" with gradient to "#FFD700"
+- FACE: soft oval shape, gradient skin (#FDDBB4 light to #D4956A shadow side), subtle nose path, mouth curve showing emotion
+- BODY: bezier-curved torso (NOT rectangles!), shoulder width > waist, proper muscle/cloth volume  
+- CLOTHING: jacket/outfit with collar detail, fold lines as darker strokes, buttons/logos if applicable
+- SHADING: every major body part has a lighter face-side and darker shadow-side (two tone or gradient)`,
+    shonen:`Dynamic shōnen anime (Dragon Ball / Naruto / One Piece style):
+- Bold thick outlines (stroke-width 3-4), vibrant colors
+- Energetic dynamic poses, off-center compositions
+- Large sparkly eyes with multiple highlight dots
+- Speed lines, energy auras, impact marks`,
+    seinen:`Mature seinen anime (Berserk / Vinland Saga / Monster style):
+- Darker color palette, dramatic contrast
+- Detailed realistic body proportions
+- Subtle facial expressions, intense eyes
+- High contrast lighting, deep shadows`,
+    ghibli:`Studio Ghibli style (Spirited Away / Mononoke / Totoro):
+- Soft warm watercolor-like background fills
+- Round gentle character features
+- Lush organic environment details
+- Muted nostalgic color palette`,
+    cyberpunk:`Cyberpunk anime (Akira / Ghost in Shell / Cyberpunk Edgerunners):
+- Neon lights, dark rainy city, reflective puddles
+- High-tech glowing clothing elements
+- Dramatic neon palette (cyan, magenta, yellow)
+- Holographic UI elements, circuit patterns`
+  }[aiSt]||'professional anime style';
+
+  const cams={
+    dynamic:`CAMERA: Dynamic cinematic — scene ${sceneN} of ${totalN}: ${
+      sceneN<=2?'WIDE ESTABLISHING SHOT — character small in frame, full environment visible':
+      sceneN<=Math.floor(totalN*0.5)?'MEDIUM SHOT — character waist-up, background detailed':
+      sceneN<=Math.floor(totalN*0.75)?'CLOSE-UP — character head/chest only, intense expression':
+      'EXTREME CLOSE-UP or WIDE DRAMATIC — final moment camera'
+    }`,
+    fixed:'CAMERA: Fixed medium shot — character centered at medium distance, consistent across frames',
+    zoom:`CAMERA: Progressive zoom — scene ${sceneN}/${totalN}: character at scale ${(0.6+sceneN/totalN*0.8).toFixed(2)} (getting larger each frame)`
+  }[aiCam];
+
+  const refNote=refImgData?`
+⚠️ REFERENCE IMAGE PROVIDED — CHARACTER DESIGN RULES:
+You MUST reproduce this character's design EXACTLY in every frame:
+• Copy the exact hair style (color, shape, spikiness/flow)
+• Copy the exact eye color, shape, and style
+• Copy the clothing design (jacket type, colors, any logos/emblems)
+• Maintain the same body proportions and face structure
+• Keep the same art style and line quality
+Any deviation from the reference design is NOT acceptable.
+`:'';
+
+  return `You are a master professional anime SVG artist creating ONE cinematic frame.
+
+${refNote}
+SCENE (frame ${sceneN}/${totalN}): "${beat}"
+STORY CONTEXT: ${ctx||'início da história'}
+
+VISUAL STYLE: ${styles}
+${cams}
+
+CANVAS: ${CW}x${CH}px  viewBox="0 0 ${CW} ${CH}"
+
+━━━ DRAW THIS FRAME ━━━
+
+[LAYER 1: BACKGROUND]
+Sky with <defs><linearGradient id="sky${sceneN}"> dramatic gradient (sunset/storm/night/dawn based on scene mood)
+Minimum 3 background environment elements (buildings, trees, mountains, debris, etc.) using <path> elements
+Atmospheric depth: far elements lighter/bluer, near elements darker
+Ground/floor with perspective shadow
+
+[LAYER 2: SHADOW]
+Character ground shadow: <ellipse> near feet, fill="#000000" fill-opacity="0.25" rx="55" ry="10"
+
+[LAYER 3: CHARACTER — FULL BODY ~260px tall, centered around x=270]
+
+HEAD (top ~y=60-120):
+<defs>
+  <linearGradient id="skin${sceneN}" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#FDDBB4"/>
+    <stop offset="100%" stop-color="#D4956A"/>
+  </linearGradient>
+</defs>
+<ellipse cx="270" cy="90" rx="42" ry="48" fill="url(#skin${sceneN})" stroke="#222" stroke-width="1.5"/>
+
+HAIR (minimum 6 separate paths, each with fill and slightly darker stroke):
+If white/silver hair: use fills like "#F0F0F5", "#E8E8F0", "#D0D0E0" with stroke "#888"
+If dark hair: use fills like "#1A1A2E", "#2D2D4E" with shine path "#5555AA"
+Each hair chunk = different <path> with unique bezier curves showing individual strands
+
+LEFT EYE (adjust x for face angle):
+<ellipse cx="255" cy="100" rx="14" ry="10" fill="#111111"/>
+<ellipse cx="255" cy="100" rx="11" ry="8" fill="[iris-color]"/>
+<circle cx="258" cy="97" r="3" fill="#FFFFFF"/>
+<circle cx="255" cy="101" r="2.5" fill="#000000"/>
+
+RIGHT EYE (mirror):
+<ellipse cx="283" cy="100" rx="14" ry="10" fill="#111111"/>
+<ellipse cx="283" cy="100" rx="11" ry="8" fill="[iris-color]"/>
+<circle cx="286" cy="97" r="3" fill="#FFFFFF"/>
+<circle cx="283" cy="101" r="2.5" fill="#000000"/>
+
+Eyebrows: 2 thick <path> strokes
+Nose: small <path d="M 268,110 Q 270,115 272,110">
+Mouth: <path> curve matching current emotion
+Cheeks (if appropriate): <ellipse fill="#FFB6C1" fill-opacity="0.3">
+
+NECK: <path> 20px wide connecting head to shoulders
+
+TORSO (y=150-230):
+<defs><linearGradient id="body${sceneN}" ...></defs>
+MUST use bezier <path> for torso silhouette — wide shoulders (~100px), narrowing waist
+Clothing over torso with slightly different fill
+Fold/shadow lines as thin darker strokes
+Collar, belt, or outfit details
+
+ARMS (both arms, 3 segments):
+Upper arm: tapered <path> rx≈15
+Elbow: <circle r="8">
+Forearm: tapered <path> rx≈10
+Hand: palm + visible finger shapes
+POSE THIS FRAME: ${
+  sceneN%4===1?'right arm raised/forward, left arm at side':
+  sceneN%4===2?'both arms out, dynamic pose':
+  sceneN%4===3?'one arm across chest, defensive':
+  'arms at sides, neutral/relaxed'
+}
+
+LEGS (both legs visible below torso):
+Thigh: wide <path>
+Knee: <circle r="9">  
+Shin: narrowing <path>
+Foot/shoe: <path> with sole shape
+
+[LAYER 4: ANIME FX — minimum 6 elements]
+Speed lines, energy particles, sparkles, glow aura, impact marks, floating debris
+
+[LAYER 5: SUBTITLE BAR]
+<rect x="0" y="${CH-44}" width="${CW}" height="44" fill="#000000" fill-opacity="0.82"/>
+<text x="${CW/2}" y="${CH-19}" text-anchor="middle" fill="#FFFFFF" font-size="14" font-family="Arial, sans-serif">SHORT PORTUGUESE SENTENCE HERE</text>
+<text x="${CW/2}" y="${CH-4}" text-anchor="middle" fill="#888888" font-size="9" font-family="Arial, sans-serif">— personagem —</text>
+
+━━━ CRITICAL SVG RULES ━━━
+FORBIDDEN: rgba() inside fill= or stroke= attributes  → use hex + fill-opacity= instead
+FORBIDDEN: JavaScript or event handlers
+REQUIRED: All attributes use double quotes
+REQUIRED: All gradient IDs must include "${sceneN}" to be unique
+REQUIRED: Valid <path d=""> syntax only
+
+━━━ OUTPUT — ONLY THIS JSON, nothing else ━━━
+{"dialogue":"frase curta em português (máx 8 palavras)","svg":"<svg xmlns='http://www.w3.org/2000/svg' width='${CW}' height='${CH}' viewBox='0 0 ${CW} ${CH}'>...full complete SVG...</svg>"}`;
+}
+
+// STORY BEATS
+function makeBeats(scene,n){
+  const beats=[];
+  for(let i=0;i<n;i++){
+    const p=i/n;
+    let phase;
+    if(p<0.15)phase=`ABERTURA: ${scene}. Plano geral. Personagem aparece. Cenário estabelecido.`;
+    else if(p<0.35)phase=`DESENVOLVIMENTO: ${scene}. Tensão crescente. Personagem em movimento.`;
+    else if(p<0.55)phase=`CONFRONTO: ${scene}. Ação intensa. Expressão determinada.`;
+    else if(p<0.75)phase=`CLÍMAX: ${scene}. Momento mais dramático. Câmera dramática. Efeitos intensos.`;
+    else if(p<0.9)phase=`VIRADA: ${scene}. Resultado do clímax. Transformação ou vitória.`;
+    else phase=`RESOLUÇÃO: ${scene}. Cena final. Câmera se afasta. Expressão de paz ou triunfo.`;
+    beats.push(phase);
+  }
+  return beats;
+}
+
+// MAIN GENERATION
+async function startGen(){
+  const scene=document.getElementById('sceneInput').value.trim();
+  if(!scene){toast('Escreve a cena! ✍️');return;}
+  const key=(localStorage.getItem('as2_'+provider)||'').trim();
+  if(!key){toast('Coloca a API Key! 🔑');document.getElementById('keyInput').focus();return;}
+
+  const btn=document.getElementById('genBtn'),sp=document.getElementById('spinEl');
+  const fill=document.getElementById('pfill'),txt=document.getElementById('ptxt'),bi=document.getElementById('binfo');
+  btn.disabled=true;sp.style.display='inline-block';
+
+  const total=Math.ceil(filmDur/4);
+  frames=[];cur=0;frameDialogues=[];
+  const beats=makeBeats(scene,total);
+  let storyCtx='';
+
+  try{
+    for(let i=0;i<total;i++){
+      const beat=beats[i];
+      bi.textContent=`Cena ${i+1}/${total}: gerando...`;
+      txt.textContent=`⏳ Frame ${i+1} de ${total}`;
+      fill.style.width=((i/total)*92)+'%';
+
+      try{
+        const prompt=buildPrompt(beat,storyCtx,i+1,total);
+        const raw=await callAI(prompt,key);
+        const parsed=parseResp(raw);
+        for(const fd of parsed){
+          const du=await svgToCanvas(fd.svg||'');
+          frames.push(du);frameDialogues.push(fd.dialogue||'');
+        }
+        storyCtx+=` Cena${i+1}:${beat.slice(0,40)}`;
+        // live preview
+        cur=frames.length-1;loadF(cur);renderStrip();updHUD();
+      }catch(e){
+        console.warn('Cena',i+1,'erro:',e.message);
+        frames.push(errFrame(`Cena ${i+1}`));frameDialogues.push('');
+      }
+    }
+    fill.style.width='100%';
+    txt.textContent=`✅ ${frames.length} frames! ~${Math.round(frames.length/fps)}s de filme`;
+    bi.textContent='Clique ▶ PLAY para assistir 🎌';
+    cur=0;loadF(0);renderStrip();updHUD();
+    toast(`🎌 Anime pronto! ${frames.length} frames · ~${Math.round(frames.length/fps)}s`);
+    setTimeout(()=>{fill.style.width='0%';txt.textContent='';bi.textContent='';},6000);
+  }catch(e){
+    txt.textContent='❌ '+e.message;fill.style.width='0%';console.error(e);
+  }
+  btn.disabled=false;sp.style.display='none';
+}
+
+async function callAI(prompt,key){
+  if(provider==='claude')return callClaude(prompt,key);
+  if(provider==='gemini')return callGemini(prompt,key);
+  return callGroq(prompt,key);
+}
+async function callClaude(prompt,key){
+  const uc=[];
+  if(refImgData){const[m,b]=refImgData.split(',');uc.push({type:'image',source:{type:'base64',media_type:m.match(/:(.*?);/)?.[1]||'image/png',data:b}});}
+  uc.push({type:'text',text:prompt});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-opus-4-5',max_tokens:8000,
+      system:`You are a master anime SVG artist. OUTPUT RULES:
+1. Output ONLY a JSON object: {"dialogue":"...","svg":"..."}
+2. NO markdown, NO code blocks, NO explanation
+3. NEVER use rgba() in SVG fill= or stroke= — ALWAYS use hex + fill-opacity= 
+4. Draw proper anime characters with detailed hair strands, gradient eyes, curved torso anatomy
+5. All SVG attribute values must use double quotes`,
+      messages:[{role:'user',content:uc}]})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Claude '+res.status);}
+  return (await res.json()).content?.map(c=>c.text||'').join('')||'';
+}
+async function callGemini(prompt,key){
+  const parts=[];
+  if(refImgData){const[m,b]=refImgData.split(',');parts.push({inlineData:{mimeType:m.match(/:(.*?);/)?.[1]||'image/png',data:b}});}
+  parts.push({text:`MASTER ANIME SVG ARTIST. NEVER use rgba() in SVG attributes. Output ONLY JSON {"dialogue":"...","svg":"..."}. No markdown.\n\n${prompt}`});
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:8000,temperature:0.8}})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Gemini '+res.status);
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+async function callGroq(prompt,key){
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:gqModel,messages:[
+      {role:'system',content:'Master anime SVG artist. NEVER rgba() in SVG attributes, use hex+fill-opacity. Output ONLY JSON {"dialogue":"...","svg":"..."}. No markdown.'},
+      {role:'user',content:prompt+'\n\nOutput ONLY the JSON:'}
+    ],max_tokens:8000,temperature:0.8})
+  });
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.error?.message||'Groq '+res.status);
+  return (d.choices?.[0]?.message?.content||'').replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+}
+
+function errFrame(msg){
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  const c=t.getContext('2d');c.fillStyle='#1a1a2e';c.fillRect(0,0,CW,CH);
+  c.fillStyle='#2a1a2e';c.fillRect(CW/2-100,CH/2-25,200,50);
+  c.fillStyle='#f87171';c.font='bold 13px sans-serif';c.textAlign='center';c.fillText('⚠ '+msg+' — retentando...',CW/2,CH/2+5);
+  return t.toDataURL();
+}
+
+function expPNGs(){frames.forEach((f,i)=>{const a=document.createElement('a');a.href=f;a.download=`anime_${String(i+1).padStart(3,'0')}.png`;a.click();});toast('PNGs exportados!');}
+function savePrj(){const b=new Blob([JSON.stringify({frames,frameDialogues,fps})],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='anime_projeto.json';a.click();toast('Salvo!');}
+
+let toastT;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3500);}
+
+init();loadKey();
+</script>
+</body>
+</html>
