@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dream 3D - Universe Connection</title>
+    <!-- Bibliotecas Externas -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root { --glass: rgba(255, 255, 255, 0.15); --accent: #00d9ff; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; }
+        
+        /* TELAS DE MENU */
+        .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10000; background: linear-gradient(135deg, #004e92, #000428); transition: 0.8s; }
+        .glass-panel { background: var(--glass); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.2); padding: 30px; border-radius: 25px; width: 350px; text-align: center; }
+        
+        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: none; background: rgba(255,255,255,0.9); font-family: inherit; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border-radius: 50px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+        /* FOTO DE PERFIL */
+        #profile-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); margin: 10px auto; display: block; background: #eee; }
+
+        /* CHAT SYSTEM */
+        #chat-container { position: fixed; bottom: 20px; left: 20px; width: 300px; height: 150px; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); border-radius: 10px; display: none; flex-direction: column; }
+        #chat-log { flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; }
+        #chat-input { background: rgba(255,255,255,0.2); color: white; border-radius: 0 0 10px 10px; padding: 10px; width: 100%; border: none; outline: none; }
+        
+        /* BALÃO DE CHAT SOBRE O PLAYER */
+        .chat-bubble { position: absolute; background: white; color: black; padding: 5px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        /* HUD */
+        #hud { position: fixed; top: 20px; left: 20px; pointer-events: none; display: none; }
+        #crosshair { position: fixed; top: 50%; left: 50%; width: 10px; height: 10px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body>
+
+    <!-- ETAPA 1: PERFIL -->
+    <div id="screen-profile" class="overlay">
+        <div class="glass-panel">
+            <h2 style="margin: 0;">SEU PERFIL</h2>
+            <img id="profile-preview" src="https://via.placeholder.com/80" alt="Avatar">
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+            <button class="btn" style="background: #666; font-size: 12px;" onclick="document.getElementById('file-input').click()">CARREGAR FOTO</button>
+            <input type="text" id="user-name" placeholder="Nome Ex: SonhadorX">
+            <textarea id="user-bio" placeholder="Sua Bio..." rows="2"></textarea>
+            <button class="btn" onclick="goToMode()">CONTINUAR</button>
+        </div>
+    </div>
+
+    <!-- ETAPA 2: MODO DE JOGO -->
+    <div id="screen-mode" class="overlay" style="display: none;">
+        <div class="glass-panel">
+            <h2>DREAM 3D</h2>
+            <button class="btn" onclick="showMaps(true)">JOGAR ONLINE (P2P)</button>
+            <button class="btn" style="background: #444;" onclick="showMaps(false)">MODO OFFLINE</button>
+        </div>
+    </div>
+
+    <!-- ETAPA 3: MAPAS -->
+    <div id="screen-maps" class="overlay" style="display: none;">
+        <div class="glass-panel">
+            <h3>ESCOLHA O MUNDO</h3>
+            <div id="map-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <!-- Mapas gerados dinamicamente -->
+            </div>
+            <div id="online-setup" style="display: none; margin-top: 15px;">
+                <input type="text" id="peer-id-input" placeholder="ID do Amigo para Conectar">
+                <p style="font-size: 10px;">Seu ID: <span id="my-peer-id">Gerando...</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI EM JOGO -->
+    <div id="hud">
+        <div id="info">Mundo: <span id="current-map">---</span></div>
+        <button class="btn" style="width: auto; padding: 5px 15px; background: #ff4444;" onclick="triggerMeteors()">ATIVAR METEOROS</button>
+    </div>
+    <div id="chat-container">
+        <div id="chat-log"></div>
+        <input type="text" id="chat-input" placeholder="Pressione Enter para falar...">
+    </div>
+    <div id="crosshair"></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        let scene, camera, renderer, controls, clock;
+        let peer, conn, myId;
+        let isOnline = false;
+        let playerName = "", playerImg = "";
+        let players = {}; // Outros jogadores
+        let meteors = [];
+
+        // --- SISTEMA DE PERFIL ---
+        document.getElementById('file-input').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                playerImg = reader.result;
+                document.getElementById('profile-preview').src = playerImg;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+
+        window.goToMode = () => {
+            playerName = document.getElementById('user-name').value || "User" + Math.floor(Math.random()*999);
+            document.getElementById('screen-profile').style.display = 'none';
+            document.getElementById('screen-mode').style.display = 'flex';
+        };
+
+        window.showMaps = (multi) => {
+            isOnline = multi;
+            document.getElementById('screen-mode').style.display = 'none';
+            document.getElementById('screen-maps').style.display = 'flex';
+            
+            if(isOnline) {
+                document.getElementById('online-setup').style.display = 'block';
+                initMultiplayer();
+            }
+
+            const maps = ['Cidade', 'Praia', 'Marte', 'Zombie Land', 'Vazio', 'Cyber', 'Neve', 'Céu', 'Oceano', 'Floresta'];
+            const container = document.getElementById('map-list');
+            maps.forEach(m => {
+                const b = document.createElement('button');
+                b.className = 'btn';
+                b.style.fontSize = '12px';
+                b.innerText = m;
+                b.onclick = () => startGame(m);
+                container.appendChild(b);
+            });
+        };
+
+        // --- MULTIPLAYER COM PEERJS ---
+        function initMultiplayer() {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                myId = id;
+                document.getElementById('my-peer-id').innerText = id;
+            });
+            peer.on('connection', (c) => {
+                conn = c;
+                setupDataListener();
+            });
+        }
+
+        window.startGame = (map) => {
+            const remoteId = document.getElementById('peer-id-input').value;
+            if(isOnline && remoteId) {
+                conn = peer.connect(remoteId);
+                setupDataListener();
+            }
+
+            document.getElementById('screen-maps').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('chat-container').style.display = 'flex';
+            document.getElementById('current-map').innerText = map;
+            
+            init3D(map);
+        };
+
+        function setupDataListener() {
+            conn.on('data', (data) => {
+                if(data.type === 'chat') showChatBubble(data.msg, false);
+                if(data.type === 'move') moveRemotePlayer(data);
+            });
+        }
+
+        // --- MOTOR 3D ---
+        function init3D(map) {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            clock = new THREE.Clock();
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 2, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new PointerLockControls(camera, document.body);
+            
+            // Iluminação
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const sun = new THREE.DirectionalLight(0xffffff, 1);
+            sun.position.set(50, 100, 50);
+            scene.add(sun);
+
+            // Chão
+            const floorGeo = new THREE.PlaneGeometry(1000, 1000);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x44aa44 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            // Chat Input Handler
+            document.getElementById('chat-input').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter') {
+                    const msg = e.target.value;
+                    if(!msg) return;
+                    showChatBubble(msg, true);
+                    if(isOnline && conn) conn.send({ type: 'chat', msg: msg });
+                    e.target.value = "";
+                }
+            });
+
+            animate();
+        }
+
+        // --- CHAT SOBRE A CABEÇA ---
+        function showChatBubble(msg, isMe) {
+            const div = document.createElement('div');
+            div.className = 'chat-bubble';
+            div.innerText = msg;
+            document.body.appendChild(div);
+
+            const log = document.getElementById('chat-log');
+            log.innerHTML += `<div><b>${isMe ? playerName : 'Amigo'}:</b> ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+
+            // Animação do balão (rastreamento 3D simplificado para o exemplo)
+            let life = 3.0;
+            const updateBubble = () => {
+                life -= 0.02;
+                if(life <= 0) {
+                    div.remove();
+                    return;
+                }
+                // Posicionamento HUD do balão
+                div.style.left = "50%";
+                div.style.top = "40%";
+                requestAnimationFrame(updateBubble);
+            };
+            updateBubble();
+        }
+
+        // --- SISTEMA DE METEOROS ---
+        window.triggerMeteors = () => {
+            setInterval(() => {
+                const meteor = new THREE.Group();
+                const core = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshBasicMaterial({color: 0xff4400}));
+                meteor.add(core);
+                
+                // Trilha de fogo
+                const trail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 1, 5), new THREE.MeshBasicMaterial({color: 0xffaa00, transparent: true, opacity: 0.6}));
+                trail.position.y = 3;
+                meteor.add(trail);
+
+                meteor.position.set(Math.random()*200-100, 100, Math.random()*200-100);
+                scene.add(meteor);
+                meteors.push({ mesh: meteor, vel: new THREE.Vector3((Math.random()-0.5)*2, -2, (Math.random()-0.5)*2) });
+            }, 500);
+        };
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Movimentação Básica
+            if(controls.isLocked) {
+                // Lógica de movimento WASD aqui...
+            }
+
+            // Update Meteoros
+            meteors.forEach((m, i) => {
+                m.mesh.position.add(m.vel);
+                if(m.mesh.position.y < 0) {
+                    // Explosão Visual
+                    m.mesh.scale.set(3, 0.1, 3);
+                    setTimeout(() => { scene.remove(m.mesh); meteors.splice(i, 1); }, 100);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // Auto-lock controls on click
+        document.addEventListener('mousedown', () => {
+            if(document.getElementById('screen-maps').style.display === 'none') controls.lock();
+        });
+    </script>
+</body>
+</html>
