@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Pro</title>
+
+<style>
+body {
+    margin: 0;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: Arial;
+    color: white;
+}
+
+.game {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+}
+
+/* LANES */
+.lane {
+    position: absolute;
+    width: 25%;
+    height: 100%;
+    border-right: 1px solid #222;
+}
+
+/* POSIÇÃO */
+.lane:nth-child(1){left:0;}
+.lane:nth-child(2){left:25%;}
+.lane:nth-child(3){left:50%;}
+.lane:nth-child(4){left:75%;}
+
+/* SETAS */
+.note {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    font-size: 40px;
+    text-align: center;
+    line-height: 60px;
+    color: white;
+}
+
+.hitline {
+    position: absolute;
+    bottom: 120px;
+    width: 100%;
+    height: 5px;
+    background: white;
+}
+
+/* UI */
+.ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+button {
+    margin: 5px;
+    padding: 10px;
+    border: none;
+    background: #111;
+    color: white;
+    cursor: pointer;
+}
+
+.feedback {
+    position: absolute;
+    bottom: 180px;
+    width: 100%;
+    text-align: center;
+    font-size: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game" id="game">
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="hitline"></div>
+
+    <div class="ui">
+        <div id="score">Score: 0</div>
+        <button onclick="setMode('easy')">Fácil</button>
+        <button onclick="setMode('normal')">Normal</button>
+        <button onclick="setMode('hard')">Difícil</button>
+        <button onclick="toggleBot()">Auto Bot</button>
+    </div>
+
+    <div class="feedback" id="fb"></div>
+</div>
+
+<audio id="music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+<script>
+let game = document.getElementById("game")
+let notes = []
+let score = 0
+
+let keys = ["ArrowLeft","ArrowDown","ArrowUp","ArrowRight"]
+let symbols = ["←","↓","↑","→"]
+
+let speed = 5
+let spawnRate = 600
+let bot = false
+
+function setMode(mode){
+    if(mode === "easy"){
+        speed = 4
+        spawnRate = 800
+    }
+    if(mode === "normal"){
+        speed = 6
+        spawnRate = 500
+    }
+    if(mode === "hard"){
+        speed = 10
+        spawnRate = 250
+    }
+}
+
+function toggleBot(){
+    bot = !bot
+}
+
+function spawnNote(){
+    let lane = Math.floor(Math.random()*4)
+    
+    let note = document.createElement("div")
+    note.className = "note"
+    note.innerText = symbols[lane]
+    note.style.left = (lane*25 + 10)+"%"
+    note.style.top = "0px"
+    
+    game.appendChild(note)
+    
+    notes.push({el: note, lane: lane, y:0})
+}
+
+function show(text){
+    let fb = document.getElementById("fb")
+    fb.innerText = text
+    setTimeout(()=>fb.innerText="",200)
+}
+
+function hit(lane){
+    for(let i=0;i<notes.length;i++){
+        let n = notes[i]
+        
+        if(n.lane === lane){
+            let diff = Math.abs(window.innerHeight-120 - n.y)
+            
+            if(diff < 20){
+                score += 300
+                show("PERFECT")
+            } else if(diff < 50){
+                score += 100
+                show("GOOD")
+            } else {
+                show("BAD")
+                return
+            }
+            
+            n.el.remove()
+            notes.splice(i,1)
+            document.getElementById("score").innerText = "Score: "+score
+            return
+        }
+    }
+    show("MISS")
+}
+
+document.addEventListener("keydown", e=>{
+    let lane = keys.indexOf(e.key)
+    if(lane !== -1){
+        hit(lane)
+    }
+})
+
+function update(){
+    notes.forEach((n,i)=>{
+        n.y += speed
+        n.el.style.top = n.y+"px"
+        
+        if(bot){
+            if(n.y > window.innerHeight-130){
+                hit(n.lane)
+            }
+        }
+        
+        if(n.y > window.innerHeight){
+            n.el.remove()
+            notes.splice(i,1)
+            show("MISS")
+        }
+    })
+}
+
+setInterval(update,16)
+setInterval(spawnNote, spawnRate)
+
+document.body.onclick = ()=>{
+    document.getElementById("music").play()
+}
+</script>
+
+</body>
+</html>

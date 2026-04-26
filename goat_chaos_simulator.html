@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOAT CHAOS SIMULATOR 🐐💥</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: 'Nunito', sans-serif;
+    cursor: none;
+  }
+
+  #custom-cursor {
+    position: fixed; width: 20px; height: 20px;
+    background: #ff4500; border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s;
+    box-shadow: 0 0 10px #ff4500;
+  }
+
+  canvas { display: block; }
+
+  /* LOADING SCREEN */
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    background: linear-gradient(135deg, #1a0a00, #2d0000, #1a0a00);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    animation: bgPulse 2s infinite alternate;
+  }
+  @keyframes bgPulse {
+    from { background: linear-gradient(135deg, #1a0a00, #2d0000, #1a0a00); }
+    to { background: linear-gradient(135deg, #0a1a00, #002d10, #0a1a00); }
+  }
+  #loading-goat {
+    font-size: 100px;
+    animation: goatBounce 0.5s infinite alternate;
+    filter: drop-shadow(0 0 20px #ff4500);
+  }
+  @keyframes goatBounce {
+    from { transform: translateY(0) rotate(-5deg); }
+    to { transform: translateY(-20px) rotate(5deg); }
+  }
+  #loading-title {
+    font-family: 'Bangers', cursive;
+    font-size: 60px; color: #ff4500;
+    letter-spacing: 4px;
+    text-shadow: 0 0 30px #ff4500, 0 4px 0 #800000;
+    margin: 20px 0 10px;
+    animation: titleGlow 1s infinite alternate;
+  }
+  @keyframes titleGlow {
+    from { text-shadow: 0 0 30px #ff4500, 0 4px 0 #800000; }
+    to { text-shadow: 0 0 60px #ff8800, 0 4px 0 #ff4500; }
+  }
+  #loading-sub {
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px; color: #ffaa00;
+    margin-bottom: 40px; letter-spacing: 2px;
+  }
+  #loading-bar-container {
+    width: 400px; height: 20px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid #ff4500;
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 0 20px rgba(255,69,0,0.5);
+  }
+  #loading-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #ff4500, #ff8800, #ffcc00);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 15px #ff8800;
+  }
+  #loading-tip {
+    margin-top: 20px; font-size: 16px;
+    color: rgba(255,200,100,0.8);
+    font-style: italic; max-width: 400px;
+    text-align: center;
+  }
+  #loading-pct {
+    font-family: 'Bangers', cursive;
+    font-size: 28px; color: #ffcc00;
+    margin-top: 10px;
+  }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed; pointer-events: none;
+    font-size: 20px; z-index: 999;
+    animation: floatUp 1.5s forwards;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(-100px) scale(2) rotate(360deg); }
+  }
+
+  /* MAIN MENU */
+  #main-menu {
+    display: none;
+    position: fixed; inset: 0; z-index: 100;
+    background: radial-gradient(ellipse at center, #1a0500 0%, #000 100%);
+    flex-direction: column; align-items: center; justify-content: center;
+  }
+  #menu-title {
+    font-family: 'Bangers', cursive;
+    font-size: 90px; color: #ff4500;
+    letter-spacing: 6px; line-height: 1;
+    text-shadow: 0 0 40px #ff4500, 0 6px 0 #660000, 0 0 100px rgba(255,69,0,0.3);
+    animation: menuTitleAnim 3s infinite alternate;
+    text-align: center;
+  }
+  @keyframes menuTitleAnim {
+    0% { transform: scale(1) rotate(-1deg); filter: hue-rotate(0deg); }
+    50% { transform: scale(1.05) rotate(1deg); }
+    100% { transform: scale(1) rotate(-1deg); filter: hue-rotate(30deg); }
+  }
+  #menu-goat-row {
+    font-size: 60px; margin: 10px 0 30px;
+    animation: goatRow 2s infinite;
+  }
+  @keyframes goatRow {
+    0% { transform: translateX(-10px) rotate(-3deg); }
+    50% { transform: translateX(10px) rotate(3deg); }
+    100% { transform: translateX(-10px) rotate(-3deg); }
+  }
+  .menu-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 28px; padding: 15px 60px;
+    margin: 8px; border: none; border-radius: 50px;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: all 0.2s; letter-spacing: 2px;
+    min-width: 280px;
+  }
+  .menu-btn:hover { transform: scale(1.08) rotate(-1deg); }
+  .menu-btn::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+  .menu-btn:hover::after { transform: translateX(0); }
+  .btn-play { background: linear-gradient(135deg, #ff4500, #ff8800); color: white; box-shadow: 0 8px 30px rgba(255,69,0,0.6); }
+  .btn-multi { background: linear-gradient(135deg, #8800ff, #cc00ff); color: white; box-shadow: 0 8px 30px rgba(136,0,255,0.6); }
+  .btn-settings { background: linear-gradient(135deg, #0088ff, #00ccff); color: white; box-shadow: 0 8px 30px rgba(0,136,255,0.6); }
+  .btn-quit { background: linear-gradient(135deg, #333, #666); color: #ccc; }
+  #menu-version { position: absolute; bottom: 20px; right: 20px; color: rgba(255,100,0,0.5); font-size: 13px; }
+
+  /* SETTINGS PANEL */
+  #settings-panel {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+    align-items: center; justify-content: center;
+  }
+  #settings-box {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #0088ff; border-radius: 20px;
+    padding: 40px; width: 500px;
+    box-shadow: 0 0 50px rgba(0,136,255,0.3);
+  }
+  #settings-box h2 {
+    font-family: 'Bangers', cursive; font-size: 40px; color: #00ccff;
+    text-align: center; margin-bottom: 30px;
+    letter-spacing: 4px;
+  }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .setting-row label { font-size: 18px; color: #ccc; font-weight: 700; }
+  .setting-select {
+    background: rgba(0,136,255,0.2); border: 2px solid #0088ff;
+    color: white; padding: 8px 16px; border-radius: 8px; font-size: 16px;
+  }
+  .setting-range { accent-color: #ff4500; width: 150px; }
+  .btn-close-settings {
+    font-family: 'Fredoka One', cursive; font-size: 22px;
+    padding: 12px 40px; background: linear-gradient(135deg, #ff4500, #ff8800);
+    border: none; border-radius: 50px; color: white; cursor: pointer;
+    width: 100%; margin-top: 20px; transition: transform 0.2s;
+  }
+  .btn-close-settings:hover { transform: scale(1.05); }
+
+  /* MULTIPLAYER LOBBY */
+  #lobby-panel {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+    align-items: center; justify-content: center;
+  }
+  #lobby-box {
+    background: linear-gradient(135deg, #0a1a0a, #0d2b0d);
+    border: 2px solid #00ff66; border-radius: 20px;
+    padding: 40px; width: 550px;
+    box-shadow: 0 0 50px rgba(0,255,100,0.3);
+  }
+  #lobby-box h2 { font-family: 'Bangers', cursive; font-size: 40px; color: #00ff66; text-align: center; margin-bottom: 20px; letter-spacing: 4px; }
+  #player-list { list-style: none; margin-bottom: 20px; }
+  #player-list li { padding: 10px 15px; margin-bottom: 8px; background: rgba(0,255,100,0.1); border-radius: 10px; color: #ccc; display: flex; align-items: center; gap: 10px; }
+  .player-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ff66; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  .lobby-btn { font-family: 'Fredoka One', cursive; font-size: 20px; padding: 12px 30px; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; }
+  .lobby-btn:hover { transform: scale(1.05); }
+  .btn-start-multi { background: linear-gradient(135deg, #00cc44, #00ff66); color: #000; }
+  .btn-close-lobby { background: #333; color: #ccc; margin-left: 10px; }
+
+  /* GAME HUD */
+  #hud {
+    display: none; position: fixed; inset: 0;
+    pointer-events: none; z-index: 50;
+  }
+  #score-display {
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    font-family: 'Bangers', cursive; font-size: 52px; color: #ffcc00;
+    text-shadow: 0 0 20px #ff8800, 0 3px 0 #660000;
+    letter-spacing: 3px; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  #score-display.score-pop { transform: translateX(-50%) scale(1.3); color: #ff4500; }
+  #combo-display {
+    position: absolute; top: 85px; left: 50%; transform: translateX(-50%);
+    font-family: 'Fredoka One', cursive; font-size: 28px; color: #ff8800;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #combo-display.show { opacity: 1; }
+
+  #health-bar-container {
+    position: absolute; bottom: 30px; left: 30px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .bar-label { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 700; letter-spacing: 1px; }
+  .bar-outer { width: 200px; height: 16px; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; overflow: hidden; }
+  #health-bar { height: 100%; background: linear-gradient(90deg, #ff4500, #ff8800); border-radius: 6px; transition: width 0.3s; width: 100%; }
+  #energy-bar { height: 100%; background: linear-gradient(90deg, #0088ff, #00ccff); border-radius: 6px; transition: width 0.3s; width: 80%; }
+
+  #controls-hint {
+    position: absolute; bottom: 30px; right: 30px;
+    background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px; padding: 12px 16px; font-size: 13px; color: rgba(255,255,255,0.7);
+    line-height: 1.8;
+  }
+  .key { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 700; margin: 0 2px; }
+
+  #area-name {
+    position: absolute; top: 20px; left: 20px;
+    font-family: 'Bangers', cursive; font-size: 28px; color: rgba(255,200,100,0.9);
+    letter-spacing: 3px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+
+  #minimap {
+    position: absolute; top: 20px; right: 20px;
+    width: 120px; height: 120px;
+    background: rgba(0,0,0,0.7); border: 2px solid rgba(255,150,0,0.5);
+    border-radius: 12px; overflow: hidden;
+  }
+  #minimap-canvas { width: 100%; height: 100%; }
+
+  #event-banner {
+    position: absolute; top: 130px; left: 50%; transform: translateX(-50%);
+    font-family: 'Bangers', cursive; font-size: 36px;
+    color: #fff; text-shadow: 0 0 20px #ff4500, 0 3px 0 #800000;
+    letter-spacing: 3px; opacity: 0;
+    transition: opacity 0.5s;
+    white-space: nowrap;
+  }
+  #event-banner.show { opacity: 1; }
+
+  #multiplayer-indicators {
+    position: absolute; top: 20px; left: 160px;
+    display: flex; gap: 8px;
+  }
+  .player-indicator {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,0,0,0.5); border-radius: 8px; padding: 4px 10px;
+    font-size: 14px; color: white; font-weight: 700;
+  }
+  .pi-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ABILITY BUTTONS */
+  #ability-bar {
+    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; pointer-events: all;
+  }
+  .ability-btn {
+    width: 60px; height: 60px; border-radius: 12px;
+    background: rgba(0,0,0,0.7); border: 2px solid rgba(255,150,0,0.6);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; position: relative;
+    font-size: 24px;
+  }
+  .ability-btn:hover { transform: scale(1.15); border-color: #ff8800; box-shadow: 0 0 15px rgba(255,150,0,0.5); }
+  .ability-label { font-size: 9px; color: rgba(255,200,100,0.8); margin-top: 2px; font-weight: 700; }
+  .ability-cooldown {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 900; color: white; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .ability-cooldown.active { opacity: 1; }
+
+  /* PAUSE MENU */
+  #pause-menu {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  #pause-menu h2 { font-family: 'Bangers', cursive; font-size: 70px; color: #ff4500; margin-bottom: 30px; letter-spacing: 5px; }
+  .pause-btn { font-family: 'Fredoka One', cursive; font-size: 24px; padding: 14px 50px; margin: 8px; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; min-width: 250px; }
+  .pause-btn:hover { transform: scale(1.06); }
+  .pbtn-resume { background: linear-gradient(135deg, #ff4500, #ff8800); color: white; }
+  .pbtn-menu { background: #333; color: #ccc; }
+
+  /* GAME CANVAS */
+  #game-canvas-container {
+    display: none; position: fixed; inset: 0;
+  }
+
+  /* Explosion overlay */
+  #explosion-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    background: radial-gradient(circle, rgba(255,100,0,0.6) 0%, transparent 70%);
+    opacity: 0; transition: opacity 0.1s;
+  }
+  #explosion-overlay.flash { opacity: 1; }
+
+  /* KILL FEED */
+  #kill-feed {
+    position: absolute; top: 160px; right: 20px;
+    display: flex; flex-direction: column; gap: 5px;
+    pointer-events: none;
+  }
+  .kill-entry {
+    background: rgba(0,0,0,0.6); border-left: 3px solid #ff4500;
+    padding: 5px 10px; border-radius: 0 8px 8px 0;
+    font-size: 13px; color: white; font-weight: 700;
+    animation: killFade 3s forwards;
+  }
+  @keyframes killFade { 0%{opacity:1;transform:translateX(0)} 70%{opacity:1} 100%{opacity:0;transform:translateX(20px)} }
+
+  /* NPC Reaction bubbles */
+  .npc-bubble {
+    position: fixed; pointer-events: none; z-index: 70;
+    background: white; border-radius: 12px; padding: 5px 10px;
+    font-size: 13px; color: #333; font-weight: 700;
+    animation: bubble 2s forwards;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .npc-bubble::after {
+    content: ''; position: absolute; bottom: -8px; left: 15px;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid white;
+  }
+  @keyframes bubble { 0%{opacity:0;transform:scale(0) translateY(0)} 20%{opacity:1;transform:scale(1) translateY(0)} 80%{opacity:1;transform:translateY(-20px)} 100%{opacity:0;transform:translateY(-40px)} }
+</style>
+</head>
+<body>
+
+<div id="custom-cursor"></div>
+<div id="explosion-overlay"></div>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div id="loading-goat">🐐</div>
+  <div id="loading-title">GOAT CHAOS<br>SIMULATOR</div>
+  <div id="loading-sub">💥 DESTRUIÇÃO TOTAL • CAOS ABSOLUTO • FÍSICA INSANA 💥</div>
+  <div id="loading-bar-container"><div id="loading-bar"></div></div>
+  <div id="loading-pct">0%</div>
+  <div id="loading-tip">Dica: Pule em cima de NPCs para ganhar combo x10!</div>
+</div>
+
+<!-- MAIN MENU -->
+<div id="main-menu">
+  <div id="menu-title">🐐 GOAT CHAOS<br>SIMULATOR 💥</div>
+  <div id="menu-goat-row">🐐🔥💥🏠🚗💣🐐</div>
+  <button class="menu-btn btn-play" onclick="startGame()">🎮 JOGAR</button>
+  <button class="menu-btn btn-multi" onclick="openLobby()">👥 MULTIPLAYER</button>
+  <button class="menu-btn btn-settings" onclick="openSettings()">⚙️ CONFIGURAÇÕES</button>
+  <button class="menu-btn btn-quit" onclick="quitGame()">❌ SAIR</button>
+  <div id="menu-version">v2.4.1 CHAOS EDITION • 🐐 BLEEEHHH</div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings-panel">
+  <div id="settings-box">
+    <h2>⚙️ CONFIGURAÇÕES</h2>
+    <div class="setting-row">
+      <label>🎨 Gráficos</label>
+      <select class="setting-select" id="gfx-quality">
+        <option>🔥 ULTRA (INSANO)</option>
+        <option selected>⚡ ALTO</option>
+        <option>💻 MÉDIO</option>
+        <option>🐌 BAIXO</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label>🔊 Volume Geral</label>
+      <input type="range" class="setting-range" id="vol-master" min="0" max="100" value="80">
+    </div>
+    <div class="setting-row">
+      <label>🎵 Música</label>
+      <input type="range" class="setting-range" id="vol-music" min="0" max="100" value="60">
+    </div>
+    <div class="setting-row">
+      <label>🖱️ Sensibilidade</label>
+      <input type="range" class="setting-range" id="sensitivity" min="1" max="10" value="5">
+    </div>
+    <div class="setting-row">
+      <label>💀 Física de Ragdoll</label>
+      <select class="setting-select" id="ragdoll">
+        <option>🤪 MÁXIMO CAOS</option>
+        <option selected>😎 ALTO</option>
+        <option>🙂 MÉDIO</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label>🐛 Bugs Intencionais</label>
+      <select class="setting-select" id="bugs">
+        <option selected>✅ ATIVADO (RECOMENDADO)</option>
+        <option>❌ Desativado (sem graça)</option>
+      </select>
+    </div>
+    <button class="btn-close-settings" onclick="closeSettings()">✅ SALVAR E FECHAR</button>
+  </div>
+</div>
+
+<!-- MULTIPLAYER LOBBY -->
+<div id="lobby-panel">
+  <div id="lobby-box">
+    <h2>👥 LOBBY MULTIPLAYER</h2>
+    <div style="color:#00ff66;font-size:15px;margin-bottom:15px;text-align:center;">🟢 SERVIDOR: chaos-br-01.goatgame.io • PING: 23ms</div>
+    <ul id="player-list">
+      <li><span class="player-dot"></span>🐐 GatoDescomedido <span style="margin-left:auto;color:#00ff66">PRONTO</span></li>
+      <li><span class="player-dot"></span>🔥 DestruidorTotal <span style="margin-left:auto;color:#00ff66">PRONTO</span></li>
+      <li><span class="player-dot"></span>💣 BombaBomba99 <span style="margin-left:auto;color:#ffaa00">AGUARDANDO</span></li>
+      <li><span class="player-dot"></span>⚡ VelocidadePura <span style="margin-left:auto;color:#00ff66">PRONTO</span></li>
+      <li><span class="player-dot" style="background:#555;animation:none"></span><span style="color:#555">[ SLOT VAZIO ]</span></li>
+    </ul>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="lobby-btn btn-start-multi" onclick="startGame()">🎮 INICIAR JOGO!</button>
+      <button class="lobby-btn btn-close-lobby" onclick="closeLobby()">← VOLTAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause-menu">
+  <h2>⏸ PAUSADO</h2>
+  <button class="pause-btn pbtn-resume" onclick="resumeGame()">▶️ CONTINUAR</button>
+  <button class="pause-btn pbtn-menu" onclick="backToMenu()">🏠 MENU PRINCIPAL</button>
+</div>
+
+<!-- GAME -->
+<div id="game-canvas-container">
+  <canvas id="three-canvas"></canvas>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="area-name">🏙️ CENTRO DA CIDADE</div>
+  <div id="score-display">💥 PONTOS: 0</div>
+  <div id="combo-display">🔥 COMBO x1</div>
+
+  <div id="multiplayer-indicators">
+    <div class="player-indicator"><div class="pi-dot" style="background:#ff4500"></div>🐐 Você</div>
+    <div class="player-indicator"><div class="pi-dot" style="background:#8800ff"></div>GatoDescomedido</div>
+    <div class="player-indicator"><div class="pi-dot" style="background:#00ccff"></div>DestruidorTotal</div>
+  </div>
+
+  <div id="event-banner">⚠️ METEORO SE APROXIMANDO!</div>
+  <div id="kill-feed"></div>
+
+  <div id="health-bar-container">
+    <div class="bar-label">❤️ VIDA</div>
+    <div class="bar-outer"><div id="health-bar"></div></div>
+    <div class="bar-label" style="margin-top:6px">⚡ ENERGIA</div>
+    <div class="bar-outer"><div id="energy-bar"></div></div>
+  </div>
+
+  <div id="ability-bar">
+    <div class="ability-btn" onclick="useAbility('turbo')" title="Turbo">
+      🚀<span class="ability-label">TURBO</span>
+      <div class="ability-cooldown" id="cd-turbo"></div>
+    </div>
+    <div class="ability-btn" onclick="useAbility('superball')" title="Bola Super">
+      ⚽<span class="ability-label">S.BOLA</span>
+      <div class="ability-cooldown" id="cd-superball"></div>
+    </div>
+    <div class="ability-btn" onclick="useAbility('explode')" title="Explodir">
+      💣<span class="ability-label">BOMBA</span>
+      <div class="ability-cooldown" id="cd-explode"></div>
+    </div>
+    <div class="ability-btn" onclick="useAbility('glitch')" title="Glitch">
+      🌀<span class="ability-label">GLITCH</span>
+      <div class="ability-cooldown" id="cd-glitch"></div>
+    </div>
+    <div class="ability-btn" onclick="useAbility('ragdoll')" title="Ragdoll">
+      🤸<span class="ability-label">RAGDOLL</span>
+      <div class="ability-cooldown" id="cd-ragdoll"></div>
+    </div>
+  </div>
+
+  <div id="minimap">
+    <canvas id="minimap-canvas" width="120" height="120"></canvas>
+  </div>
+
+  <div id="controls-hint">
+    <span class="key">WASD</span> Mover &nbsp;
+    <span class="key">ESPAÇO</span> Pular<br>
+    <span class="key">SHIFT</span> Correr &nbsp;
+    <span class="key">E</span> Interagir<br>
+    <span class="key">CLIQUE</span> Atacar &nbsp;
+    <span class="key">ESC</span> Pause<br>
+    <span class="key">1-5</span> Habilidades
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// =============================================
+//  GOAT CHAOS SIMULATOR — ENGINE PRINCIPAL
+// =============================================
+
+const TIPS = [
+  "Dica: Use Turbo + Rampa = VOO ÉPICO! 🚀",
+  "Dica: NPCs explodem ao contato com a Bomba! 💥",
+  "Dica: Glitch te deixa atravessar paredes! 🌀",
+  "Dica: Encontre o lab secreto no nordeste do mapa! 🔬",
+  "Dica: Combos maiores = mais pontos! x10 = LENDÁRIO!",
+  "Dica: Carros podem ser usados como projéteis! 🚗",
+  "Dica: Pressione CTRL para voar (se tiver energia)!",
+  "Dica: Eventos aleatórios acontecem a cada 60s!",
+];
+
+const EVENTS = [
+  "☄️ CHUVA DE METEOROS!",
+  "👽 INVASÃO ALIENÍGENA!",
+  "🌪️ TORNADO GIGANTE!",
+  "🐄 REBANHO DE VACAS LOUCAS!",
+  "💣 MODO EXPLOSÃO TOTAL!",
+  "🦆 PATOS VOADORES!",
+  "🤖 ROBÔS REBELDES!",
+  "🎪 CIRCO CHEGOU NA CIDADE!",
+];
+
+const KILL_MSGS = [
+  "🐐 Cabra destruiu um NPC inocente!",
+  "💥 COMBO ÉPICO realizado!",
+  "🚗 Carro enviado para órbita!",
+  "😱 NPC em pânico total!",
+  "🔥 Tudo em chamas!",
+  "🌀 Glitch dimensional ativado!",
+  "⚡ Velocidade da luz atingida!",
+  "🏆 DESTRUIÇÃO MÁXIMA!",
+];
+
+const AREA_NAMES = [
+  "🏙️ CENTRO DA CIDADE",
+  "🌿 FAZENDA DO CAOS",
+  "🛒 SHOPPING DESTRUÍDO",
+  "🔬 LABORATÓRIO SECRETO",
+  "🌲 PARQUE DA LOUCURA",
+  "🏭 FÁBRICA EXPLOSIVA",
+  "🏖️ PRAIA DO RAGDOLL",
+  "🚀 BASE ALIENÍGENA",
+];
+
+const NPC_REACTIONS = [
+  "AHHH!! 😱", "CORRAM!! 🏃", "MEU CARRO!!! 😭",
+  "CABRA LOUCA!! 🐐", "CHAMA A POLÍCIA! 👮", "OMG!! 💀",
+  "FOGE! FOGE! 😰", "NÃO!!! 😤", "IMPOSSÍVEL!! 🤯",
+  "BLEEEHHH?! 🐐", "EXPLOSÃO!! 💥", "MINHA VIDA! 😩",
+];
+
+// ---- CURSOR ----
+const cursor = document.getElementById('custom-cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
+document.addEventListener('mousedown', () => cursor.style.transform = 'translate(-50%,-50%) scale(1.5)');
+document.addEventListener('mouseup', () => cursor.style.transform = 'translate(-50%,-50%) scale(1)');
+
+// ---- LOADING ----
+let loadPct = 0;
+const loadBar = document.getElementById('loading-bar');
+const loadPctEl = document.getElementById('loading-pct');
+const loadTip = document.getElementById('loading-tip');
+
+function setTip() {
+  loadTip.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+}
+setTip();
+setInterval(setTip, 2500);
+
+const loadInterval = setInterval(() => {
+  loadPct += Math.random() * 5 + 1;
+  if (loadPct >= 100) {
+    loadPct = 100;
+    clearInterval(loadInterval);
+    setTimeout(showMenu, 600);
+  }
+  loadBar.style.width = loadPct + '%';
+  loadPctEl.textContent = Math.floor(loadPct) + '%';
+}, 80);
+
+function showMenu() {
+  document.getElementById('loading-screen').style.opacity = '0';
+  document.getElementById('loading-screen').style.transition = 'opacity 0.8s';
+  setTimeout(() => {
+    document.getElementById('loading-screen').style.display = 'none';
+    const menu = document.getElementById('main-menu');
+    menu.style.display = 'flex';
+    menu.style.opacity = '0';
+    menu.style.transition = 'opacity 0.8s';
+    requestAnimationFrame(() => menu.style.opacity = '1');
+  }, 800);
+}
+
+function openSettings() {
+  document.getElementById('settings-panel').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settings-panel').style.display = 'none';
+  spawnParticles('⚙️✅', event);
+}
+function openLobby() {
+  document.getElementById('lobby-panel').style.display = 'flex';
+}
+function closeLobby() {
+  document.getElementById('lobby-panel').style.display = 'none';
+}
+function quitGame() {
+  document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;flex-direction:column">
+    <div style="font-size:80px">🐐</div>
+    <div style="font-family:Bangers,cursive;font-size:50px;color:#ff4500;margin-top:20px">BLEEEHHH! ATÉ LOGO!</div>
+    <div style="color:#888;margin-top:15px;font-size:18px">Obrigado por jogar GOAT CHAOS SIMULATOR!</div>
+  </div>`;
+}
+
+// ---- GAME STATE ----
+let gameRunning = false;
+let paused = false;
+let score = 0;
+let combo = 1;
+let comboTimer = null;
+let health = 100;
+let energy = 80;
+let currentArea = 0;
+
+// ---- THREE.JS SETUP ----
+let scene, camera, renderer, clock;
+let goat, goatVelocity = {x:0,y:0,z:0};
+let objects = [], npcs = [], vehicles = [];
+let keys = {};
+let animFrameId;
+
+function startGame() {
+  document.getElementById('main-menu').style.display = 'none';
+  document.getElementById('lobby-panel').style.display = 'none';
+  document.getElementById('game-canvas-container').style.display = 'block';
+  document.getElementById('hud').style.display = 'block';
+  gameRunning = true;
+  initThree();
+  buildWorld();
+  spawnNPCs();
+  spawnVehicles();
+  startRandomEvents();
+  startGameLoop();
+  updateHUD();
+  drawMinimap();
+}
+
+function initThree() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87CEEB);
+  scene.fog = new THREE.Fog(0x87CEEB, 80, 300);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 500);
+  camera.position.set(0, 8, 12);
+
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('three-canvas'),
+    antialias: true,
+    powerPreference: 'high-performance'
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  clock = new THREE.Clock();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // LIGHTS
+  const ambient = new THREE.AmbientLight(0xffeedd, 0.6);
+  scene.add(ambient);
+
+  const sun = new THREE.DirectionalLight(0xfff0cc, 2.5);
+  sun.position.set(100, 200, 100);
+  sun.castShadow = true;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 500;
+  sun.shadow.camera.left = -200;
+  sun.shadow.camera.right = 200;
+  sun.shadow.camera.top = 200;
+  sun.shadow.camera.bottom = -200;
+  sun.shadow.mapSize.width = 2048;
+  sun.shadow.mapSize.height = 2048;
+  scene.add(sun);
+
+  // Hemisphere
+  const hemi = new THREE.HemisphereLight(0x87CEEB, 0x5a3e28, 0.5);
+  scene.add(hemi);
+
+  // Point lights (city)
+  for (let i = 0; i < 20; i++) {
+    const pl = new THREE.PointLight(
+      [0xff8800, 0x0088ff, 0xff4400, 0x88ff00][Math.floor(Math.random()*4)],
+      2, 20
+    );
+    pl.position.set(Math.random()*200-100, 5, Math.random()*200-100);
+    scene.add(pl);
+  }
+
+  // Input
+  document.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'Escape') togglePause();
+    if (e.code === 'Digit1') useAbility('turbo');
+    if (e.code === 'Digit2') useAbility('superball');
+    if (e.code === 'Digit3') useAbility('explode');
+    if (e.code === 'Digit4') useAbility('glitch');
+    if (e.code === 'Digit5') useAbility('ragdoll');
+  });
+  document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+  document.getElementById('three-canvas').addEventListener('click', e => {
+    if (!paused) doAttack(e);
+  });
+}
+
+function buildWorld() {
+  // GROUND — huge map
+  const groundGeo = new THREE.PlaneGeometry(600, 600, 80, 80);
+  // Slightly deform ground for terrain
+  const positions = groundGeo.attributes.position;
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i), z = positions.getZ(i);
+    const dist = Math.sqrt(x*x + z*z);
+    positions.setY(i, Math.sin(x*0.04)*2 + Math.cos(z*0.03)*2 + Math.sin(dist*0.02)*3);
+  }
+  groundGeo.computeVertexNormals();
+  const groundMat = new THREE.MeshLambertMaterial({ color: 0x4a7c34 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI/2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // ROAD GRID
+  buildRoads();
+  // CITY
+  buildCity();
+  // FARM
+  buildFarm();
+  // PARK
+  buildPark();
+  // LAB
+  buildLab();
+  // SHOPPING
+  buildShopping();
+  // RANDOM DEBRIS / PROPS
+  buildProps();
+  // GOAT PLAYER
+  buildGoat();
+  // SKYBOX CLOUDS
+  buildClouds();
+}
+
+function makeBox(w, h, d, color, x, y, z, rx=0, ry=0) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshLambertMaterial({ color });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x, y, z);
+  mesh.rotation.y = ry;
+  mesh.rotation.x = rx;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  objects.push({ mesh, vx:0, vy:0, vz:0, mass:1, grounded:true, type:'static' });
+  return mesh;
+}
+
+function buildRoads() {
+  const roadMat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  // Main roads
+  for (let i = -2; i <= 2; i++) {
+    const r1 = new THREE.Mesh(new THREE.PlaneGeometry(600, 8), roadMat);
+    r1.rotation.x = -Math.PI/2; r1.position.set(0, 0.05, i * 40);
+    r1.receiveShadow = true; scene.add(r1);
+
+    const r2 = new THREE.Mesh(new THREE.PlaneGeometry(8, 600), roadMat);
+    r2.rotation.x = -Math.PI/2; r2.position.set(i * 40, 0.05, 0);
+    r2.receiveShadow = true; scene.add(r2);
+  }
+}
+
+function buildCity() {
+  // Buildings — many and varied
+  const bColors = [0x778899, 0x5a6a7a, 0x8a7a6a, 0x6a7a5a, 0xaabbcc, 0xcc8866, 0x8866cc];
+  for (let bx = -90; bx < 90; bx += 20) {
+    for (let bz = -90; bz < 90; bz += 20) {
+      if (Math.abs(bx) < 20 && Math.abs(bz) < 20) continue; // center plaza
+      if (Math.random() < 0.4) continue;
+      const h = 5 + Math.random() * 35;
+      const w = 6 + Math.random() * 8;
+      const d = 6 + Math.random() * 8;
+      const c = bColors[Math.floor(Math.random()*bColors.length)];
+      makeBox(w, h, d, c, bx + Math.random()*6-3, h/2, bz + Math.random()*6-3);
+
+      // Windows
+      const wMat = new THREE.MeshLambertMaterial({ color: 0xffffaa, emissive: 0xaaaa44, emissiveIntensity: 0.3 });
+      for (let wy = 2; wy < h-2; wy += 3) {
+        for (let wx = -w/2+1; wx < w/2; wx += 2.5) {
+          const win = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.5), wMat);
+          win.position.set(bx + wx, wy, bz + d/2 + 0.1);
+          scene.add(win);
+        }
+      }
+    }
+  }
+
+  // Lampposts
+  for (let i = 0; i < 40; i++) {
+    const x = Math.random()*180-90, z = Math.random()*180-90;
+    makeBox(0.3, 6, 0.3, 0x444444, x, 3, z);
+    const pl = new THREE.PointLight(0xffcc88, 2, 12);
+    pl.position.set(x, 6.5, z);
+    scene.add(pl);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0xffdd88}));
+    bulb.position.set(x, 6.5, z);
+    scene.add(bulb);
+  }
+}
+
+function buildFarm() {
+  // Barn
+  makeBox(20, 10, 30, 0xaa3322, 150, 5, -80);
+  makeBox(22, 2, 32, 0x663322, 150, 11, -80); // roof
+  // Silo
+  for (let i = 0; i < 3; i++) {
+    const silo = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 18, 12), new THREE.MeshLambertMaterial({color: 0xccbbaa}));
+    silo.position.set(140 + i*10, 9, -100);
+    silo.castShadow = true;
+    scene.add(silo);
+    objects.push({mesh: silo, vx:0,vy:0,vz:0, mass:5, grounded:true, type:'static'});
+  }
+  // Fence posts
+  for (let i = -15; i < 15; i += 3) {
+    makeBox(0.4, 2, 0.4, 0x8B6914, 130 + i, 1, -65);
+    if (i < 12) makeBox(6, 0.3, 0.2, 0x8B6914, 133 + i, 2, -65);
+  }
+  // Haystacks
+  for (let i = 0; i < 6; i++) {
+    const hay = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 4), new THREE.MeshLambertMaterial({color: 0xddbb44}));
+    hay.position.set(125 + Math.random()*30, 1.5, -75 + Math.random()*20);
+    hay.castShadow = true;
+    scene.add(hay);
+    objects.push({mesh: hay, vx:0, vy:0, vz:0, mass:2, grounded:true, type:'dynamic'});
+  }
+}
+
+function buildPark() {
+  // Trees
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5a3e28 });
+  const leafMat = new THREE.MeshLambertMaterial({ color: 0x2d8a2d });
+  for (let i = 0; i < 30; i++) {
+    const x = -150 + Math.random()*80, z = -150 + Math.random()*80;
+    const h = 4 + Math.random()*8;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, h, 8), trunkMat);
+    trunk.position.set(x, h/2, z); trunk.castShadow = true; scene.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(2+Math.random()*2, 8, 8), leafMat);
+    leaves.position.set(x, h + 1.5, z); leaves.castShadow = true; scene.add(leaves);
+    objects.push({mesh: trunk, vx:0,vy:0,vz:0, mass:10, grounded:true, type:'static'});
+    objects.push({mesh: leaves, vx:0,vy:0,vz:0, mass:3, grounded:true, type:'dynamic'});
+  }
+  // Park benches
+  for (let i = 0; i < 8; i++) {
+    makeBox(3, 0.4, 0.8, 0x8B4513, -150 + i*10, 0.8, -130);
+    makeBox(3, 0.4, 0.1, 0x8B4513, -150 + i*10, 1.4, -130.4);
+  }
+}
+
+function buildLab() {
+  // Main lab building
+  makeBox(50, 15, 40, 0xccddee, -150, 7.5, 100);
+  // Glowing windows
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
+  for (let i = 0; i < 10; i++) {
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), glowMat);
+    w.position.set(-155 + i*4, 5 + Math.random()*5, 120.1);
+    scene.add(w);
+    const pl = new THREE.PointLight(0x00ffcc, 3, 8);
+    pl.position.copy(w.position);
+    scene.add(pl);
+  }
+  // Antenna
+  makeBox(1, 30, 1, 0x888888, -125, 15, 80);
+  const antenna = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshBasicMaterial({color:0xff0000}));
+  antenna.position.set(-125, 31, 80);
+  scene.add(antenna);
+  const aLight = new THREE.PointLight(0xff0000, 5, 15);
+  aLight.position.copy(antenna.position);
+  scene.add(aLight);
+}
+
+function buildShopping() {
+  // Big mall
+  makeBox(80, 12, 60, 0xeeddcc, 120, 6, 100);
+  // Store windows
+  const storeMat = new THREE.MeshBasicMaterial({ color: 0xaaddff, transparent:true, opacity:0.7 });
+  for (let i = 0; i < 6; i++) {
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), storeMat);
+    s.position.set(84 + i*14, 5, 130.1);
+    scene.add(s);
+  }
+  // Parking lot cars (static props)
+  for (let i = 0; i < 8; i++) {
+    spawnCar(90 + i*10, 0, 140, true);
+  }
+  // Sign
+  makeBox(30, 4, 1, 0xff4400, 120, 14, 130);
+}
+
+function buildProps() {
+  // Cones, barrels, dumpsters
+  for (let i = 0; i < 50; i++) {
+    const x = Math.random()*400-200, z = Math.random()*400-200;
+    const type = Math.random();
+    if (type < 0.3) {
+      // Traffic cone
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2, 8), new THREE.MeshLambertMaterial({color: 0xff6600}));
+      cone.position.set(x, 1, z);
+      scene.add(cone);
+      objects.push({mesh: cone, vx:0, vy:0, vz:0, mass:0.5, grounded:true, type:'dynamic'});
+    } else if (type < 0.6) {
+      // Barrel
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2.5, 10), new THREE.MeshLambertMaterial({color: 0x994400}));
+      barrel.position.set(x, 1.25, z);
+      scene.add(barrel);
+      objects.push({mesh: barrel, vx:0, vy:0, vz:0, mass:3, grounded:true, type:'dynamic'});
+    } else {
+      // Dumpster
+      makeBox(3, 2, 2, 0x228833, x, 1, z);
+    }
+  }
+
+  // Ramps
+  makeBox(10, 0.5, 4, 0x888866, 20, 1, 20, -0.3, 0);
+  makeBox(10, 0.5, 4, 0x888866, -20, 1, -20, -0.3, Math.PI/2);
+  makeBox(10, 0.5, 4, 0x888866, 0, 1, 50, -0.25, Math.PI/4);
+}
+
+function buildClouds() {
+  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+  for (let i = 0; i < 30; i++) {
+    const g = new THREE.Group();
+    for (let j = 0; j < 4; j++) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random()*4, 6, 6), cloudMat);
+      s.position.set(j*4, Math.random()*2, 0);
+      g.add(s);
+    }
+    g.position.set(Math.random()*400-200, 60 + Math.random()*40, Math.random()*400-200);
+    g.userData.drift = Math.random()*0.02 + 0.005;
+    scene.add(g);
+    objects.push({mesh: g, vx:g.userData.drift, vy:0, vz:0, mass:-1, grounded:false, type:'cloud'});
+  }
+}
+
+function buildGoat() {
+  goat = new THREE.Group();
+  // Body
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.2, 2.5), new THREE.MeshLambertMaterial({color: 0xf5e6d0}));
+  body.position.y = 0.6;
+  body.castShadow = true;
+  goat.add(body);
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(1, 0.9, 1), new THREE.MeshLambertMaterial({color: 0xf5e6d0}));
+  head.position.set(0, 1.4, 1.1);
+  head.castShadow = true;
+  goat.add(head);
+  // Horns
+  const hornMat = new THREE.MeshLambertMaterial({color: 0x8B6914});
+  const h1 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 6), hornMat);
+  h1.position.set(-0.3, 2.0, 1.0); h1.rotation.z = -0.3; goat.add(h1);
+  const h2 = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 6), hornMat);
+  h2.position.set(0.3, 2.0, 1.0); h2.rotation.z = 0.3; goat.add(h2);
+  // Eyes
+  const eyeMat = new THREE.MeshBasicMaterial({color: 0x000000});
+  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.08), eyeMat);
+  eye1.position.set(-0.28, 1.45, 1.61); goat.add(eye1);
+  const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.08), eyeMat);
+  eye2.position.set(0.28, 1.45, 1.61); goat.add(eye2);
+  // Legs
+  const legMat = new THREE.MeshLambertMaterial({color: 0xe8d4bc});
+  [[-0.5,-0.9],[0.5,-0.9],[-0.5,0.7],[0.5,0.7]].forEach(([x,z], i) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
+    leg.position.set(x, -0.15, z); leg.castShadow = true; goat.add(leg);
+    leg.userData.legIndex = i;
+  });
+  // Beard
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.5, 6), new THREE.MeshLambertMaterial({color: 0xeeeecc}));
+  beard.position.set(0, 1.0, 1.5); beard.rotation.x = 0.5; goat.add(beard);
+
+  goat.position.set(0, 2, 0);
+  goat.userData.onGround = true;
+  goat.userData.velocityY = 0;
+  goat.userData.ragdoll = false;
+  goat.userData.glitch = false;
+  scene.add(goat);
+}
+
+function spawnCar(x, y, z, isStatic=false) {
+  const car = new THREE.Group();
+  const colors = [0xcc2200, 0x0044cc, 0x008800, 0xcc8800, 0x880088, 0x008888];
+  const bodyColor = colors[Math.floor(Math.random()*colors.length)];
+  // Car body
+  const carBody = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 8), new THREE.MeshLambertMaterial({color: bodyColor}));
+  carBody.position.y = 0.8; carBody.castShadow = true; car.add(carBody);
+  // Cabin
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.2, 4), new THREE.MeshLambertMaterial({color: bodyColor}));
+  cabin.position.set(0, 1.9, -0.5); car.add(cabin);
+  // Windows
+  const winMat = new THREE.MeshBasicMaterial({color: 0x88ccff, transparent:true, opacity:0.6});
+  const fw = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1), winMat);
+  fw.position.set(0, 2.0, 1.6); car.add(fw);
+  // Wheels
+  const wheelMat = new THREE.MeshLambertMaterial({color: 0x222222});
+  [[2,0,2.5],[-2,0,2.5],[2,0,-2.5],[-2,0,-2.5]].forEach(([wx,wy,wz]) => {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.5, 12), wheelMat);
+    w.rotation.z = Math.PI/2; w.position.set(wx, wy+0.2, wz); w.castShadow = true; car.add(w);
+  });
+  car.position.set(x, y + 0.7, z);
+  car.castShadow = true;
+  scene.add(car);
+  vehicles.push({ mesh: car, vx:0, vy:0, vz:0, mass:10, grounded:true, type: isStatic ? 'static_vehicle' : 'vehicle', health: 100 });
+  return car;
+}
+
+function spawnNPCs() {
+  const npcColors = [0xffddaa, 0xffaa88, 0xddbb99, 0xeeccbb];
+  const shirtColors = [0xff4444, 0x4444ff, 0x44aa44, 0xaaaa00, 0xaa44aa, 0x44aaaa];
+  for (let i = 0; i < 30; i++) {
+    const npc = new THREE.Group();
+    const sc = shirtColors[Math.floor(Math.random()*shirtColors.length)];
+    const nc = npcColors[Math.floor(Math.random()*npcColors.length)];
+    // Body
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.5), new THREE.MeshLambertMaterial({color: sc}));
+    torso.position.y = 1.2; torso.castShadow = true; npc.add(torso);
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshLambertMaterial({color: nc}));
+    head.position.y = 2.3; npc.add(head);
+    // Legs
+    const lMat = new THREE.MeshLambertMaterial({color: 0x335577});
+    const l1 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1, 0.35), lMat);
+    l1.position.set(-0.22, 0.5, 0); npc.add(l1);
+    const l2 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1, 0.35), lMat);
+    l2.position.set(0.22, 0.5, 0); npc.add(l2);
+    // Arms
+    const aMat = new THREE.MeshLambertMaterial({color: nc});
+    const a1 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1, 0.25), aMat);
+    a1.position.set(-0.55, 1.2, 0); npc.add(a1);
+    const a2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1, 0.25), aMat);
+    a2.position.set(0.55, 1.2, 0); npc.add(a2);
+
+    npc.position.set(Math.random()*160-80, 2, Math.random()*160-80);
+    npc.userData = {
+      velocityY: 0,
+      onGround: true,
+      panic: false,
+      panicTimer: 0,
+      walkDir: Math.random()*Math.PI*2,
+      walkSpeed: 0.02 + Math.random()*0.03,
+      health: 100,
+      ragdoll: false,
+      ragdollVx: 0, ragdollVy: 0, ragdollVz: 0,
+      legPhase: Math.random()*Math.PI*2,
+      type: 'npc'
+    };
+    scene.add(npc);
+    npcs.push(npc);
+  }
+}
+
+function spawnVehicles() {
+  for (let i = 0; i < 15; i++) {
+    const angle = Math.random()*Math.PI*2;
+    const dist = 20 + Math.random()*80;
+    spawnCar(Math.cos(angle)*dist, 0, Math.sin(angle)*dist);
+  }
+}
+
+// ---- GAME LOOP ----
+let frameCount = 0;
+function startGameLoop() {
+  function loop() {
+    if (!gameRunning) return;
+    animFrameId = requestAnimationFrame(loop);
+    if (paused) return;
+    const dt = Math.min(clock.getDelta(), 0.05);
+    frameCount++;
+    updateGoat(dt);
+    updateNPCs(dt);
+    updateObjects(dt);
+    updateCamera();
+    updateEnergy(dt);
+    if (frameCount % 5 === 0) drawMinimap();
+    renderer.render(scene, camera);
+  }
+  loop();
+}
+
+const GRAVITY = -25;
+let isJumping = false;
+let glitchActive = false;
+
+function updateGoat(dt) {
+  if (goat.userData.ragdoll) {
+    // Ragdoll physics
+    goat.userData.velocityY += GRAVITY * dt;
+    goat.position.x += goat.userData.ragdollVx * dt;
+    goat.position.y += goat.userData.velocityY * dt;
+    goat.position.z += goat.userData.ragdollVz * dt;
+    goat.rotation.x += 0.1;
+    goat.rotation.z += 0.07;
+    goat.userData.ragdollVx *= 0.95;
+    goat.userData.ragdollVz *= 0.95;
+    if (goat.position.y <= 1.5) {
+      goat.position.y = 1.5;
+      goat.userData.velocityY = 0;
+      goat.userData.ragdoll = false;
+      goat.rotation.set(0, goat.rotation.y, 0);
+    }
+    return;
+  }
+
+  const speed = keys['ShiftLeft'] || keys['ShiftRight'] ? 18 : 10;
+  const dx = keys['KeyA'] ? -1 : keys['KeyD'] ? 1 : 0;
+  const dz = keys['KeyW'] ? -1 : keys['KeyS'] ? 1 : 0;
+  const moving = dx !== 0 || dz !== 0;
+
+  if (moving) {
+    const angle = Math.atan2(dx, dz);
+    goat.rotation.y = angle;
+    goat.position.x += Math.sin(angle) * speed * dt;
+    goat.position.z += Math.cos(angle) * speed * dt;
+
+    // Leg animation
+    goat.children.forEach(c => {
+      if (c.userData.legIndex !== undefined) {
+        const phase = frameCount * 0.2 + (c.userData.legIndex % 2) * Math.PI;
+        c.rotation.x = Math.sin(phase) * 0.5;
+      }
+    });
+    // Bob body
+    goat.children[0].position.y = 0.6 + Math.sin(frameCount * 0.3) * 0.05;
+  }
+
+  // Jump
+  if ((keys['Space']) && goat.userData.onGround) {
+    goat.userData.velocityY = 14;
+    goat.userData.onGround = false;
+    addScore(5, '↑ PULO!');
+  }
+
+  // Double jump
+  if (keys['Space'] && !goat.userData.onGround && !isJumping && energy > 15) {
+    goat.userData.velocityY = 10;
+    isJumping = true;
+    energy -= 15;
+    spawnParticleEffect(goat.position, '💨', 5);
+    setTimeout(() => { isJumping = false; }, 500);
+  }
+
+  // Gravity
+  goat.userData.velocityY += GRAVITY * dt;
+  goat.position.y += goat.userData.velocityY * dt;
+
+  // Ground collision
+  if (goat.position.y <= 1.5) {
+    goat.position.y = 1.5;
+    if (goat.userData.velocityY < -15) {
+      addScore(20, '💥 IMPACTO!');
+      doExplosionEffect(goat.position);
+    }
+    goat.userData.velocityY = 0;
+    goat.userData.onGround = true;
+    isJumping = false;
+  } else {
+    goat.userData.onGround = false;
+  }
+
+  // Bounds
+  goat.position.x = Math.max(-290, Math.min(290, goat.position.x));
+  goat.position.z = Math.max(-290, Math.min(290, goat.position.z));
+
+  // Glitch effect
+  if (glitchActive) {
+    goat.position.x += (Math.random()-0.5)*3;
+    goat.position.y += (Math.random()-0.5)*2;
+    goat.position.z += (Math.random()-0.5)*3;
+  }
+
+  // Update area name
+  const ax = goat.position.x, az = goat.position.z;
+  let areaIdx = 0;
+  if (ax > 80 && az < -50) areaIdx = 1; // Farm
+  else if (ax < -80 && az < -80) areaIdx = 2; // Park
+  else if (ax < -100 && az > 70) areaIdx = 3; // Lab
+  else if (ax > 80 && az > 70) areaIdx = 4; // Shopping
+  else if (ax < -50 && az > 0) areaIdx = 5;
+  else if (az > 80) areaIdx = 6;
+  else if (Math.abs(ax) < 30 && Math.abs(az) < 30) areaIdx = 0;
+  if (document.getElementById('area-name').textContent !== AREA_NAMES[areaIdx]) {
+    document.getElementById('area-name').textContent = AREA_NAMES[areaIdx];
+  }
+}
+
+function updateCamera() {
+  if (!goat) return;
+  const targetX = goat.position.x - Math.sin(goat.rotation.y) * (-10);
+  const targetZ = goat.position.z - Math.cos(goat.rotation.y) * (-10);
+  camera.position.x += (targetX - camera.position.x) * 0.1;
+  camera.position.y += (goat.position.y + 7 - camera.position.y) * 0.1;
+  camera.position.z += (targetZ - camera.position.z) * 0.1;
+  camera.lookAt(goat.position.x, goat.position.y + 1, goat.position.z);
+}
+
+function updateNPCs(dt) {
+  npcs.forEach(npc => {
+    const u = npc.userData;
+    const dist = npc.position.distanceTo(goat.position);
+
+    // Panic if goat is near
+    if (dist < 15 && !u.panic) {
+      u.panic = true;
+      u.panicTimer = 3 + Math.random()*3;
+      u.walkSpeed = 0.08 + Math.random()*0.05;
+      // Flee direction
+      u.walkDir = Math.atan2(npc.position.x - goat.position.x, npc.position.z - goat.position.z);
+      if (Math.random() < 0.3) showNPCReaction(npc);
+    }
+
+    if (u.panic) {
+      u.panicTimer -= dt;
+      if (u.panicTimer <= 0) {
+        u.panic = false;
+        u.walkSpeed = 0.02 + Math.random()*0.03;
+      }
+      // Erratic movement
+      u.walkDir += (Math.random()-0.5)*0.3;
+    } else {
+      u.walkDir += (Math.random()-0.5)*0.05;
+    }
+
+    if (u.ragdoll) {
+      u.velocityY += GRAVITY * dt;
+      npc.position.x += u.ragdollVx * dt;
+      npc.position.y += u.velocityY * dt;
+      npc.position.z += u.ragdollVz * dt;
+      npc.rotation.x += 0.15;
+      npc.rotation.z += 0.1;
+      u.ragdollVx *= 0.92;
+      u.ragdollVz *= 0.92;
+      if (npc.position.y <= 1.5) {
+        npc.position.y = 1.5;
+        u.velocityY = 0;
+        u.ragdoll = false;
+        npc.rotation.set(0, npc.rotation.y, 0);
+      }
+      return;
+    }
+
+    // Walk
+    npc.position.x += Math.sin(u.walkDir) * u.walkSpeed * speed_mult(u.panic);
+    npc.position.z += Math.cos(u.walkDir) * u.walkSpeed * speed_mult(u.panic);
+    npc.rotation.y = u.walkDir;
+
+    // Bounds
+    if (Math.abs(npc.position.x) > 250 || Math.abs(npc.position.z) > 250) {
+      u.walkDir += Math.PI;
+    }
+
+    // Gravity
+    u.velocityY += GRAVITY * dt;
+    npc.position.y += u.velocityY * dt;
+    if (npc.position.y <= 1.5) {
+      npc.position.y = 1.5;
+      u.velocityY = 0;
+      u.onGround = true;
+    }
+
+    // Leg animation
+    u.legPhase += 0.2 * speed_mult(u.panic);
+    npc.children[2].rotation.x = Math.sin(u.legPhase) * 0.6;
+    npc.children[3].rotation.x = -Math.sin(u.legPhase) * 0.6;
+  });
+}
+
+function speed_mult(panic) { return panic ? 4 : 1; }
+
+function updateObjects(dt) {
+  objects.forEach(o => {
+    if (o.type === 'cloud') {
+      o.mesh.position.x += o.vx;
+      if (o.mesh.position.x > 250) o.mesh.position.x = -250;
+    } else if (o.type === 'dynamic') {
+      if (o.vy !== 0 || !o.grounded) {
+        o.vy += GRAVITY * dt;
+        o.mesh.position.x += o.vx * dt;
+        o.mesh.position.y += o.vy * dt;
+        o.mesh.position.z += o.vz * dt;
+        o.vx *= 0.96;
+        o.vz *= 0.96;
+        o.mesh.rotation.x += o.vz * 0.1;
+        o.mesh.rotation.z += o.vx * 0.1;
+        if (o.mesh.position.y <= 0.5) {
+          o.mesh.position.y = 0.5;
+          o.vy = Math.abs(o.vy) > 2 ? -o.vy * 0.4 : 0;
+          o.grounded = (o.vy === 0);
+        }
+      }
+    } else if (o.type === 'vehicle' || o.type === 'static_vehicle') {
+      if (o.vy !== 0 || !o.grounded) {
+        o.vy += GRAVITY * dt;
+        o.mesh.position.x += o.vx * dt;
+        o.mesh.position.y += o.vy * dt;
+        o.mesh.position.z += o.vz * dt;
+        o.vx *= 0.97;
+        o.vz *= 0.97;
+        o.mesh.rotation.z += o.vx * 0.02;
+        if (o.mesh.position.y <= 0.7) {
+          o.mesh.position.y = 0.7;
+          o.vy = Math.abs(o.vy) > 3 ? -o.vy * 0.3 : 0;
+          o.grounded = (o.vy === 0);
+        }
+      }
+    }
+  });
+}
+
+function updateEnergy(dt) {
+  energy = Math.min(100, energy + dt * 8);
+  document.getElementById('energy-bar').style.width = energy + '%';
+}
+
+// ---- ABILITIES ----
+const cooldowns = {};
+function useAbility(name) {
+  if (cooldowns[name] && Date.now() < cooldowns[name]) return;
+  const durations = { turbo: 4000, superball: 6000, explode: 5000, glitch: 8000, ragdoll: 3000 };
+
+  switch(name) {
+    case 'turbo':
+      goat.userData.velocityY = 25;
+      goat.position.y += 3;
+      addScore(50, '🚀 TURBO BOOST!');
+      spawnParticleEffect(goat.position, '🔥', 8);
+      break;
+    case 'superball':
+      for (let i = 0; i < 6; i++) {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshLambertMaterial({color: 0xff4400}));
+        b.position.copy(goat.position);
+        const a = i / 6 * Math.PI * 2;
+        scene.add(b);
+        objects.push({mesh: b, vx: Math.cos(a)*12, vy: 8, vz: Math.sin(a)*12, mass:1, grounded:false, type:'dynamic'});
+      }
+      addScore(80, '⚽ SUPER BOLAS!');
+      break;
+    case 'explode':
+      doExplosionEffect(goat.position);
+      // Launch nearby objects
+      objects.forEach(o => {
+        if (o.type === 'dynamic' || o.type === 'vehicle') {
+          const dist = o.mesh.position.distanceTo(goat.position);
+          if (dist < 20) {
+            const dir = o.mesh.position.clone().sub(goat.position).normalize();
+            o.vx = dir.x * (30/dist * 5);
+            o.vy = 15 + Math.random()*10;
+            o.vz = dir.z * (30/dist * 5);
+            o.grounded = false;
+          }
+        }
+      });
+      npcs.forEach(n => {
+        const dist = n.position.distanceTo(goat.position);
+        if (dist < 25) {
+          n.userData.ragdoll = true;
+          const dir = n.position.clone().sub(goat.position).normalize();
+          n.userData.ragdollVx = dir.x * 20;
+          n.userData.ragdollVz = dir.z * 20;
+          n.userData.velocityY = 15;
+        }
+      });
+      addScore(200, '💣 EXPLOSÃO TOTAL!');
+      break;
+    case 'glitch':
+      glitchActive = true;
+      goat.userData.velocityY = 20;
+      setTimeout(() => { glitchActive = false; }, durations.glitch);
+      addScore(30, '🌀 GLITCH!');
+      break;
+    case 'ragdoll':
+      goat.userData.ragdoll = true;
+      goat.userData.ragdollVx = (Math.random()-0.5) * 20;
+      goat.userData.ragdollVz = (Math.random()-0.5) * 20;
+      goat.userData.velocityY = 15;
+      addScore(10, '🤸 RAGDOLL!');
+      break;
+  }
+
+  cooldowns[name] = Date.now() + durations[name];
+  const cdEl = document.getElementById('cd-' + name);
+  if (cdEl) {
+    cdEl.classList.add('active');
+    let remaining = durations[name] / 1000;
+    const cd = document.getElementById('cd-' + name);
+    cd.textContent = remaining.toFixed(0);
+    const timer = setInterval(() => {
+      remaining -= 0.5;
+      if (remaining <= 0) { clearInterval(timer); cd.classList.remove('active'); }
+      else cd.textContent = remaining.toFixed(0);
+    }, 500);
+  }
+}
+
+// ---- ATTACK ----
+function doAttack(e) {
+  addScore(10, '👊 ATAQUE!');
+  // Hit NPCs near goat
+  npcs.forEach(n => {
+    const dist = n.position.distanceTo(goat.position);
+    if (dist < 6) {
+      n.userData.ragdoll = true;
+      const forward = new THREE.Vector3(-Math.sin(goat.rotation.y), 1, -Math.cos(goat.rotation.y));
+      n.userData.ragdollVx = forward.x * 18;
+      n.userData.ragdollVz = forward.z * 18;
+      n.userData.velocityY = 12;
+      addScore(50, '🤣 NPC LANÇADO!');
+      addKillFeed('Cabra lançou ' + ['um NPC inocente!', 'um senhor!', 'uma pessoa!'][Math.floor(Math.random()*3)]);
+      combo++;
+      updateCombo();
+    }
+  });
+  // Hit objects
+  objects.forEach(o => {
+    if (o.type === 'dynamic' || o.type === 'vehicle') {
+      const dist = o.mesh.position.distanceTo(goat.position);
+      if (dist < 5) {
+        o.vx = -Math.sin(goat.rotation.y) * 15;
+        o.vy = 8;
+        o.vz = -Math.cos(goat.rotation.y) * 15;
+        o.grounded = false;
+        addScore(30, '💨 OBJETO LANÇADO!');
+      }
+    }
+  });
+  doExplosionFlash();
+}
+
+function doExplosionEffect(pos) {
+  doExplosionFlash();
+  spawnParticleEffect(pos, '💥', 12);
+}
+
+function doExplosionFlash() {
+  const overlay = document.getElementById('explosion-overlay');
+  overlay.classList.add('flash');
+  setTimeout(() => overlay.classList.remove('flash'), 120);
+}
+
+// ---- SCORE ----
+function addScore(pts, label) {
+  score += pts * combo;
+  updateHUD();
+  if (label) {
+    const scoreEl = document.getElementById('score-display');
+    scoreEl.classList.add('score-pop');
+    setTimeout(() => scoreEl.classList.remove('score-pop'), 200);
+  }
+
+  if (comboTimer) clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => {
+    combo = 1;
+    document.getElementById('combo-display').classList.remove('show');
+  }, 3000);
+}
+
+function updateCombo() {
+  const el = document.getElementById('combo-display');
+  el.textContent = `🔥 COMBO x${combo}`;
+  el.classList.add('show');
+}
+
+function updateHUD() {
+  document.getElementById('score-display').textContent = `💥 PONTOS: ${score.toLocaleString()}`;
+  document.getElementById('health-bar').style.width = health + '%';
+}
+
+// ---- EVENTS ----
+function startRandomEvents() {
+  setInterval(() => {
+    if (!gameRunning || paused) return;
+    const ev = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+    showEventBanner(ev);
+    triggerEvent(ev);
+  }, 25000 + Math.random()*20000);
+}
+
+function showEventBanner(text) {
+  const el = document.getElementById('event-banner');
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+function triggerEvent(ev) {
+  if (ev.includes('METEORO') || ev.includes('CHUVA')) {
+    // Rain meteors
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => {
+        const meteor = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshLambertMaterial({color: 0xff4400}));
+        meteor.position.set(Math.random()*200-100, 80, Math.random()*200-100);
+        scene.add(meteor);
+        objects.push({mesh: meteor, vx:0, vy:-20, vz:0, mass:20, grounded:false, type:'dynamic'});
+      }, i * 800);
+    }
+  } else if (ev.includes('TORNADO')) {
+    // Throw all dynamic objects
+    objects.forEach(o => {
+      if (o.type === 'dynamic') {
+        o.vx = (Math.random()-0.5) * 30;
+        o.vy = 20 + Math.random()*15;
+        o.vz = (Math.random()-0.5) * 30;
+        o.grounded = false;
+      }
+    });
+    npcs.forEach(n => {
+      n.userData.ragdoll = true;
+      n.userData.ragdollVx = (Math.random()-0.5)*25;
+      n.userData.ragdollVz = (Math.random()-0.5)*25;
+      n.userData.velocityY = 20;
+    });
+  } else if (ev.includes('EXPLOSÃO')) {
+    doExplosionEffect(goat.position);
+    addScore(500, '💣 EVENTO EXPLOSÃO!');
+  }
+  addKillFeed('⚡ EVENTO: ' + ev);
+}
+
+// ---- UI HELPERS ----
+function addKillFeed(msg) {
+  const feed = document.getElementById('kill-feed');
+  const entry = document.createElement('div');
+  entry.className = 'kill-entry';
+  entry.textContent = msg;
+  feed.prepend(entry);
+  if (feed.children.length > 5) feed.removeChild(feed.lastChild);
+  setTimeout(() => entry.remove(), 3000);
+}
+
+function showNPCReaction(npc) {
+  const pos3D = npc.position.clone();
+  pos3D.y += 3;
+  const projected = pos3D.clone().project(camera);
+  const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+  if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'npc-bubble';
+  bubble.textContent = NPC_REACTIONS[Math.floor(Math.random()*NPC_REACTIONS.length)];
+  bubble.style.left = x + 'px';
+  bubble.style.top = (y - 40) + 'px';
+  document.body.appendChild(bubble);
+  setTimeout(() => bubble.remove(), 2100);
+}
+
+function spawnParticles(emoji, e) {
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emoji;
+    p.style.left = (Math.random()*100 + (e?.clientX || window.innerWidth/2) - 50) + 'px';
+    p.style.top = (e?.clientY || window.innerHeight/2) + 'px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1500);
+  }
+}
+
+function spawnParticleEffect(worldPos, emoji, count=5) {
+  const pos3D = worldPos.clone();
+  const projected = pos3D.clone().project(camera);
+  const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emoji;
+    p.style.left = (x + (Math.random()-0.5)*80) + 'px';
+    p.style.top = (y + (Math.random()-0.5)*80) + 'px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1600);
+  }
+}
+
+// ---- MINIMAP ----
+function drawMinimap() {
+  const canvas = document.getElementById('minimap-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,120,120);
+  ctx.fillStyle = 'rgba(0,50,0,0.7)';
+  ctx.fillRect(0,0,120,120);
+
+  const scale = 120/600;
+  const ox = 60, oy = 60;
+
+  // Draw objects as dots
+  objects.forEach(o => {
+    if (o.type === 'static') {
+      ctx.fillStyle = 'rgba(100,100,150,0.5)';
+      ctx.fillRect(
+        ox + o.mesh.position.x * scale - 1,
+        oy + o.mesh.position.z * scale - 1,
+        2, 2
+      );
+    }
+  });
+
+  // NPCs
+  npcs.forEach(n => {
+    ctx.fillStyle = n.userData.panic ? '#ff6600' : '#66ff66';
+    ctx.beginPath();
+    ctx.arc(ox + n.position.x*scale, oy + n.position.z*scale, 2, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Vehicles
+  vehicles.forEach(v => {
+    ctx.fillStyle = '#4488ff';
+    ctx.fillRect(ox + v.mesh.position.x*scale-2, oy + v.mesh.position.z*scale-2, 4, 3);
+  });
+
+  // Player
+  if (goat) {
+    ctx.fillStyle = '#ff4500';
+    ctx.beginPath();
+    ctx.arc(ox + goat.position.x*scale, oy + goat.position.z*scale, 4, 0, Math.PI*2);
+    ctx.fill();
+    // Direction
+    ctx.strokeStyle = '#ffcc00';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ox + goat.position.x*scale, oy + goat.position.z*scale);
+    ctx.lineTo(
+      ox + goat.position.x*scale - Math.sin(goat.rotation.y)*8,
+      oy + goat.position.z*scale - Math.cos(goat.rotation.y)*8
+    );
+    ctx.stroke();
+  }
+}
+
+// ---- PAUSE ----
+function togglePause() {
+  if (!gameRunning) return;
+  paused = !paused;
+  document.getElementById('pause-menu').style.display = paused ? 'flex' : 'none';
+  if (!paused) clock.getDelta(); // reset delta
+}
+
+function resumeGame() {
+  paused = false;
+  document.getElementById('pause-menu').style.display = 'none';
+}
+
+function backToMenu() {
+  gameRunning = false;
+  paused = false;
+  cancelAnimationFrame(animFrameId);
+  if (renderer) renderer.dispose();
+  document.getElementById('game-canvas-container').style.display = 'none';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('pause-menu').style.display = 'none';
+  score = 0; combo = 1; health = 100; energy = 80;
+  scene = null; camera = null; renderer = null; goat = null;
+  objects = []; npcs = []; vehicles = [];
+  document.getElementById('main-menu').style.display = 'flex';
+}
+
+// Show initial event after 10s
+setTimeout(() => {
+  if (gameRunning) showEventBanner(EVENTS[Math.floor(Math.random()*EVENTS.length)]);
+}, 10000);
+
+// Random kill messages
+setInterval(() => {
+  if (gameRunning && !paused && Math.random() < 0.3) {
+    addKillFeed(KILL_MSGS[Math.floor(Math.random()*KILL_MSGS.length)]);
+  }
+}, 8000);
+</script>
+</body>
+</html>

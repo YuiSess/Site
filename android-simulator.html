@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DroidSim - Android Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Google+Sans:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Roboto', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ===== PHONE SHELL ===== */
+  .phone-shell {
+    width: 390px;
+    height: 844px;
+    background: #0d0d0d;
+    border-radius: 54px;
+    position: relative;
+    box-shadow:
+      0 0 0 2px #333,
+      0 0 0 4px #222,
+      0 30px 80px rgba(0,0,0,0.8),
+      inset 0 0 30px rgba(255,255,255,0.03);
+    overflow: hidden;
+  }
+
+  .phone-screen {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    border-radius: 44px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* ===== STATUS BAR ===== */
+  .status-bar {
+    height: 44px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons svg { width: 16px; height: 16px; fill: white; }
+
+  /* Dynamic Island */
+  .dynamic-island {
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 1001;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: none;
+    flex-direction: column;
+    transition: all 0.3s ease;
+  }
+  .screen.active { display: flex; }
+
+  /* ===== WALLPAPER / HOME ===== */
+  #home-screen {
+    background: linear-gradient(160deg, #0f0c29, #302b63, #24243e);
+    padding-top: 50px;
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 20px;
+    flex: 1;
+  }
+
+  .app-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .app-icon:active { transform: scale(0.9); }
+
+  .icon-box {
+    width: 58px; height: 58px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .icon-label {
+    color: white;
+    font-size: 11px;
+    font-weight: 400;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  .home-dock {
+    height: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 10px;
+  }
+
+  .dock-bg {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0 0 44px 44px;
+  }
+
+  /* ===== NAV BAR ===== */
+  .nav-bar {
+    height: 48px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 500;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 8px 20px;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .nav-btn:active { background: rgba(255,255,255,0.1); transform: scale(0.9); }
+
+  /* ===== PLAY STORE ===== */
+  #play-store {
+    background: #f8f9fa;
+    overflow-y: auto;
+  }
+
+  .store-header {
+    background: white;
+    padding: 55px 16px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .store-search {
+    background: #f1f3f4;
+    border-radius: 30px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #666;
+  }
+
+  .store-section { padding: 16px; }
+  .store-section h3 { font-size: 16px; color: #202124; margin-bottom: 12px; font-weight: 700; }
+
+  .game-card {
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .game-card:active { transform: scale(0.98); }
+
+  .game-icon {
+    width: 64px; height: 64px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .game-info { flex: 1; }
+  .game-info h4 { font-size: 14px; color: #202124; font-weight: 600; }
+  .game-info p { font-size: 12px; color: #666; margin: 2px 0; }
+  .game-stars { color: #ffa000; font-size: 11px; }
+
+  .install-btn {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .install-btn:active { background: #1557b0; }
+  .install-btn.installed { background: transparent; color: #1a73e8; border: 1px solid #1a73e8; }
+
+  /* ===== SETTINGS ===== */
+  #settings-screen {
+    background: #f6f6f6;
+    overflow-y: auto;
+  }
+
+  .settings-header {
+    background: white;
+    padding: 55px 16px 16px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #202124;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .settings-group {
+    background: white;
+    border-radius: 12px;
+    margin: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .settings-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s;
+    gap: 14px;
+  }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item:active { background: #f5f5f5; }
+
+  .settings-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .settings-text { flex: 1; }
+  .settings-text h4 { font-size: 14px; color: #202124; }
+  .settings-text p { font-size: 12px; color: #888; }
+
+  .toggle {
+    width: 44px; height: 24px;
+    background: #1a73e8;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px; left: 22px;
+    transition: left 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .toggle.off { background: #ccc; }
+  .toggle.off::after { left: 2px; }
+
+  /* ===== KEYBOARD ===== */
+  .keyboard {
+    position: absolute;
+    bottom: 48px; left: 0; right: 0;
+    background: #d1d3d9;
+    padding: 8px 4px 4px;
+    z-index: 900;
+    display: none;
+  }
+  .keyboard.visible { display: block; }
+
+  .key-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 5px;
+  }
+
+  .key {
+    background: white;
+    border: none;
+    border-radius: 5px;
+    height: 42px;
+    min-width: 30px;
+    font-size: 16px;
+    color: #000;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    box-shadow: 0 2px 0 #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 36px;
+    transition: background 0.1s;
+    user-select: none;
+  }
+  .key:active { background: #a8d0ff; transform: translateY(1px); box-shadow: 0 1px 0 #aaa; }
+
+  .key.special {
+    background: #adb5bd;
+    font-size: 12px;
+    font-weight: 600;
+    flex: 1.5;
+    max-width: 55px;
+  }
+
+  .key.space {
+    flex: 4;
+    max-width: 200px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  .key.enter {
+    background: #adb5bd;
+    font-size: 11px;
+    flex: 1.8;
+    max-width: 66px;
+  }
+
+  /* ===== CAR DELIVERY GAME ===== */
+  #car-game {
+    background: #87CEEB;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #game-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .game-ui {
+    position: absolute;
+    top: 55px; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .game-score {
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .game-controls {
+    position: absolute;
+    bottom: 60px; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 10;
+  }
+
+  .ctrl-btn {
+    width: 70px; height: 70px;
+    background: rgba(255,255,255,0.25);
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.1s;
+  }
+  .ctrl-btn:active { background: rgba(255,255,255,0.5); }
+
+  .ctrl-group { display: flex; gap: 10px; }
+
+  .game-start-screen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    gap: 20px;
+  }
+
+  .game-start-screen h2 {
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .game-start-screen p { color: rgba(255,255,255,0.8); font-size: 14px; text-align: center; }
+
+  .play-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 14px 40px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+    transition: transform 0.15s;
+  }
+  .play-btn:active { transform: scale(0.95); }
+
+  /* ===== NOTIFICATION ===== */
+  .notification-toast {
+    position: absolute;
+    top: 55px; left: 16px; right: 16px;
+    background: rgba(40,40,40,0.95);
+    color: white;
+    border-radius: 14px;
+    padding: 12px 16px;
+    z-index: 2000;
+    font-size: 13px;
+    display: none;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    animation: slideDown 0.3s ease;
+  }
+  .notification-toast.show { display: block; }
+  @keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ===== LOCK SCREEN ===== */
+  #lock-screen {
+    background: linear-gradient(180deg, #1a1a3e 0%, #0d2137 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  .lock-time {
+    font-size: 72px;
+    font-weight: 200;
+    color: white;
+    letter-spacing: -2px;
+    font-family: 'Google Sans', sans-serif;
+  }
+  .lock-date { font-size: 16px; color: rgba(255,255,255,0.7); }
+  .lock-hint { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 40px; }
+
+  .lock-notifs {
+    margin-top: 20px;
+    width: 85%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lock-notif {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px 16px;
+    color: white;
+    font-size: 13px;
+  }
+
+  /* ===== DIALOGS ===== */
+  .dialog-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1500;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    border-radius: 44px;
+  }
+  .dialog-overlay.show { display: flex; }
+
+  .dialog-box {
+    background: white;
+    border-radius: 28px 28px 0 0;
+    padding: 20px;
+    width: 100%;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  /* ===== APPS GRID WIDGET ===== */
+  .widget-weather {
+    margin: 16px 20px 0;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 16px;
+    color: white;
+  }
+  .widget-weather h3 { font-size: 13px; opacity: 0.8; }
+  .widget-weather .temp { font-size: 42px; font-weight: 200; }
+  .widget-weather p { font-size: 13px; opacity: 0.8; }
+
+  /* ===== MESSAGES APP ===== */
+  #messages-screen {
+    background: white;
+    overflow-y: auto;
+  }
+
+  .msg-header {
+    background: white;
+    padding: 55px 16px 12px;
+    font-size: 20px;
+    font-weight: 700;
+    border-bottom: 1px solid #eee;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .msg-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+  }
+
+  .msg-avatar {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .msg-content h4 { font-size: 15px; color: #202124; font-weight: 600; }
+  .msg-content p { font-size: 13px; color: #666; margin-top: 2px; }
+  .msg-time { font-size: 12px; color: #999; margin-left: auto; }
+
+  /* ===== CHAT WINDOW ===== */
+  #chat-screen {
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-header {
+    background: white;
+    padding: 55px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 120px;
+  }
+
+  .bubble {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .bubble.received {
+    background: white;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    color: #202124;
+  }
+  .bubble.sent {
+    background: #1a73e8;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+    color: white;
+  }
+
+  .chat-input-area {
+    position: absolute;
+    bottom: 48px; left: 0; right: 0;
+    background: white;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #eee;
+    z-index: 50;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .send-btn {
+    width: 40px; height: 40px;
+    background: #1a73e8;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+
+  /* ===== CAMERA ===== */
+  #camera-screen {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .camera-viewfinder {
+    width: 100%;
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .camera-corner {
+    position: absolute;
+    width: 30px; height: 30px;
+    border-color: white;
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .camera-corner.tl { top: 30px; left: 30px; border-width: 3px 0 0 3px; }
+  .camera-corner.tr { top: 30px; right: 30px; border-width: 3px 3px 0 0; }
+  .camera-corner.bl { bottom: 30px; left: 30px; border-width: 0 0 3px 3px; }
+  .camera-corner.br { bottom: 30px; right: 30px; border-width: 0 3px 3px 0; }
+
+  .camera-controls {
+    background: #1a1a1a;
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .shutter-btn {
+    width: 70px; height: 70px;
+    border: 4px solid white;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    transition: transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .shutter-btn:active { transform: scale(0.9); }
+
+  .cam-side-btn {
+    width: 48px; height: 48px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo-taken {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+  }
+  .photo-taken.flash { opacity: 1; }
+
+  /* ===== THREE.JS OVERLAY ===== */
+  #three-container {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+
+  .road {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 38%;
+    background: #555;
+    border-top: 4px solid #888;
+  }
+
+  .road-line {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 8px;
+    width: 60px;
+    background: #fff;
+    left: var(--x);
+    animation: roadMove 0.8s linear infinite;
+  }
+
+  @keyframes roadMove {
+    from { transform: translateX(0) translateY(-50%); }
+    to { transform: translateX(-100px) translateY(-50%); }
+  }
+
+  .sky-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 62%;
+    background: linear-gradient(180deg, #87CEEB 0%, #b0e0f5 100%);
+  }
+
+  .building {
+    position: absolute;
+    bottom: 38%;
+    background: #444;
+    opacity: 0.6;
+  }
+
+  .sun {
+    position: absolute;
+    top: 60px; right: 60px;
+    width: 50px; height: 50px;
+    background: #FFD700;
+    border-radius: 50%;
+    box-shadow: 0 0 30px #FFD700;
+  }
+
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.8;
+  }
+
+  .delivery-target {
+    position: absolute;
+    bottom: 38%;
+    right: -80px;
+    animation: driveIn 3s linear forwards;
+    font-size: 40px;
+    z-index: 5;
+  }
+
+  @keyframes driveIn {
+    from { right: -80px; }
+    to { right: 40px; }
+  }
+
+  .delivery-arrow {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: rgba(255,165,0,0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="phone-shell">
+  <div class="phone-screen">
+
+    <!-- Dynamic Island -->
+    <div class="dynamic-island"></div>
+
+    <!-- Status Bar (shown on all screens) -->
+    <div class="status-bar" id="status-bar">
+      <span class="time" id="clock">12:00</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 24 24"><path d="M1.5 8.5C5.2 4.8 10.4 2.5 12 2.5s6.8 2.3 10.5 6L21 10c-3.1-3.1-5.7-5-9-5s-5.9 1.9-9 5L1.5 8.5z"/><path d="M5 12c1.9-1.9 4.3-3 7-3s5.1 1.1 7 3l-1.5 1.5C15.9 11.9 14 11 12 11s-3.9.9-5.5 2.5L5 12z"/><path d="M12 16c-.8 0-1.5.7-1.5 1.5S11.2 19 12 19s1.5-.7 1.5-1.5S12.8 16 12 16z"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2" fill="none" stroke="white" stroke-width="2"/><path d="M23 10v4a2 2 0 000-4z"/><rect x="3" y="8" width="12" height="8" rx="1"/></svg>
+      </div>
+    </div>
+
+    <!-- LOCK SCREEN -->
+    <div class="screen active" id="lock-screen" onclick="unlock()">
+      <div class="lock-time" id="lock-clock">12:00</div>
+      <div class="lock-date" id="lock-date">Sabado, 25 de Abril</div>
+      <div class="lock-notifs">
+        <div class="lock-notif">
+          <strong>Play Store</strong><br>Car Delivery - Disponivel!
+        </div>
+        <div class="lock-notif">
+          <strong>Gabriel</strong><br>Voce viu o novo jogo?
+        </div>
+      </div>
+      <div class="lock-hint">Toque para desbloquear</div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div class="screen" id="home-screen">
+      <!-- Weather Widget -->
+      <div class="widget-weather">
+        <h3>Itaporanga, SP</h3>
+        <div class="temp">28°C</div>
+        <p>Ensolarado</p>
+      </div>
+
+      <div class="home-grid">
+        <div class="app-icon" onclick="openApp('phone')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#4CAF50,#2e7d32)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          </div>
+          <span class="icon-label">Telefone</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('messages')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#2196F3,#0d47a1)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          </div>
+          <span class="icon-label">Mensagens</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('playstore')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#fff,#f5f5f5)">
+            <svg width="36" height="36" viewBox="0 0 24 24"><defs><linearGradient id="pg1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#00C853"/><stop offset="100%" style="stop-color:#69F0AE"/></linearGradient><linearGradient id="pg2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FF6D00"/><stop offset="100%" style="stop-color:#FFAB40"/></linearGradient></defs><path d="M3 20.5v-17c0-.83 1.01-1.3 1.7-.78l14.12 8.5c.64.39.64 1.17 0 1.56L4.7 21.28C4.01 21.8 3 21.33 3 20.5z" fill="url(#pg1)"/></svg>
+          </div>
+          <span class="icon-label">Play Store</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('camera')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#607D8B,#37474F)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/><path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+          </div>
+          <span class="icon-label">Camera</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('cargame')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#FF5722,#BF360C)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          </div>
+          <span class="icon-label">Car Delivery</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('settings')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#9E9E9E,#616161)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+          </div>
+          <span class="icon-label">Config.</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('gallery')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#E91E63,#880E4F)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+          </div>
+          <span class="icon-label">Galeria</span>
+        </div>
+
+        <div class="app-icon" onclick="openApp('calculator')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#009688,#004D40)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-2v-4H8v-2h4V7h2v4h4v2h-4v4z"/></svg>
+          </div>
+          <span class="icon-label">Calculadora</span>
+        </div>
+      </div>
+
+      <div class="dock-bg"></div>
+      <div class="home-dock" style="position:relative;z-index:1">
+        <div class="app-icon" onclick="openApp('phone')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#4CAF50,#2e7d32)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          </div>
+        </div>
+        <div class="app-icon" onclick="openApp('messages')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#2196F3,#0d47a1)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          </div>
+        </div>
+        <div class="app-icon" onclick="openApp('playstore')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#fff,#f5f5f5)">
+            <svg width="30" height="30" viewBox="0 0 24 24"><path d="M3 20.5v-17c0-.83 1.01-1.3 1.7-.78l14.12 8.5c.64.39.64 1.17 0 1.56L4.7 21.28C4.01 21.8 3 21.33 3 20.5z" fill="#4CAF50"/></svg>
+          </div>
+        </div>
+        <div class="app-icon" onclick="openApp('cargame')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#FF5722,#BF360C)">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAY STORE -->
+    <div class="screen" id="play-store">
+      <div class="store-header">
+        <div class="store-search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#666"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          Pesquisar em apps e jogos
+        </div>
+      </div>
+
+      <div class="store-section">
+        <h3>Em alta agora</h3>
+
+        <div class="game-card" onclick="launchGame('cargame')">
+          <div class="game-icon" style="background:linear-gradient(135deg,#FF5722,#BF360C)">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          </div>
+          <div class="game-info">
+            <h4>Car Delivery</h4>
+            <p>Corrida & Entrega</p>
+            <div class="game-stars">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#999">4.9</span></div>
+          </div>
+          <button class="install-btn installed" id="btn-cargame">Jogar</button>
+        </div>
+
+        <div class="game-card" onclick="installGame('puzzle')">
+          <div class="game-icon" style="background:linear-gradient(135deg,#9C27B0,#4A148C)">
+            <span>🧩</span>
+          </div>
+          <div class="game-info">
+            <h4>Puzzle Master</h4>
+            <p>Puzzle & Logica</p>
+            <div class="game-stars">&#9733;&#9733;&#9733;&#9733;&#9734; <span style="color:#999">4.2</span></div>
+          </div>
+          <button class="install-btn" id="btn-puzzle" onclick="event.stopPropagation();installGame('puzzle')">Instalar</button>
+        </div>
+
+        <div class="game-card" onclick="installGame('snake')">
+          <div class="game-icon" style="background:linear-gradient(135deg,#4CAF50,#1B5E20)">
+            <span style="font-size:32px">🐍</span>
+          </div>
+          <div class="game-info">
+            <h4>Snake Turbo</h4>
+            <p>Acao & Classicos</p>
+            <div class="game-stars">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#999">4.7</span></div>
+          </div>
+          <button class="install-btn" id="btn-snake" onclick="event.stopPropagation();installGame('snake')">Instalar</button>
+        </div>
+
+        <div class="game-card" onclick="installGame('space')">
+          <div class="game-icon" style="background:linear-gradient(135deg,#1a237e,#000051)">
+            <span style="font-size:32px">🚀</span>
+          </div>
+          <div class="game-info">
+            <h4>Space Rush</h4>
+            <p>Aventura & Espaco</p>
+            <div class="game-stars">&#9733;&#9733;&#9733;&#9733;&#9734; <span style="color:#999">4.4</span></div>
+          </div>
+          <button class="install-btn" id="btn-space" onclick="event.stopPropagation();installGame('space')">Instalar</button>
+        </div>
+
+        <div class="game-card" onclick="installGame('jump')">
+          <div class="game-icon" style="background:linear-gradient(135deg,#FF9800,#E65100)">
+            <span style="font-size:32px">🏃</span>
+          </div>
+          <div class="game-info">
+            <h4>Run &amp; Jump</h4>
+            <p>Plataforma</p>
+            <div class="game-stars">&#9733;&#9733;&#9733;&#9733;&#9733; <span style="color:#999">4.8</span></div>
+          </div>
+          <button class="install-btn" id="btn-jump" onclick="event.stopPropagation();installGame('jump')">Instalar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="settings-screen">
+      <div class="settings-header">Configuracoes</div>
+
+      <div class="settings-group">
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#E3F2FD">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#1976D2"><path d="M1.5 8.5C5.2 4.8 10.4 2.5 12 2.5s6.8 2.3 10.5 6L21 10c-3.1-3.1-5.7-5-9-5s-5.9 1.9-9 5L1.5 8.5z"/><path d="M12 16c-.8 0-1.5.7-1.5 1.5S11.2 19 12 19s1.5-.7 1.5-1.5S12.8 16 12 16z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Wi-Fi</h4><p>AndroidNet_5G</p></div>
+          <div class="toggle" onclick="this.classList.toggle('off')"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#F3E5F5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#7B1FA2"><path d="M17.71 7.71L12 2l-5.71 5.71a.996.996 0 000 1.41L12 14.82l5.71-5.7a.996.996 0 000-1.41zM12 3.83l3.89 3.89L12 11.61 8.11 7.72 12 3.83zM5 16c0 2.76 3.13 5 7 5s7-2.24 7-5h-2c0 1.66-2.24 3-5 3s-5-1.34-5-3H5z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Bluetooth</h4><p>Ligado</p></div>
+          <div class="toggle" onclick="this.classList.toggle('off')"></div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#FFF8E1">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#F9A825"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Modo Aviao</h4><p>Desligado</p></div>
+          <div class="toggle off" onclick="this.classList.toggle('off')"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#E8F5E9">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#388E3C"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Som e Vibracao</h4><p>Toque: Galaxy</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#E3F2FD">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#1976D2"><path d="M20 8H4V6h16v2zm-2-6H6v2h12V2zm4 10v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-8c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Tela</h4><p>Brilho 80%</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#FBE9E7">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#D84315"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33C16.4 22 17 21.4 17 20.67V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Bateria</h4><p>87% - Carregando</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#F3E5F5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#7B1FA2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Conta Google</h4><p>usuario@gmail.com</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#E8F5E9">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#388E3C"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Seguranca</h4><p>Impressao Digital</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#E3F2FD">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#1976D2"><path d="M11 9h2V7h-2v2zm1 11c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-18C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 13h2v-6h-2v6z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Sobre o Telefone</h4><p>DroidSim Pro</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="settings-item">
+          <div class="settings-icon" style="background:#FFF9C4">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#F9A825"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+          </div>
+          <div class="settings-text"><h4>Atualizacoes</h4><p>Android 14</p></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </div>
+      </div>
+      <div style="height:60px"></div>
+    </div>
+
+    <!-- MESSAGES SCREEN -->
+    <div class="screen" id="messages-screen">
+      <div class="msg-header">Mensagens</div>
+      <div class="msg-item" onclick="openChat('Gabriel','#1976D2','G')">
+        <div class="msg-avatar" style="background:#1976D2">G</div>
+        <div class="msg-content">
+          <h4>Gabriel</h4>
+          <p>Voce viu o novo jogo?</p>
+        </div>
+        <div class="msg-time">10:32</div>
+      </div>
+      <div class="msg-item" onclick="openChat('Ana','#E91E63','A')">
+        <div class="msg-avatar" style="background:#E91E63">A</div>
+        <div class="msg-content">
+          <h4>Ana</h4>
+          <p>Oi! Tudo bem?</p>
+        </div>
+        <div class="msg-time">09:15</div>
+      </div>
+      <div class="msg-item" onclick="openChat('Familia','#4CAF50','F')">
+        <div class="msg-avatar" style="background:#4CAF50">F</div>
+        <div class="msg-content">
+          <h4>Familia</h4>
+          <p>Almoco domingo?</p>
+        </div>
+        <div class="msg-time">Ontem</div>
+      </div>
+      <div class="msg-item" onclick="openChat('Pedro','#FF9800','P')">
+        <div class="msg-avatar" style="background:#FF9800">P</div>
+        <div class="msg-content">
+          <h4>Pedro</h4>
+          <p>Valeu cara!</p>
+        </div>
+        <div class="msg-time">Seg</div>
+      </div>
+    </div>
+
+    <!-- CHAT SCREEN -->
+    <div class="screen" id="chat-screen">
+      <div class="chat-header">
+        <button onclick="openApp('messages')" style="background:none;border:none;color:#1976D2;font-size:22px;cursor:pointer;">&#8592;</button>
+        <div class="msg-avatar" id="chat-avatar" style="background:#1976D2;width:38px;height:38px;font-size:16px">G</div>
+        <div>
+          <div id="chat-name" style="font-weight:700;font-size:15px">Gabriel</div>
+          <div style="font-size:12px;color:#4CAF50">Online</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="bubble received">Oi! Voce viu o novo jogo Car Delivery?</div>
+        <div class="bubble sent">Ainda nao! Como e?</div>
+        <div class="bubble received">E incrivel! Da pra dirigir um carro 3D e fazer entregas!</div>
+        <div class="bubble sent">Vou baixar agora!</div>
+        <div class="bubble received">Voce viu o novo jogo?</div>
+      </div>
+      <div class="chat-input-area">
+        <input class="chat-input" id="chat-input" type="text" placeholder="Mensagem..." onclick="showKeyboard(this)">
+        <button class="send-btn" onclick="sendMessage()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CAMERA SCREEN -->
+    <div class="screen" id="camera-screen">
+      <div class="camera-viewfinder">
+        <div class="camera-corner tl"></div>
+        <div class="camera-corner tr"></div>
+        <div class="camera-corner bl"></div>
+        <div class="camera-corner br"></div>
+        <div class="photo-taken" id="photo-flash"></div>
+        <div style="position:absolute;top:55px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:12px">Modo Foto</div>
+        <div style="position:absolute;bottom:20px;width:100%;display:flex;justify-content:center;gap:30px">
+          <div style="color:rgba(255,255,255,0.5);font-size:13px">Video</div>
+          <div style="color:white;font-size:13px;font-weight:700;border-bottom:2px solid white;padding-bottom:4px">Foto</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:13px">Retrato</div>
+        </div>
+      </div>
+      <div class="camera-controls">
+        <div class="cam-side-btn" style="overflow:hidden;background:#333">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+        </div>
+        <div class="shutter-btn" onclick="takePhoto()">
+          <div style="width:58px;height:58px;border:3px solid #ddd;border-radius:50%;background:white"></div>
+        </div>
+        <div class="cam-side-btn" onclick="showToast('Modo selfie!')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAR DELIVERY GAME -->
+    <div class="screen" id="car-game">
+      <div class="sky-bg"></div>
+      <div class="sun"></div>
+
+      <!-- Clouds -->
+      <div class="cloud" style="width:80px;height:25px;top:80px;left:30px;animation:moveClouds 8s linear infinite"></div>
+      <div class="cloud" style="width:60px;height:18px;top:100px;left:80px;animation:moveClouds 8s linear 2s infinite"></div>
+      <div class="cloud" style="width:90px;height:22px;top:70px;right:20px;animation:moveCloudsR 10s linear infinite"></div>
+
+      <!-- Buildings -->
+      <div class="building" style="width:40px;height:120px;right:20px"></div>
+      <div class="building" style="width:30px;height:90px;right:70px"></div>
+      <div class="building" style="width:50px;height:150px;left:10px"></div>
+      <div class="building" style="width:35px;height:80px;left:70px"></div>
+
+      <div class="road">
+        <div class="road-line" style="--x:20px"></div>
+        <div class="road-line" style="--x:120px"></div>
+        <div class="road-line" style="--x:220px"></div>
+        <div class="road-line" style="--x:320px"></div>
+      </div>
+
+      <!-- THREE.JS Canvas -->
+      <canvas id="game-canvas"></canvas>
+
+      <div class="game-ui">
+        <div class="game-score">Pontos: <span id="score">0</span></div>
+        <div class="game-score">Entregas: <span id="deliveries">0</span></div>
+      </div>
+
+      <div class="delivery-arrow" id="delivery-arrow" style="display:none">ENTREGA &#8594;</div>
+
+      <div class="game-controls" id="game-controls" style="display:none">
+        <div class="ctrl-group">
+          <div class="ctrl-btn" id="btn-left" ontouchstart="startMove('left')" ontouchend="stopMove('left')" onmousedown="startMove('left')" onmouseup="stopMove('left')">&#8592;</div>
+          <div class="ctrl-btn" id="btn-right" ontouchstart="startMove('right')" ontouchend="stopMove('right')" onmousedown="startMove('right')" onmouseup="stopMove('right')">&#8594;</div>
+        </div>
+        <div class="ctrl-group">
+          <div class="ctrl-btn" id="btn-brake" ontouchstart="startMove('brake')" ontouchend="stopMove('brake')" onmousedown="startMove('brake')" onmouseup="stopMove('brake')">&#9632;</div>
+          <div class="ctrl-btn" id="btn-accel" ontouchstart="startMove('accel')" ontouchend="stopMove('accel')" onmousedown="startMove('accel')" onmouseup="stopMove('accel')">&#9650;</div>
+        </div>
+      </div>
+
+      <div class="game-start-screen" id="game-start">
+        <h2>Car Delivery</h2>
+        <p>Faca entregas pela cidade!</p>
+        <p style="font-size:12px;color:rgba(255,255,255,0.5)">Use os botoes para dirigir</p>
+        <button class="play-btn" onclick="startGame()">JOGAR</button>
+      </div>
+    </div>
+
+    <!-- Android Keyboard -->
+    <div class="keyboard" id="keyboard">
+      <div class="key-row">
+        <button class="key" onclick="typeKey('q')">q</button>
+        <button class="key" onclick="typeKey('w')">w</button>
+        <button class="key" onclick="typeKey('e')">e</button>
+        <button class="key" onclick="typeKey('r')">r</button>
+        <button class="key" onclick="typeKey('t')">t</button>
+        <button class="key" onclick="typeKey('y')">y</button>
+        <button class="key" onclick="typeKey('u')">u</button>
+        <button class="key" onclick="typeKey('i')">i</button>
+        <button class="key" onclick="typeKey('o')">o</button>
+        <button class="key" onclick="typeKey('p')">p</button>
+      </div>
+      <div class="key-row">
+        <button class="key" onclick="typeKey('a')">a</button>
+        <button class="key" onclick="typeKey('s')">s</button>
+        <button class="key" onclick="typeKey('d')">d</button>
+        <button class="key" onclick="typeKey('f')">f</button>
+        <button class="key" onclick="typeKey('g')">g</button>
+        <button class="key" onclick="typeKey('h')">h</button>
+        <button class="key" onclick="typeKey('j')">j</button>
+        <button class="key" onclick="typeKey('k')">k</button>
+        <button class="key" onclick="typeKey('l')">l</button>
+      </div>
+      <div class="key-row">
+        <button class="key special" onclick="toggleShift()">&#8679;</button>
+        <button class="key" onclick="typeKey('z')">z</button>
+        <button class="key" onclick="typeKey('x')">x</button>
+        <button class="key" onclick="typeKey('c')">c</button>
+        <button class="key" onclick="typeKey('v')">v</button>
+        <button class="key" onclick="typeKey('b')">b</button>
+        <button class="key" onclick="typeKey('n')">n</button>
+        <button class="key" onclick="typeKey('m')">m</button>
+        <button class="key special" onclick="typeKey('BACK')">&#9003;</button>
+      </div>
+      <div class="key-row">
+        <button class="key special" style="max-width:48px;font-size:11px" onclick="hideKeyboard()">...</button>
+        <button class="key special" style="max-width:48px" onclick="typeKey(',')">?</button>
+        <button class="key space" onclick="typeKey(' ')">espaco</button>
+        <button class="key special" style="max-width:48px" onclick="typeKey('.')">.</button>
+        <button class="key enter" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification-toast" id="toast"></div>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar" id="nav-bar">
+      <button class="nav-btn" onclick="goBack()">&#9664;</button>
+      <button class="nav-btn" onclick="goHome()">&#9711;</button>
+      <button class="nav-btn" onclick="openRecents()">&#9632;</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+
+/* ===== CLOCK ===== */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const t = h+':'+m;
+  document.getElementById('clock').textContent = t;
+  document.getElementById('lock-clock').textContent = t;
+
+  const days = ['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
+  const months = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('lock-date').textContent =
+    days[now.getDay()] + ', ' + now.getDate() + ' de ' + months[now.getMonth()];
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+/* ===== SCREENS ===== */
+let currentScreen = 'lock-screen';
+let activeInput = null;
+let shiftOn = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+  hideKeyboard();
+}
+
+function unlock() { showScreen('home-screen'); }
+function goHome() { showScreen('home-screen'); hideKeyboard(); }
+function goBack() {
+  const backs = {
+    'play-store': 'home-screen',
+    'settings-screen': 'home-screen',
+    'car-game': 'home-screen',
+    'messages-screen': 'home-screen',
+    'camera-screen': 'home-screen',
+    'chat-screen': 'messages-screen',
+  };
+  const target = backs[currentScreen] || 'home-screen';
+  showScreen(target);
+  if (currentScreen === 'car-game') { stopGameLoop(); }
+}
+function openRecents() { showToast('Recentes'); }
+
+function openApp(app) {
+  const map = {
+    'playstore': 'play-store',
+    'settings': 'settings-screen',
+    'cargame': 'car-game',
+    'messages': 'messages-screen',
+    'camera': 'camera-screen',
+    'phone': null,
+    'gallery': null,
+    'calculator': null,
+  };
+  if (app === 'phone') { showToast('Discando...'); return; }
+  if (app === 'gallery') { showToast('Galeria: sem fotos ainda'); return; }
+  if (app === 'calculator') { showToast('Calculadora em breve!'); return; }
+  if (map[app]) showScreen(map[app]);
+}
+
+/* ===== TOAST ===== */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ===== PLAY STORE ===== */
+function installGame(id) {
+  const btn = document.getElementById('btn-'+id);
+  if (!btn) return;
+  btn.textContent = 'Instalando...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = 'Jogar';
+    btn.classList.add('installed');
+    btn.disabled = false;
+    showToast('Jogo instalado!');
+  }, 1800);
+}
+
+function launchGame(id) {
+  if (id === 'cargame') openApp('cargame');
+}
+
+/* ===== MESSAGES ===== */
+function openChat(name, color, initial) {
+  document.getElementById('chat-name').textContent = name;
+  document.getElementById('chat-avatar').textContent = initial;
+  document.getElementById('chat-avatar').style.background = color;
+  showScreen('chat-screen');
+}
+
+function sendMessage() {
+  const inp = document.getElementById('chat-input');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  const msgs = document.getElementById('chat-messages');
+  const b = document.createElement('div');
+  b.className = 'bubble sent';
+  b.textContent = txt;
+  msgs.appendChild(b);
+  inp.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(() => {
+    const r = document.createElement('div');
+    r.className = 'bubble received';
+    r.textContent = 'Legal!';
+    msgs.appendChild(r);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 1000);
+  hideKeyboard();
+}
+
+/* ===== KEYBOARD ===== */
+function showKeyboard(input) {
+  activeInput = input;
+  document.getElementById('keyboard').classList.add('visible');
+}
+function hideKeyboard() {
+  document.getElementById('keyboard').classList.remove('visible');
+  activeInput = null;
+}
+function typeKey(k) {
+  if (!activeInput) activeInput = document.getElementById('chat-input');
+  if (k === 'BACK') { activeInput.value = activeInput.value.slice(0,-1); return; }
+  if (shiftOn) { k = k.toUpperCase(); shiftOn = false; }
+  activeInput.value += k;
+}
+function toggleShift() { shiftOn = !shiftOn; }
+
+/* ===== CAMERA ===== */
+function takePhoto() {
+  const flash = document.getElementById('photo-flash');
+  flash.classList.add('flash');
+  setTimeout(() => flash.classList.remove('flash'), 150);
+  showToast('Foto tirada!');
+}
+
+/* ===== THREE.JS CAR GAME ===== */
+let renderer, scene, camera, carMesh, gameLoop, gameRunning = false;
+let score = 0, deliveries = 0;
+let carX = 0, carSpeed = 0, carTurn = 0;
+let keys = { left: false, right: false, accel: false, brake: false };
+let frameId = null;
+
+function initThree() {
+  const canvas = document.getElementById('game-canvas');
+  const container = document.getElementById('car-game');
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  renderer.setClearColor(0x000000, 0);
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(60, W/H, 0.1, 200);
+  camera.position.set(0, 3.5, 7);
+  camera.lookAt(0, 0, 0);
+
+  // Lights
+  const amb = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(amb);
+  const sun = new THREE.DirectionalLight(0xfff5e0, 1.2);
+  sun.position.set(5, 10, 5);
+  sun.castShadow = true;
+  scene.add(sun);
+
+  buildCar();
+}
+
+function buildCar() {
+  carMesh = new THREE.Group();
+
+  // Body
+  const bodyGeo = new THREE.BoxGeometry(1.8, 0.5, 3.6);
+  const bodyMat = new THREE.MeshPhongMaterial({ color: 0xff3300, shininess: 120 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.55;
+  carMesh.add(body);
+
+  // Cabin
+  const cabGeo = new THREE.BoxGeometry(1.4, 0.45, 1.8);
+  const cabMat = new THREE.MeshPhongMaterial({ color: 0xcc2200 });
+  const cab = new THREE.Mesh(cabGeo, cabMat);
+  cab.position.set(0, 0.97, -0.1);
+  carMesh.add(cab);
+
+  // Windshield
+  const windGeo = new THREE.BoxGeometry(1.3, 0.38, 0.05);
+  const windMat = new THREE.MeshPhongMaterial({ color: 0x88ccff, transparent: true, opacity: 0.6 });
+  const wind = new THREE.Mesh(windGeo, windMat);
+  wind.position.set(0, 1.0, 0.82);
+  carMesh.add(wind);
+
+  // Rear window
+  const rwGeo = new THREE.BoxGeometry(1.3, 0.35, 0.05);
+  const rw = new THREE.Mesh(rwGeo, windMat);
+  rw.position.set(0, 1.0, -1.02);
+  carMesh.add(rw);
+
+  // Wheels
+  const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.22, 16);
+  const wheelMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
+  const rimGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.24, 12);
+  const rimMat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+
+  const wheelPos = [
+    [-0.95, 0.3, 1.2], [0.95, 0.3, 1.2],
+    [-0.95, 0.3, -1.2], [0.95, 0.3, -1.2]
+  ];
+  wheelPos.forEach(p => {
+    const wg = new THREE.Group();
+    const w = new THREE.Mesh(wheelGeo, wheelMat);
+    w.rotation.z = Math.PI/2;
+    wg.add(w);
+    const r = new THREE.Mesh(rimGeo, rimMat);
+    r.rotation.z = Math.PI/2;
+    wg.add(r);
+    wg.position.set(...p);
+    carMesh.add(wg);
+  });
+
+  // Headlights
+  const hlGeo = new THREE.BoxGeometry(0.3, 0.15, 0.08);
+  const hlMat = new THREE.MeshPhongMaterial({ color: 0xffffaa, emissive: 0xffff00, emissiveIntensity: 0.5 });
+  [-0.6, 0.6].forEach(x => {
+    const hl = new THREE.Mesh(hlGeo, hlMat);
+    hl.position.set(x, 0.6, 1.82);
+    carMesh.add(hl);
+  });
+
+  // Tail lights
+  const tlMat = new THREE.MeshPhongMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.6 });
+  [-0.6, 0.6].forEach(x => {
+    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.12, 0.08), tlMat);
+    tl.position.set(x, 0.6, -1.82);
+    carMesh.add(tl);
+  });
+
+  // Bumpers
+  const bumpGeo = new THREE.BoxGeometry(1.9, 0.15, 0.12);
+  const bumpMat = new THREE.MeshPhongMaterial({ color: 0x111111 });
+  const frontBump = new THREE.Mesh(bumpGeo, bumpMat);
+  frontBump.position.set(0, 0.28, 1.86);
+  carMesh.add(frontBump);
+  const rearBump = new THREE.Mesh(bumpGeo, bumpMat);
+  rearBump.position.set(0, 0.28, -1.86);
+  carMesh.add(rearBump);
+
+  // Hood details
+  const hoodGeo = new THREE.BoxGeometry(0.4, 0.06, 0.8);
+  const hoodMat = new THREE.MeshPhongMaterial({ color: 0xdd2200 });
+  const hood = new THREE.Mesh(hoodGeo, hoodMat);
+  hood.position.set(0, 0.82, 1.2);
+  carMesh.add(hood);
+
+  // Roof rack (delivery look)
+  const rackGeo = new THREE.BoxGeometry(1.2, 0.06, 1.4);
+  const rackMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+  const rack = new THREE.Mesh(rackGeo, rackMat);
+  rack.position.set(0, 1.25, -0.1);
+  carMesh.add(rack);
+
+  // Package on roof
+  const boxGeo = new THREE.BoxGeometry(0.7, 0.35, 0.7);
+  const boxMat = new THREE.MeshPhongMaterial({ color: 0xcd853f });
+  const pkg = new THREE.Mesh(boxGeo, boxMat);
+  pkg.position.set(0, 1.46, -0.1);
+  carMesh.add(pkg);
+
+  // Ribbon on box
+  const ribbonH = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 0.08), new THREE.MeshPhongMaterial({color:0xffffff}));
+  ribbonH.position.set(0, 1.64, -0.1);
+  carMesh.add(ribbonH);
+  const ribbonV = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.72), new THREE.MeshPhongMaterial({color:0xffffff}));
+  ribbonV.position.set(0, 1.64, -0.1);
+  carMesh.add(ribbonV);
+
+  scene.add(carMesh);
+  carMesh.position.set(0, 0, 0);
+}
+
+function startGame() {
+  document.getElementById('game-start').style.display = 'none';
+  document.getElementById('game-controls').style.display = 'flex';
+  document.getElementById('delivery-arrow').style.display = 'block';
+  score = 0; deliveries = 0;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('deliveries').textContent = '0';
+  gameRunning = true;
+  initThree();
+  gameLoop = setInterval(gameUpdate, 100);
+  renderLoop();
+}
+
+function stopGameLoop() {
+  gameRunning = false;
+  clearInterval(gameLoop);
+  if (frameId) cancelAnimationFrame(frameId);
+  document.getElementById('game-start').style.display = 'flex';
+  document.getElementById('game-controls').style.display = 'none';
+  document.getElementById('delivery-arrow').style.display = 'none';
+}
+
+function gameUpdate() {
+  if (!gameRunning) return;
+  score += 5;
+  document.getElementById('score').textContent = score;
+  if (score % 200 === 0) {
+    deliveries++;
+    document.getElementById('deliveries').textContent = deliveries;
+    showToast('Entrega realizada! +200 pts');
+  }
+}
+
+function startMove(dir) { keys[dir] = true; }
+function stopMove(dir) { keys[dir] = false; }
+
+let roadOffset = 0;
+
+function renderLoop() {
+  if (!gameRunning) return;
+  frameId = requestAnimationFrame(renderLoop);
+
+  if (!carMesh || !renderer) return;
+
+  // Update car position based on keys
+  if (keys.accel) carSpeed = Math.min(carSpeed + 0.008, 0.18);
+  if (keys.brake) carSpeed = Math.max(carSpeed - 0.012, 0);
+  if (!keys.accel && !keys.brake) carSpeed *= 0.97;
+
+  if (keys.left) carTurn = Math.min(carTurn + 0.04, 0.12);
+  else if (keys.right) carTurn = Math.max(carTurn - 0.04, -0.12);
+  else carTurn *= 0.85;
+
+  carX += carTurn * carSpeed * 5;
+  carX = Math.max(-2.2, Math.min(2.2, carX));
+
+  carMesh.position.x = carX;
+  carMesh.rotation.y = carTurn * 3;
+
+  // Bounce effect
+  carMesh.position.y = Math.sin(Date.now() * 0.015) * 0.04 * carSpeed * 10;
+
+  // Wheel spin
+  carMesh.children.forEach((c, i) => {
+    if (i >= 5 && i <= 8) c.rotation.x += carSpeed * 3;
+  });
+
+  // Camera follow
+  camera.position.x += (carX * 0.3 - camera.position.x) * 0.1;
+
+  renderer.render(scene, camera);
+}
+
+/* ===== CLOUD ANIMATION ===== */
+const style = document.createElement('style');
+style.textContent = `
+@keyframes moveClouds {
+  from { transform: translateX(0); }
+  to { transform: translateX(350px); }
+}
+@keyframes moveCloudsR {
+  from { transform: translateX(0); }
+  to { transform: translateX(-350px); }
+}
+`;
+document.head.appendChild(style);
+
+/* ===== INIT ===== */
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.keyboard') && !e.target.closest('.chat-input')) {
+    hideKeyboard();
+  }
+});
+
+</script>
+</body>
+</html>

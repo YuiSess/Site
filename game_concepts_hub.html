@@ -1,0 +1,278 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.hub { padding: 1.5rem 0; }
+.tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.tab { padding: 8px 16px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+.tab.active { background: var(--color-background-primary); color: var(--color-text-primary); border-color: var(--color-border-primary); }
+.panel { display: none; }
+.panel.active { display: block; }
+.hero { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; background: var(--color-background-primary); }
+.hero-header { display: flex; align-items: center; gap: 12px; margin-bottom: 0.75rem; }
+.icon { width: 40px; height: 40px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.icon-g1 { background: #F5C4B3; }
+.icon-g2 { background: #B5D4F4; }
+.icon-g3 { background: #9FE1CB; }
+.hero h2 { font-size: 17px; font-weight: 500; color: var(--color-text-primary); }
+.hero p { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+.card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem 1rem; }
+.card-label { font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.card-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.4; }
+.regions { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+.region { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); cursor: pointer; transition: background 0.1s; }
+.region:hover { background: var(--color-background-secondary); }
+.region-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.region-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); flex: 1; }
+.region-tag { font-size: 11px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 2px 8px; border-radius: 999px; }
+.system-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.sys { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.875rem; }
+.sys-icon { font-size: 16px; margin-bottom: 6px; }
+.sys-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.sys-list { list-style: none; }
+.sys-list li { font-size: 12px; color: var(--color-text-secondary); padding: 2px 0; display: flex; align-items: center; gap: 6px; }
+.sys-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--color-text-tertiary); flex-shrink: 0; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin: 2px; font-weight: 500; }
+.badge-red { background: #FCEBEB; color: #791F1F; }
+.badge-blue { background: #E6F1FB; color: #0C447C; }
+.badge-green { background: #EAF3DE; color: #27500A; }
+.badge-amber { background: #FAEEDA; color: #633806; }
+.badge-purple { background: #EEEDFE; color: #3C3489; }
+.badge-teal { background: #E1F5EE; color: #085041; }
+.rules { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 0.875rem 1rem; margin-bottom: 1rem; }
+.rules-title { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 8px; }
+.rule { display: flex; gap: 8px; font-size: 12px; padding: 3px 0; }
+.rule .r-icon { flex-shrink: 0; width: 14px; text-align: center; }
+.rule .r-text { color: var(--color-text-secondary); }
+.rule.ok .r-text { color: var(--color-text-primary); }
+.cta { text-align: center; margin-top: 1rem; }
+.cta button { padding: 10px 24px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer; font-size: 13px; font-weight: 500; }
+.cta button:hover { background: var(--color-background-secondary); }
+</style>
+
+<div class="hub">
+<h2 class="sr-only">Hub de conceitos de jogos: Goat Simulator, Roblox e Sandbox de Física</h2>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('g1', this)">Destruição (Goat Style)</div>
+  <div class="tab" onclick="switchTab('g2', this)">Plataforma (Roblox Style)</div>
+  <div class="tab" onclick="switchTab('g3', this)">Sandbox de Física</div>
+</div>
+
+<!-- GAME 1 -->
+<div class="panel active" id="g1">
+  <div class="hero">
+    <div class="hero-header">
+      <div class="icon icon-g1">🐐</div>
+      <div>
+        <h2>Chaos World — Destruição Total</h2>
+        <p>Sandbox de mundo aberto com física caótica e destruição exagerada</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <div class="rules-title">Regras do projeto</div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Mapa pequeno ou vazio</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Assets feios ou de baixa qualidade</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Física travada sem propósito</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Mapa grande, detalhado e vivo</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Visual polido e consistente</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Tudo interativo e responsivo</span></div>
+  </div>
+
+  <div style="margin-bottom:0.5rem;"><span class="badge badge-red">Cidade</span><span class="badge badge-amber">Rural</span><span class="badge badge-blue">Zonas especiais</span></div>
+
+  <div class="regions">
+    <div class="region"><div class="region-dot" style="background:#D85A30"></div><span class="region-name">Centro Urbano</span><span class="region-tag">alta densidade</span></div>
+    <div class="region"><div class="region-dot" style="background:#378ADD"></div><span class="region-name">Laboratório Secreto</span><span class="region-tag">eventos especiais</span></div>
+    <div class="region"><div class="region-dot" style="background:#639922"></div><span class="region-name">Zona Rural + Fazenda</span><span class="region-tag">open field</span></div>
+    <div class="region"><div class="region-dot" style="background:#7F77DD"></div><span class="region-name">Porto Industrial</span><span class="region-tag">veículos pesados</span></div>
+    <div class="region"><div class="region-dot" style="background:#1D9E75"></div><span class="region-name">Shopping Center</span><span class="region-tag">NPCs densos</span></div>
+    <div class="region"><div class="region-dot" style="background:#D4537E"></div><span class="region-name">Parque de Diversões</span><span class="region-tag">brinquedos físicos</span></div>
+  </div>
+
+  <div class="system-grid">
+    <div class="sys">
+      <div class="sys-icon">💥</div>
+      <div class="sys-name">Física avançada</div>
+      <ul class="sys-list">
+        <li>Ragdoll dinâmico</li>
+        <li>Peso e impacto reais</li>
+        <li>Prédios quebráveis</li>
+        <li>Veículos deformáveis</li>
+      </ul>
+    </div>
+    <div class="sys">
+      <div class="sys-icon">🎮</div>
+      <div class="sys-name">Gameplay</div>
+      <ul class="sys-list">
+        <li>Sistema de combos</li>
+        <li>NPCs reativos</li>
+        <li>Eventos aleatórios</li>
+        <li>Meteoros, explosões</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cta"><button onclick="sendPrompt('Gere o código completo do jogo de destruição estilo Goat Simulator com física avançada, mapa grande e todas as regiões detalhadas ↗')">Gerar código do jogo ↗</button></div>
+</div>
+
+<!-- GAME 2 -->
+<div class="panel" id="g2">
+  <div class="hero">
+    <div class="hero-header">
+      <div class="icon icon-g2">🧱</div>
+      <div>
+        <h2>BuildVerse — Plataforma de Jogos</h2>
+        <p>Plataforma online de criação e exploração com múltiplos jogos</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <div class="rules-title">Regras do projeto</div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Mapas pequenos ou limitados</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Interface feia ou desorganizada</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Sistemas quebrados ou incompletos</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Lobby central grande e vivo</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Multiplayer estável</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Interface moderna e limpa</span></div>
+  </div>
+
+  <div style="margin-bottom: 0.5rem"><span class="badge badge-blue">Simuladores</span><span class="badge badge-red">PvP</span><span class="badge badge-green">Minigames</span><span class="badge badge-amber">Meme Games</span><span class="badge badge-purple">Criação</span></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Lobby</div>
+      <div class="card-title">Hub Central</div>
+      <div class="card-desc">Espaço grande, detalhado, portal para todos os jogos</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Editor</div>
+      <div class="card-title">Criador de Jogos</div>
+      <div class="card-desc">Blocos + scripts simples, liberdade total de criação</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Economia</div>
+      <div class="card-title">Loja & Moeda</div>
+      <div class="card-desc">Itens cosméticos, moeda própria, avatares detalhados</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Online</div>
+      <div class="card-title">Multiplayer</div>
+      <div class="card-desc">Partidas estáveis, salas, matchmaking por jogo</div>
+    </div>
+  </div>
+
+  <div class="system-grid">
+    <div class="sys">
+      <div class="sys-icon">🎯</div>
+      <div class="sys-name">Jogos incluídos</div>
+      <ul class="sys-list">
+        <li>Simuladores variados</li>
+        <li>PvP arenas</li>
+        <li>Roube um Brainrot</li>
+        <li>Minigames party</li>
+      </ul>
+    </div>
+    <div class="sys">
+      <div class="sys-icon">🛠️</div>
+      <div class="sys-name">Ferramentas</div>
+      <ul class="sys-list">
+        <li>Editor visual</li>
+        <li>Sistema de scripts</li>
+        <li>Publicação simples</li>
+        <li>Analytics básico</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cta"><button onclick="sendPrompt('Gere o código completo da plataforma estilo Roblox com lobby, editor de jogos, múltiplos minigames, economia e avatares ↗')">Gerar código da plataforma ↗</button></div>
+</div>
+
+<!-- GAME 3 -->
+<div class="panel" id="g3">
+  <div class="hero">
+    <div class="hero-header">
+      <div class="icon icon-g3">🧪</div>
+      <div>
+        <h2>SoftLab — Sandbox de Física Mole</h2>
+        <p>Simulação avançada de materiais deformáveis em tempo real</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <div class="rules-title">Regras do projeto</div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Física simples ou falsa</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Objetos duros sem variação</span></div>
+    <div class="rule"><span class="r-icon" style="color:#A32D2D">✕</span><span class="r-text">Visual feio ou mal feito</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Física avançada e impressionante</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Deformação em tempo real</span></div>
+    <div class="rule ok"><span class="r-icon" style="color:#3B6D11">✓</span><span class="r-text">Interface simples e moderna</span></div>
+  </div>
+
+  <div style="margin-bottom: 0.5rem"><span class="badge badge-teal">Gelatina</span><span class="badge badge-amber">Borracha</span><span class="badge badge-blue">Metal</span><span class="badge badge-purple">Vidro</span></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Material</div>
+      <div class="card-title">Gelatina</div>
+      <div class="card-desc">Mole, oscila, absorve impacto lentamente</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Material</div>
+      <div class="card-title">Borracha</div>
+      <div class="card-desc">Elástica, quica, retorna ao formato original</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Material</div>
+      <div class="card-title">Metal</div>
+      <div class="card-desc">Duro, deforma permanente, conduz força</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Material</div>
+      <div class="card-title">Vidro</div>
+      <div class="card-desc">Quebradiço, fragmenta em pedaços, espalha</div>
+    </div>
+  </div>
+
+  <div class="system-grid">
+    <div class="sys">
+      <div class="sys-icon">🔧</div>
+      <div class="sys-name">Ferramentas</div>
+      <ul class="sys-list">
+        <li>Explosão controlada</li>
+        <li>Força direcional</li>
+        <li>Gravidade variável</li>
+        <li>Slow motion</li>
+      </ul>
+    </div>
+    <div class="sys">
+      <div class="sys-icon">🏗️</div>
+      <div class="sys-name">Construção</div>
+      <ul class="sys-list">
+        <li>Blocos de material</li>
+        <li>Conectores e juntas</li>
+        <li>Máquinas customizadas</li>
+        <li>Cenários de teste</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cta"><button onclick="sendPrompt('Gere o código completo do sandbox de física mole com materiais deformáveis, ferramentas de teste, construção com blocos e slow motion ↗')">Gerar código do sandbox ↗</button></div>
+</div>
+
+</div>
+
+<script>
+function switchTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+</script>

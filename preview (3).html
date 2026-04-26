@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Game Pro</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#000; /* PRETO TOTAL */
+    color:white;
+    overflow:hidden;
+}
+
+/* TELAS */
+.screen{
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:none;
+}
+
+.active{
+    display:block;
+}
+
+/* MENU */
+.menu{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100%;
+}
+
+.title{
+    font-size:50px;
+    margin-bottom:30px;
+    text-shadow:0 0 20px cyan;
+}
+
+button{
+    padding:15px 40px;
+    margin:10px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(45deg,#00aaff,#0044ff);
+    color:white;
+    font-size:18px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:scale(1.1);
+    box-shadow:0 0 20px cyan;
+}
+
+/* JOGO */
+.lane{
+    position:absolute;
+    width:25%;
+    height:100%;
+    border-right:1px solid #111; /* MAIS LIMPO */
+}
+
+.lane:nth-child(1){left:0;}
+.lane:nth-child(2){left:25%;}
+.lane:nth-child(3){left:50%;}
+.lane:nth-child(4){left:75%;}
+
+.note{
+    position:absolute;
+    width:60px;
+    height:60px;
+    font-size:40px;
+    text-align:center;
+    line-height:60px;
+}
+
+.hitline{
+    position:absolute;
+    bottom:120px;
+    width:100%;
+    height:5px;
+    background:white;
+}
+
+/* UI */
+.ui{
+    position:absolute;
+    top:10px;
+    left:10px;
+}
+
+.feedback{
+    position:absolute;
+    bottom:180px;
+    width:100%;
+    text-align:center;
+    font-size:30px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu" class="screen active">
+    <div class="menu">
+        <div class="title">⚡ RHYTHM GAME</div>
+        <button onclick="goSelect()">PLAY</button>
+    </div>
+</div>
+
+<!-- SELEÇÃO -->
+<div id="select" class="screen">
+    <div class="menu">
+        <div class="title">ESCOLHA</div>
+        <button onclick="startGame('easy')">Fácil</button>
+        <button onclick="startGame('normal')">Normal</button>
+        <button onclick="startGame('hard')">Difícil</button>
+        <button onclick="toggleBot()">Auto Bot</button>
+        <button onclick="backMenu()">Voltar</button>
+    </div>
+</div>
+
+<!-- JOGO -->
+<div id="game" class="screen">
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="hitline"></div>
+
+    <div class="ui">
+        <div id="score">Score: 0</div>
+        <button onclick="exitGame()">Sair</button>
+    </div>
+
+    <div class="feedback" id="fb"></div>
+</div>
+
+<audio id="music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+<script>
+let screens = {
+    menu: document.getElementById("menu"),
+    select: document.getElementById("select"),
+    game: document.getElementById("game")
+}
+
+function show(name){
+    for(let k in screens){
+        screens[k].classList.remove("active")
+    }
+    screens[name].classList.add("active")
+}
+
+function goSelect(){ show("select") }
+function backMenu(){ show("menu") }
+
+let speed = 5
+let spawnRate = 500
+let bot = false
+
+function toggleBot(){
+    bot = !bot
+    alert("Auto Bot: " + (bot ? "ON" : "OFF"))
+}
+
+function startGame(mode){
+    if(mode==="easy"){ speed=4; spawnRate=800 }
+    if(mode==="normal"){ speed=6; spawnRate=500 }
+    if(mode==="hard"){ speed=11; spawnRate=200 }
+
+    show("game")
+    document.getElementById("music").play()
+}
+
+function exitGame(){
+    location.reload()
+}
+
+/* JOGO */
+let notes = []
+let score = 0
+
+let keys = ["ArrowLeft","ArrowDown","ArrowUp","ArrowRight"]
+let symbols = ["←","↓","↑","→"]
+
+function spawn(){
+    let lane = Math.floor(Math.random()*4)
+
+    let n = document.createElement("div")
+    n.className = "note"
+    n.innerText = symbols[lane]
+    n.style.left = (lane*25+10)+"%"
+    n.style.top = "0px"
+
+    screens.game.appendChild(n)
+    notes.push({el:n, lane:lane, y:0})
+}
+
+function showFB(text){
+    let fb = document.getElementById("fb")
+    fb.innerText = text
+    setTimeout(()=>fb.innerText="",200)
+}
+
+function hit(lane){
+    for(let i=0;i<notes.length;i++){
+        let n = notes[i]
+
+        if(n.lane === lane){
+            let diff = Math.abs(window.innerHeight-120 - n.y)
+
+            if(diff < 20){
+                score += 300
+                showFB("PERFECT")
+            } else if(diff < 50){
+                score += 100
+                showFB("GOOD")
+            } else {
+                showFB("BAD")
+                return
+            }
+
+            n.el.remove()
+            notes.splice(i,1)
+            document.getElementById("score").innerText = "Score: " + score
+            return
+        }
+    }
+    showFB("MISS")
+}
+
+document.addEventListener("keydown", e=>{
+    let lane = keys.indexOf(e.key)
+    if(lane !== -1){
+        hit(lane)
+    }
+})
+
+function update(){
+    notes.forEach((n,i)=>{
+        n.y += speed
+        n.el.style.top = n.y + "px"
+
+        if(bot && n.y > window.innerHeight - 130){
+            hit(n.lane)
+        }
+
+        if(n.y > window.innerHeight){
+            n.el.remove()
+            notes.splice(i,1)
+            showFB("MISS")
+        }
+    })
+}
+
+setInterval(update,16)
+setInterval(spawn,spawnRate)
+</script>
+
+</body>
+</html>

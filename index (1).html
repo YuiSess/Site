@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HandChat 3D</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap');
+
+:root {
+  --bg: #020408;
+  --surface: #070d18;
+  --card: #0c1526;
+  --cyan: #00f5ff;
+  --pink: #ff0080;
+  --purple: #8000ff;
+  --yellow: #ffcc00;
+  --text: #dde8ff;
+  --muted: #3a4a6b;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scanline effect */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,245,255,0.015) 2px,
+    rgba(0,245,255,0.015) 4px
+  );
+  pointer-events:none;
+  z-index:9999;
+}
+
+/* HEADER */
+header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 24px;
+  border-bottom:1px solid rgba(0,245,255,0.15);
+  background:rgba(2,4,8,0.95);
+  backdrop-filter:blur(20px);
+  z-index:100;
+  flex-shrink:0;
+}
+
+.logo {
+  font-family:'Orbitron',monospace;
+  font-weight:900;
+  font-size:1.3rem;
+  letter-spacing:3px;
+  color:var(--cyan);
+  text-shadow:0 0 20px rgba(0,245,255,0.6);
+}
+.logo em { color:var(--pink); font-style:normal; }
+
+.hdr-center {
+  display:flex;
+  align-items:center;
+  gap:20px;
+  font-size:0.78rem;
+  letter-spacing:1px;
+}
+
+.online-pill {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 14px;
+  border:1px solid rgba(0,245,255,0.2);
+  border-radius:20px;
+  color:var(--cyan);
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+}
+.blink { width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:blink 1.2s ease infinite; }
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+.room-display {
+  font-family:'Orbitron',monospace;
+  font-size:0.7rem;
+  color:var(--muted);
+  letter-spacing:2px;
+}
+.room-display span { color:var(--yellow); }
+
+/* MAIN */
+main {
+  flex:1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 56px;
+  gap:10px;
+  padding:10px;
+  min-height:0;
+}
+
+/* PANELS */
+.panel {
+  position:relative;
+  border-radius:12px;
+  overflow:hidden;
+  background:var(--card);
+}
+
+.panel-local { border:1px solid rgba(0,245,255,0.25); }
+.panel-remote { border:1px solid rgba(255,0,128,0.2); }
+
+/* real camera feed */
+video {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform:scaleX(-1);
+  opacity:0.18; /* subtle — avatar is the hero */
+  z-index:1;
+}
+
+/* Three.js canvas fills panel */
+.three-canvas {
+  position:absolute;
+  inset:0;
+  width:100%!important;
+  height:100%!important;
+  z-index:2;
+}
+
+/* Hidden processing canvas for MediaPipe */
+#procCanvas { display:none; }
+
+.panel-label {
+  position:absolute;
+  top:12px; left:12px;
+  z-index:20;
+  font-family:'Orbitron',monospace;
+  font-size:0.6rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:4px 12px;
+  border-radius:20px;
+  backdrop-filter:blur(10px);
+}
+.panel-local .panel-label { background:rgba(0,245,255,0.1);color:var(--cyan);border:1px solid rgba(0,245,255,0.3); }
+.panel-remote .panel-label { background:rgba(255,0,128,0.1);color:var(--pink);border:1px solid rgba(255,0,128,0.3); }
+
+/* Gesture indicator */
+.gesture-hud {
+  position:absolute;
+  bottom:12px; left:12px;
+  z-index:20;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.g-chip {
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:0.65rem;
+  letter-spacing:1px;
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--muted);
+  transition:all 0.3s;
+  font-family:'Orbitron',monospace;
+}
+.g-chip.lit {
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(0,245,255,0.12);
+  box-shadow:0 0 12px rgba(0,245,255,0.3);
+}
+
+/* Waiting overlay */
+.waiting {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  background:var(--card);
+  z-index:30;
+  transition:opacity 0.5s;
+}
+.waiting.gone { opacity:0; pointer-events:none; }
+
+.orbit-ring {
+  width:70px;height:70px;
+  border-radius:50%;
+  border:1px solid rgba(255,0,128,0.3);
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  animation:spin 4s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orbit-ring::before {
+  content:'';
+  position:absolute;
+  width:10px;height:10px;
+  background:var(--pink);
+  border-radius:50%;
+  top:-5px;left:50%;
+  transform:translateX(-50%);
+  box-shadow:0 0 12px var(--pink);
+}
+.orbit-icon { font-size:1.8rem; animation:spin 4s linear infinite reverse; }
+.wait-label {
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+  letter-spacing:3px;
+  color:var(--muted);
+  text-transform:uppercase;
+  animation:pulse 2s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+
+/* BOTTOM BAR */
+.bottom-bar {
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0 16px;
+  background:rgba(7,13,24,0.95);
+  border:1px solid rgba(0,245,255,0.08);
+  border-radius:10px;
+  backdrop-filter:blur(20px);
+}
+
+.btn {
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+  letter-spacing:2px;
+  padding:9px 20px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+.btn:active{transform:scale(0.96)}
+
+.btn-connect {
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  color:#000;
+  font-weight:700;
+  box-shadow:0 4px 20px rgba(0,245,255,0.35);
+}
+.btn-connect:hover{box-shadow:0 4px 30px rgba(0,245,255,0.6)}
+.btn-connect:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none}
+
+.btn-next {
+  background:transparent;
+  border:1px solid rgba(255,204,0,0.4);
+  color:var(--yellow);
+}
+.btn-next:hover{border-color:var(--yellow);box-shadow:0 0 16px rgba(255,204,0,0.3)}
+
+.btn-end {
+  background:transparent;
+  border:1px solid rgba(255,0,128,0.4);
+  color:var(--pink);
+}
+.btn-end:hover{border-color:var(--pink);box-shadow:0 0 16px rgba(255,0,128,0.3)}
+
+.btn-chat {
+  background:rgba(128,0,255,0.12);
+  border:1px solid rgba(128,0,255,0.35);
+  color:#b060ff;
+}
+.btn-chat:hover{border-color:var(--purple);box-shadow:0 0 16px rgba(128,0,255,0.3)}
+
+.actions { display:flex;gap:8px;align-items:center; }
+
+.status-text {
+  font-family:'Orbitron',monospace;
+  font-size:0.62rem;
+  letter-spacing:2px;
+  color:var(--muted);
+}
+.status-text.ok{color:var(--cyan)}
+.status-text.warn{color:var(--yellow)}
+.status-text.err{color:var(--pink)}
+
+/* CHAT DRAWER */
+.chat-drawer {
+  position:fixed;
+  right:0;top:0;bottom:0;
+  width:280px;
+  background:rgba(7,13,24,0.97);
+  border-left:1px solid rgba(0,245,255,0.12);
+  display:flex;
+  flex-direction:column;
+  transform:translateX(100%);
+  transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  z-index:200;
+  backdrop-filter:blur(20px);
+}
+.chat-drawer.open{transform:translateX(0)}
+
+.chat-hdr {
+  padding:16px 18px;
+  border-bottom:1px solid rgba(0,245,255,0.08);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:'Orbitron',monospace;
+  font-size:0.7rem;
+  letter-spacing:2px;
+  color:var(--cyan);
+}
+.chat-close{cursor:pointer;color:var(--muted);font-size:1.1rem;line-height:1;}
+.chat-close:hover{color:var(--pink)}
+
+.chat-msgs {
+  flex:1;
+  padding:12px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.chat-msgs::-webkit-scrollbar{width:2px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px}
+
+.msg{
+  padding:8px 12px;
+  border-radius:8px;
+  font-size:0.8rem;
+  line-height:1.5;
+  max-width:88%;
+  word-break:break-word;
+}
+.msg.me{
+  align-self:flex-end;
+  background:rgba(0,245,255,0.1);
+  border:1px solid rgba(0,245,255,0.2);
+  color:var(--cyan);
+  border-bottom-right-radius:2px;
+}
+.msg.them{
+  align-self:flex-start;
+  background:rgba(255,0,128,0.08);
+  border:1px solid rgba(255,0,128,0.2);
+  color:#ff80b8;
+  border-bottom-left-radius:2px;
+}
+.msg.sys{
+  align-self:center;
+  color:var(--muted);
+  font-size:0.68rem;
+  font-style:italic;
+  text-align:center;
+}
+.msg.gesture{
+  align-self:center;
+  background:rgba(0,245,255,0.05);
+  border:1px dashed rgba(0,245,255,0.2);
+  color:var(--cyan);
+  font-size:0.68rem;
+  text-align:center;
+}
+
+.chat-input-row{
+  padding:10px;
+  border-top:1px solid rgba(0,245,255,0.08);
+  display:flex;
+  gap:6px;
+}
+.chat-input{
+  flex:1;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(0,245,255,0.15);
+  border-radius:6px;
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  font-size:0.85rem;
+  padding:8px 10px;
+  outline:none;
+}
+.chat-input:focus{border-color:rgba(0,245,255,0.4)}
+.chat-input::placeholder{color:var(--muted)}
+.send-btn{
+  background:rgba(0,245,255,0.12);
+  border:1px solid rgba(0,245,255,0.25);
+  color:var(--cyan);
+  border-radius:6px;
+  padding:8px 12px;
+  cursor:pointer;
+  font-size:0.9rem;
+}
+.send-btn:hover{background:rgba(0,245,255,0.22)}
+
+/* TOAST */
+.toast{
+  position:fixed;
+  bottom:74px;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:rgba(7,13,24,0.97);
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  padding:9px 22px;
+  border-radius:40px;
+  font-family:'Orbitron',monospace;
+  font-size:0.65rem;
+  letter-spacing:2px;
+  opacity:0;
+  transition:all 0.35s cubic-bezier(0.16,1,0.3,1);
+  z-index:500;
+  pointer-events:none;
+  box-shadow:0 0 24px rgba(0,245,255,0.25);
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SETUP MODAL */
+.modal-bg{
+  position:fixed;inset:0;
+  background:rgba(2,4,8,0.97);
+  z-index:1000;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal{
+  background:var(--card);
+  border:1px solid rgba(0,245,255,0.2);
+  border-radius:16px;
+  padding:40px;
+  width:480px;
+  max-width:95vw;
+  text-align:center;
+  box-shadow:0 0 60px rgba(0,245,255,0.08);
+}
+.modal h2{
+  font-family:'Orbitron',monospace;
+  font-size:1.2rem;
+  letter-spacing:3px;
+  color:var(--cyan);
+  margin-bottom:8px;
+}
+.modal p{
+  color:var(--muted);
+  font-size:0.85rem;
+  margin-bottom:28px;
+  line-height:1.6;
+}
+.modal label{
+  display:block;
+  text-align:left;
+  font-size:0.72rem;
+  letter-spacing:2px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:6px;
+  font-family:'Orbitron',monospace;
+}
+.modal input, .modal textarea{
+  width:100%;
+  background:rgba(0,245,255,0.04);
+  border:1px solid rgba(0,245,255,0.2);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  font-size:0.9rem;
+  padding:10px 14px;
+  outline:none;
+  margin-bottom:16px;
+  resize:none;
+}
+.modal input:focus, .modal textarea:focus{border-color:rgba(0,245,255,0.5)}
+.modal input::placeholder, .modal textarea::placeholder{color:var(--muted)}
+.modal-note{
+  font-size:0.72rem;
+  color:var(--muted);
+  margin-top:-8px;
+  margin-bottom:16px;
+  text-align:left;
+  line-height:1.5;
+}
+.modal-note a{color:var(--cyan);text-decoration:none;}
+.btn-modal{
+  width:100%;
+  padding:14px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  border:none;
+  border-radius:8px;
+  color:#000;
+  font-family:'Orbitron',monospace;
+  font-size:0.75rem;
+  font-weight:700;
+  letter-spacing:2px;
+  cursor:pointer;
+  margin-top:8px;
+}
+.btn-modal:hover{opacity:0.9}
+</style>
+</head>
+<body>
+
+<!-- FIREBASE CONFIG MODAL -->
+<div class="modal-bg" id="setupModal">
+  <div class="modal">
+    <h2>HANDCHAT 3D</h2>
+    <p>Cole sua configuração do Firebase Realtime Database para ativar o WebRTC entre dispositivos reais.</p>
+
+    <label>Firebase Config (JSON)</label>
+    <textarea id="fbConfig" rows="7" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...",
+  "databaseURL": "...",
+  "projectId": "..."
+}'></textarea>
+    <div class="modal-note">
+      1. Crie um projeto em <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+      2. Ative o <b>Realtime Database</b> no modo teste<br>
+      3. Em Configurações do projeto → Seus apps → Cole o JSON aqui
+    </div>
+
+    <label>Seu nome (apelido)</label>
+    <input id="nickInput" type="text" placeholder="Ex: Lukas" maxlength="20">
+
+    <button class="btn-modal" onclick="initApp()">▶ ENTRAR</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">HAND<em>CHAT</em></div>
+  <div class="hdr-center">
+    <div class="online-pill"><div class="blink"></div><span id="onlineN">0</span> online</div>
+    <div class="room-display">SALA: <span id="roomLabel">—</span></div>
+  </div>
+  <div style="font-family:'Orbitron',monospace;font-size:0.6rem;color:var(--muted);letter-spacing:2px;" id="myNick">—</div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <!-- LOCAL -->
+  <div class="panel panel-local" id="panelLocal">
+    <div class="panel-label">VOCÊ</div>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <canvas id="localThree" class="three-canvas"></canvas>
+    <canvas id="procCanvas"></canvas>
+    <div class="gesture-hud" id="localGestureHud">
+      <div class="g-chip" id="gc-wave">WAVE</div>
+      <div class="g-chip" id="gc-peace">PEACE</div>
+      <div class="g-chip" id="gc-thumbs">👍</div>
+      <div class="g-chip" id="gc-fist">FIST</div>
+      <div class="g-chip" id="gc-open">OPEN</div>
+    </div>
+  </div>
+
+  <!-- REMOTE -->
+  <div class="panel panel-remote" id="panelRemote">
+    <div class="panel-label" id="remoteName">STRANGER</div>
+    <video id="remoteVideo" autoplay playsinline></video>
+    <canvas id="remoteThree" class="three-canvas"></canvas>
+    <div class="waiting" id="waitingOverlay">
+      <div class="orbit-ring"><div class="orbit-icon">👤</div></div>
+      <div class="wait-label" id="waitLabel">Aguardando...</div>
+    </div>
+    <div class="gesture-hud" id="remoteGestureHud"></div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="status-text" id="statusText">AGUARDANDO CONFIG</div>
+    <div class="actions">
+      <button class="btn btn-chat" onclick="toggleChat()">💬 CHAT</button>
+      <button class="btn btn-next" id="btnNext" onclick="nextUser()" style="display:none">⏭ PRÓXIMO</button>
+      <button class="btn btn-end" id="btnEnd" onclick="endCall()" style="display:none">■ PARAR</button>
+      <button class="btn btn-connect" id="btnConnect" onclick="findPartner()" disabled>● CONECTAR</button>
+    </div>
+  </div>
+</main>
+
+<!-- CHAT DRAWER -->
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-hdr">
+    ⬡ CHAT
+    <span class="chat-close" onclick="toggleChat()">✕</span>
+  </div>
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="msg sys">HandChat 3D — conecte e interaja com gestos!</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Mensagem..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LIBS -->
+<script async src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script async src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════
+//  GLOBALS
+// ═══════════════════════════════════════════════
+let db, myNick, myId, roomRef, myRoom;
+let localStream, pc;
+let holisticReady = false;
+let connected = false;
+let searching = false;
+let chatOpen = false;
+
+// Three.js — local avatar
+let localScene, localCamera3, localRenderer, localAvatar;
+// Three.js — remote avatar
+let remoteScene, remoteCamera3, remoteRenderer, remoteAvatar;
+
+// Pose data channel
+let dataChannel;
+
+// ═══════════════════════════════════════════════
+//  INIT APP (after firebase config)
+// ═══════════════════════════════════════════════
+async function initApp() {
+  const raw = document.getElementById('fbConfig').value.trim();
+  myNick = document.getElementById('nickInput').value.trim() || 'Anon';
+  myId = Math.random().toString(36).slice(2,10);
+
+  let cfg;
+  try {
+    cfg = JSON.parse(raw);
+    if (!cfg.databaseURL) throw new Error('databaseURL missing');
+  } catch(e) {
+    alert('JSON inválido ou sem databaseURL.\n' + e.message);
+    return;
+  }
+
+  firebase.initializeApp(cfg);
+  db = firebase.database();
+
+  document.getElementById('setupModal').style.display = 'none';
+  document.getElementById('myNick').textContent = myNick;
+  document.getElementById('btnConnect').disabled = false;
+  setStatus('PRONTO', 'ok');
+
+  await startLocalStream();
+  initLocalThree();
+  initRemoteThree();
+  initHolistic();
+  trackOnline();
+}
+
+// ═══════════════════════════════════════════════
+//  CAMERA
+// ═══════════════════════════════════════════════
+async function startLocalStream() {
+  localStream = await navigator.mediaDevices.getUserMedia({
+    video:{ width:1280, height:720, facingMode:'user' },
+    audio:true
+  });
+  document.getElementById('localVideo').srcObject = localStream;
+}
+
+// ═══════════════════════════════════════════════
+//  THREE.JS — LOCAL AVATAR
+// ═══════════════════════════════════════════════
+function initLocalThree() {
+  const canvas = document.getElementById('localThree');
+  const panel  = document.getElementById('panelLocal');
+  const W = panel.clientWidth, H = panel.clientHeight;
+
+  localScene = new THREE.Scene();
+  localScene.background = null;
+
+  localCamera3 = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+  localCamera3.position.set(0, 1, 3.5);
+  localCamera3.lookAt(0, 1, 0);
+
+  localRenderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  localRenderer.setSize(W, H);
+  localRenderer.setPixelRatio(window.devicePixelRatio);
+  localRenderer.shadowMap.enabled = true;
+
+  addLights(localScene, 0x00f5ff);
+  localAvatar = buildAvatar(0x00f5ff, 0x0040ff);
+  localScene.add(localAvatar.root);
+
+  // Floor glow
+  const geoF = new THREE.CircleGeometry(1.2, 32);
+  const matF = new THREE.MeshBasicMaterial({ color:0x00f5ff, transparent:true, opacity:0.06 });
+  const floor = new THREE.Mesh(geoF, matF);
+  floor.rotation.x = -Math.PI/2;
+  floor.position.y = -1.05;
+  localScene.add(floor);
+
+  animateLocal();
+}
+
+function initRemoteThree() {
+  const canvas = document.getElementById('remoteThree');
+  const panel  = document.getElementById('panelRemote');
+  const W = panel.clientWidth, H = panel.clientHeight;
+
+  remoteScene = new THREE.Scene();
+  remoteScene.background = null;
+
+  remoteCamera3 = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+  remoteCamera3.position.set(0, 1, 3.5);
+  remoteCamera3.lookAt(0, 1, 0);
+
+  remoteRenderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  remoteRenderer.setSize(W, H);
+  remoteRenderer.setPixelRatio(window.devicePixelRatio);
+  remoteRenderer.shadowMap.enabled = true;
+
+  addLights(remoteScene, 0xff0080);
+  remoteAvatar = buildAvatar(0xff0080, 0xff6000);
+  remoteScene.add(remoteAvatar.root);
+
+  const geoF = new THREE.CircleGeometry(1.2, 32);
+  const matF = new THREE.MeshBasicMaterial({ color:0xff0080, transparent:true, opacity:0.06 });
+  const floor = new THREE.Mesh(geoF, matF);
+  floor.rotation.x = -Math.PI/2;
+  floor.position.y = -1.05;
+  remoteScene.add(floor);
+
+  animateRemote();
+}
+
+function addLights(scene, accentColor) {
+  const amb = new THREE.AmbientLight(0x111122, 1.2);
+  scene.add(amb);
+
+  const key = new THREE.PointLight(accentColor, 2.5, 8);
+  key.position.set(2, 3, 2);
+  scene.add(key);
+
+  const fill = new THREE.PointLight(0xffffff, 0.8, 10);
+  fill.position.set(-2, 2, 1);
+  scene.add(fill);
+
+  const back = new THREE.PointLight(accentColor, 1.5, 6);
+  back.position.set(0, 2, -2);
+  scene.add(back);
+}
+
+// ═══════════════════════════════════════════════
+//  BUILD AVATAR (capsule-based humanoid)
+// ═══════════════════════════════════════════════
+function buildAvatar(primaryColor, secondaryColor) {
+  const root = new THREE.Group();
+  const matBody = new THREE.MeshStandardMaterial({
+    color: primaryColor,
+    emissive: primaryColor,
+    emissiveIntensity: 0.15,
+    metalness: 0.3,
+    roughness: 0.5,
+    transparent: true,
+    opacity: 0.92
+  });
+  const matAccent = new THREE.MeshStandardMaterial({
+    color: secondaryColor,
+    emissive: secondaryColor,
+    emissiveIntensity: 0.3,
+    metalness: 0.6,
+    roughness: 0.3
+  });
+  const matJoint = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: primaryColor,
+    emissiveIntensity: 0.8,
+    metalness: 0.9,
+    roughness: 0.1
+  });
+
+  // Helper: capsule via cylinder + spheres
+  function capsule(rx, ry, rz, len, mat) {
+    const g = new THREE.Group();
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(rx, rx, len, 16), mat);
+    g.add(cyl);
+    const top = new THREE.Mesh(new THREE.SphereGeometry(rx * 0.98, 12, 8), mat);
+    top.position.y = len/2;
+    g.add(top);
+    const bot = new THREE.Mesh(new THREE.SphereGeometry(rx * 0.98, 12, 8), mat);
+    bot.position.y = -len/2;
+    g.add(bot);
+    return g;
+  }
+
+  function sphere(r, mat) {
+    return new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat);
+  }
+
+  // HEAD
+  const head = sphere(0.18, matBody);
+  head.position.y = 1.72;
+  // Face glow dot
+  const faceDot = sphere(0.04, matJoint);
+  faceDot.position.set(0, 0.02, 0.16);
+  head.add(faceDot);
+
+  // NECK
+  const neck = capsule(0.055, 0.055, 0.055, 0.10, matAccent);
+  neck.position.y = 1.56;
+
+  // TORSO
+  const torso = capsule(0.17, 0.14, 0.10, 0.58, matBody);
+  torso.position.y = 1.15;
+
+  // HIPS
+  const hips = capsule(0.15, 0.13, 0.10, 0.22, matAccent);
+  hips.position.y = 0.78;
+
+  // SHOULDERS
+  const lShoulder = sphere(0.075, matJoint); lShoulder.position.set(-0.24, 1.40, 0);
+  const rShoulder = sphere(0.075, matJoint); rShoulder.position.set( 0.24, 1.40, 0);
+
+  // UPPER ARMS
+  const lUpperArm = capsule(0.055, 0.055, 0.055, 0.28, matBody);
+  const rUpperArm = capsule(0.055, 0.055, 0.055, 0.28, matBody);
+  lUpperArm.position.set(-0.24, 1.26, 0);
+  rUpperArm.position.set( 0.24, 1.26, 0);
+
+  // ELBOWS
+  const lElbow = sphere(0.058, matJoint); lElbow.position.set(-0.24, 1.10, 0);
+  const rElbow = sphere(0.058, matJoint); rElbow.position.set( 0.24, 1.10, 0);
+
+  // FOREARMS
+  const lForearm = capsule(0.048, 0.048, 0.048, 0.26, matBody);
+  const rForearm = capsule(0.048, 0.048, 0.048, 0.26, matBody);
+  lForearm.position.set(-0.24, 0.96, 0);
+  rForearm.position.set( 0.24, 0.96, 0);
+
+  // WRISTS
+  const lWrist = sphere(0.052, matJoint); lWrist.position.set(-0.24, 0.82, 0);
+  const rWrist = sphere(0.052, matJoint); rWrist.position.set( 0.24, 0.82, 0);
+
+  // HANDS (simplified box)
+  const handGeo = new THREE.BoxGeometry(0.09, 0.12, 0.04);
+  const lHand = new THREE.Mesh(handGeo, matBody); lHand.position.set(-0.24, 0.73, 0);
+  const rHand = new THREE.Mesh(handGeo, matBody); rHand.position.set( 0.24, 0.73, 0);
+
+  // HIPS joints
+  const lHipJ = sphere(0.07, matJoint); lHipJ.position.set(-0.13, 0.68, 0);
+  const rHipJ = sphere(0.07, matJoint); rHipJ.position.set( 0.13, 0.68, 0);
+
+  // THIGHS
+  const lThigh = capsule(0.08, 0.07, 0.07, 0.38, matBody);
+  const rThigh = capsule(0.08, 0.07, 0.07, 0.38, matBody);
+  lThigh.position.set(-0.13, 0.49, 0);
+  rThigh.position.set( 0.13, 0.49, 0);
+
+  // KNEES
+  const lKnee = sphere(0.075, matJoint); lKnee.position.set(-0.13, 0.28, 0);
+  const rKnee = sphere(0.075, matJoint); rKnee.position.set( 0.13, 0.28, 0);
+
+  // SHINS
+  const lShin = capsule(0.065, 0.06, 0.06, 0.36, matBody);
+  const rShin = capsule(0.065, 0.06, 0.06, 0.36, matBody);
+  lShin.position.set(-0.13, 0.08, 0);
+  rShin.position.set( 0.13, 0.08, 0);
+
+  // ANKLES
+  const lAnkle = sphere(0.06, matJoint); lAnkle.position.set(-0.13, -0.10, 0);
+  const rAnkle = sphere(0.06, matJoint); rAnkle.position.set( 0.13, -0.10, 0);
+
+  // FEET
+  const footGeo = new THREE.BoxGeometry(0.10, 0.06, 0.20);
+  const lFoot = new THREE.Mesh(footGeo, matAccent); lFoot.position.set(-0.13, -0.17, 0.04);
+  const rFoot = new THREE.Mesh(footGeo, matAccent); rFoot.position.set( 0.13, -0.17, 0.04);
+
+  // Add all to root
+  [head, neck, torso, hips,
+   lShoulder, rShoulder,
+   lUpperArm, rUpperArm,
+   lElbow, rElbow,
+   lForearm, rForearm,
+   lWrist, rWrist,
+   lHand, rHand,
+   lHipJ, rHipJ,
+   lThigh, rThigh,
+   lKnee, rKnee,
+   lShin, rShin,
+   lAnkle, rAnkle,
+   lFoot, rFoot
+  ].forEach(m => root.add(m));
+
+  // Store named refs for pose animation
+  return {
+    root,
+    head, neck, torso, hips,
+    lUpperArm, rUpperArm,
+    lForearm, rForearm,
+    lHand, rHand,
+    lElbow, rElbow,
+    lWrist, rWrist,
+    lThigh, rThigh,
+    lShin, rShin,
+    lFoot, rFoot,
+    lShoulder, rShoulder,
+    lHipJ, rHipJ,
+    lKnee, rKnee,
+    lAnkle, rAnkle
+  };
+}
+
+// ═══════════════════════════════════════════════
+//  POSE → AVATAR ANIMATION
+//  Corpo FIXO — só braços e pernas rotacionam
+//  Posições nunca mudam (sem bugos)
+// ═══════════════════════════════════════════════
+function applyPoseToAvatar(av, pose, hands) {
+  if (!pose) return;
+  const lm = pose;
+
+  // Visibilidade mínima para usar landmark
+  function vis(i) { return lm[i]?.visibility ?? 0; }
+
+  // Vetor 2D entre dois landmarks (espaço normalizado 0-1)
+  // Retorna null se visibilidade baixa
+  function dir2(a, b, minVis) {
+    if (vis(a) < minVis || vis(b) < minVis) return null;
+    return {
+      dx: -(lm[b].x - lm[a].x),   // espelhado X
+      dy:  (lm[b].y - lm[a].y),   // Y cresce pra baixo na câmera
+      dz:   lm[b].z - lm[a].z
+    };
+  }
+
+  // Lerp suave de rotação
+  function lerpRot(mesh, axis, target, alpha) {
+    mesh.rotation[axis] = THREE.MathUtils.lerp(mesh.rotation[axis], target, alpha);
+  }
+
+  const A = 0.12; // alpha do lerp — mais suave
+
+  // ── BRAÇO ESQUERDO ──────────────────────────────
+  // Upper arm: ombro(11) → cotovelo(13)
+  const dUA_L = dir2(11, 13, 0.4);
+  if (dUA_L) {
+    // Rotação Z = inclinação lateral (braço subindo/descendo)
+    lerpRot(av.lUpperArm, 'z', Math.atan2(-dUA_L.dx, dUA_L.dy) - Math.PI/2, A);
+    // Rotação X = braço pra frente/trás
+    lerpRot(av.lUpperArm, 'x', dUA_L.dz * 1.5, A);
+    lerpRot(av.lUpperArm, 'y', 0, A);
+  }
+
+  // Forearm: cotovelo(13) → pulso(15)
+  const dFA_L = dir2(13, 15, 0.4);
+  if (dFA_L) {
+    lerpRot(av.lForearm, 'z', Math.atan2(-dFA_L.dx, dFA_L.dy) - Math.PI/2, A);
+    lerpRot(av.lForearm, 'x', dFA_L.dz * 1.5, A);
+    lerpRot(av.lForearm, 'y', 0, A);
+  }
+
+  // Hand: segue pulso
+  if (dFA_L) {
+    lerpRot(av.lHand, 'z', Math.atan2(-dFA_L.dx, dFA_L.dy) - Math.PI/2, A);
+    lerpRot(av.lHand, 'x', dFA_L.dz * 1.2, A);
+  }
+
+  // ── BRAÇO DIREITO ────────────────────────────────
+  // Upper arm: ombro(12) → cotovelo(14)
+  const dUA_R = dir2(12, 14, 0.4);
+  if (dUA_R) {
+    lerpRot(av.rUpperArm, 'z', Math.atan2(-dUA_R.dx, dUA_R.dy) - Math.PI/2, A);
+    lerpRot(av.rUpperArm, 'x', dUA_R.dz * 1.5, A);
+    lerpRot(av.rUpperArm, 'y', 0, A);
+  }
+
+  // Forearm: cotovelo(14) → pulso(16)
+  const dFA_R = dir2(14, 16, 0.4);
+  if (dFA_R) {
+    lerpRot(av.rForearm, 'z', Math.atan2(-dFA_R.dx, dFA_R.dy) - Math.PI/2, A);
+    lerpRot(av.rForearm, 'x', dFA_R.dz * 1.5, A);
+    lerpRot(av.rForearm, 'y', 0, A);
+  }
+
+  if (dFA_R) {
+    lerpRot(av.rHand, 'z', Math.atan2(-dFA_R.dx, dFA_R.dy) - Math.PI/2, A);
+    lerpRot(av.rHand, 'x', dFA_R.dz * 1.2, A);
+  }
+
+  // ── PERNA ESQUERDA ───────────────────────────────
+  // Thigh: quadril(23) → joelho(25)
+  const dTH_L = dir2(23, 25, 0.35);
+  if (dTH_L) {
+    lerpRot(av.lThigh, 'z', Math.atan2(-dTH_L.dx, dTH_L.dy) - Math.PI/2, A);
+    lerpRot(av.lThigh, 'x', dTH_L.dz * 1.2, A);
+    lerpRot(av.lThigh, 'y', 0, A);
+  }
+
+  // Shin: joelho(25) → tornozelo(27)
+  const dSH_L = dir2(25, 27, 0.3);
+  if (dSH_L) {
+    lerpRot(av.lShin, 'z', Math.atan2(-dSH_L.dx, dSH_L.dy) - Math.PI/2, A);
+    lerpRot(av.lShin, 'x', dSH_L.dz * 1.2, A);
+    lerpRot(av.lShin, 'y', 0, A);
+  }
+
+  // ── PERNA DIREITA ────────────────────────────────
+  // Thigh: quadril(24) → joelho(26)
+  const dTH_R = dir2(24, 26, 0.35);
+  if (dTH_R) {
+    lerpRot(av.rThigh, 'z', Math.atan2(-dTH_R.dx, dTH_R.dy) - Math.PI/2, A);
+    lerpRot(av.rThigh, 'x', dTH_R.dz * 1.2, A);
+    lerpRot(av.rThigh, 'y', 0, A);
+  }
+
+  // Shin: joelho(26) → tornozelo(28)
+  const dSH_R = dir2(26, 28, 0.3);
+  if (dSH_R) {
+    lerpRot(av.rShin, 'z', Math.atan2(-dSH_R.dx, dSH_R.dy) - Math.PI/2, A);
+    lerpRot(av.rShin, 'x', dSH_R.dz * 1.2, A);
+    lerpRot(av.rShin, 'y', 0, A);
+  }
+
+  // Cabeça: leve inclinação baseada no nariz vs ombros
+  if (vis(0) > 0.5 && vis(11) > 0.4 && vis(12) > 0.4) {
+    const noseX = -(lm[0].x - 0.5);
+    const shoulderMidX = -(((lm[11].x + lm[12].x) / 2) - 0.5);
+    lerpRot(av.head, 'y', (noseX - shoulderMidX) * 0.6, 0.08);
+    // Sem rotação X/Z — cabeça não balança
+    lerpRot(av.head, 'x', 0, 0.05);
+    lerpRot(av.head, 'z', 0, 0.05);
+  }
+}
+
+// Idle — só respiração sutil
+let idleT = 0;
+function idleAnimate(av, t) {
+  const breath = Math.sin(t * 1.0) * 0.006;
+  av.torso.scale.y = 1 + breath;
+  av.lUpperArm.rotation.z = THREE.MathUtils.lerp(av.lUpperArm.rotation.z, -0.18, 0.05);
+  av.rUpperArm.rotation.z = THREE.MathUtils.lerp(av.rUpperArm.rotation.z,  0.18, 0.05);
+  ['lThigh','rThigh','lShin','rShin'].forEach(k => {
+    av[k].rotation.x = THREE.MathUtils.lerp(av[k].rotation.x, 0, 0.05);
+    av[k].rotation.z = THREE.MathUtils.lerp(av[k].rotation.z, 0, 0.05);
+  });
+}
+
+function animateLocal() {
+  requestAnimationFrame(animateLocal);
+  idleT += 0.016;
+  if (localAvatar && !holisticReady) idleAnimate(localAvatar, idleT);
+  localRenderer.render(localScene, localCamera3);
+}
+
+let remoteIdleT = 0;
+function animateRemote() {
+  requestAnimationFrame(animateRemote);
+  remoteIdleT += 0.016;
+  if (remoteAvatar && !connected) idleAnimate(remoteAvatar, remoteIdleT);
+  remoteRenderer.render(remoteScene, remoteCamera3);
+}
+
+// ═══════════════════════════════════════════════
+//  MEDIAPIPE HOLISTIC
+// ═══════════════════════════════════════════════
+let holistic;
+function initHolistic() {
+  holistic = new Holistic({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`
+  });
+  holistic.setOptions({
+    modelComplexity: 1,
+    smoothLandmarks: true,
+    enableSegmentation: false,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.5
+  });
+  holistic.onResults(onHolisticResults);
+
+  const vid = document.getElementById('localVideo');
+  const cam = new Camera(vid, {
+    onFrame: async () => { await holistic.send({ image: vid }); },
+    width: 640, height: 480
+  });
+  cam.start();
+  holisticReady = true;
+}
+
+let lastGesture = null, gestureTimer = null;
+
+function onHolisticResults(res) {
+  // Apply to local avatar
+  if (localAvatar) applyPoseToAvatar(localAvatar, res.poseLandmarks, res.leftHandLandmarks);
+
+  // Detect hand gestures
+  if (res.leftHandLandmarks || res.rightHandLandmarks) {
+    const g = detectGesture(res.leftHandLandmarks || res.rightHandLandmarks);
+    if (g && g !== lastGesture) {
+      lastGesture = g;
+      handleGesture(g);
+    }
+  } else {
+    lastGesture = null;
+    clearGestureChips();
+  }
+
+  // Broadcast pose via DataChannel
+  if (dataChannel && dataChannel.readyState === 'open') {
+    const payload = {
+      type: 'pose',
+      pose: res.poseLandmarks ? res.poseLandmarks.map(l=>({x:l.x,y:l.y,z:l.z,v:l.visibility})) : null
+    };
+    try { dataChannel.send(JSON.stringify(payload)); } catch(e) {}
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  GESTURE DETECTION
+// ═══════════════════════════════════════════════
+function detectGesture(lms) {
+  if (!lms) return null;
+  const tips = [lms[8], lms[12], lms[16], lms[20]];
+  const mcps = [lms[5], lms[9],  lms[13], lms[17]];
+  const extended = tips.map((t, i) => t && mcps[i] && t.y < mcps[i].y - 0.04);
+  const [idx, mid, rng, pnk] = extended;
+  const thumb = lms[4] && lms[2] && lms[4].x < lms[2].x - 0.04;
+
+  if (idx && mid && rng && pnk) return 'open';
+  if (idx && mid && !rng && !pnk) return 'peace';
+  if (thumb && !idx && !mid && !rng && !pnk) return 'thumbs';
+  if (!idx && !mid && !rng && !pnk) return 'fist';
+  if (idx && !mid && !rng && pnk) return 'wave';
+  return null;
+}
+
+const gestureInfo = {
+  open:   { chip:'gc-open',   icon:'👋', label:'ACENO' },
+  peace:  { chip:'gc-peace',  icon:'✌️', label:'PEACE' },
+  thumbs: { chip:'gc-thumbs', icon:'👍', label:'CURTIU' },
+  fist:   { chip:'gc-fist',   icon:'✊', label:'ROCK' },
+  wave:   { chip:'gc-wave',   icon:'🤟', label:'WAVE' }
+};
+
+function clearGestureChips() {
+  document.querySelectorAll('.g-chip').forEach(c => c.classList.remove('lit'));
+}
+
+function handleGesture(g) {
+  const info = gestureInfo[g];
+  if (!info) return;
+  clearGestureChips();
+  const chip = document.getElementById(info.chip);
+  if (chip) chip.classList.add('lit');
+  showToast(info.icon + ' ' + info.label);
+  if (connected) {
+    addMsg('gesture', info.icon + ' Você fez: ' + info.label);
+    if (dataChannel?.readyState==='open') {
+      try { dataChannel.send(JSON.stringify({type:'gesture', g})); } catch(e) {}
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  WEBRTC + FIREBASE SIGNALING
+// ═══════════════════════════════════════════════
+const ICE_SERVERS = {
+  iceServers: [
+    { urls:'stun:stun.l.google.com:19302' },
+    { urls:'stun:stun1.l.google.com:19302' }
+  ]
+};
+
+async function findPartner() {
+  if (searching || connected) return;
+  searching = true;
+  document.getElementById('btnConnect').disabled = true;
+  setStatus('PROCURANDO...', 'warn');
+  document.getElementById('waitLabel').textContent = 'Procurando alguém...';
+
+  const waitingRef = db.ref('handchat/waiting');
+  const snap = await waitingRef.once('value');
+  const waiting = snap.val();
+
+  // Find a room waiting for someone
+  let foundRoom = null;
+  if (waiting) {
+    for (const [roomId, data] of Object.entries(waiting)) {
+      if (data.id !== myId) { foundRoom = { roomId, callerId: data.id, callerNick: data.nick }; break; }
+    }
+  }
+
+  if (foundRoom) {
+    // JOIN existing room as callee
+    await waitingRef.child(foundRoom.roomId).remove();
+    myRoom = foundRoom.roomId;
+    document.getElementById('roomLabel').textContent = myRoom.slice(0,8).toUpperCase();
+    document.getElementById('remoteName').textContent = foundRoom.callerNick || 'STRANGER';
+    await joinRoom(myRoom);
+  } else {
+    // CREATE new room and wait
+    myRoom = db.ref('handchat/rooms').push().key;
+    document.getElementById('roomLabel').textContent = myRoom.slice(0,8).toUpperCase();
+    await waitingRef.child(myRoom).set({ id: myId, nick: myNick, ts: Date.now() });
+    await createRoom(myRoom);
+  }
+}
+
+async function createRoom(roomId) {
+  roomRef = db.ref('handchat/rooms/' + roomId);
+  pc = new RTCPeerConnection(ICE_SERVERS);
+  setupDataChannel(pc.createDataChannel('chat'));
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  pc.onicecandidate = e => {
+    if (e.candidate) roomRef.child('callerCandidates').push(e.candidate.toJSON());
+  };
+  pc.ontrack = e => {
+    const rv = document.getElementById('remoteVideo');
+    if (!rv.srcObject) rv.srcObject = e.streams[0];
+  };
+  pc.onconnectionstatechange = () => handleConnState(pc.connectionState);
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp } });
+
+  // Listen for answer
+  roomRef.on('value', async snap => {
+    const data = snap.val();
+    if (data?.answer && !pc.remoteDescription) {
+      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+    }
+    if (data?.calleeName) {
+      document.getElementById('remoteName').textContent = data.calleeName;
+    }
+  });
+
+  // Listen for callee ICE candidates
+  roomRef.child('calleeCandidates').on('child_added', async snap => {
+    await pc.addIceCandidate(new RTCIceCandidate(snap.val()));
+  });
+}
+
+async function joinRoom(roomId) {
+  roomRef = db.ref('handchat/rooms/' + roomId);
+  pc = new RTCPeerConnection(ICE_SERVERS);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  pc.ondatachannel = e => setupDataChannel(e.channel);
+  pc.onicecandidate = e => {
+    if (e.candidate) roomRef.child('calleeCandidates').push(e.candidate.toJSON());
+  };
+  pc.ontrack = e => {
+    const rv = document.getElementById('remoteVideo');
+    if (!rv.srcObject) rv.srcObject = e.streams[0];
+  };
+  pc.onconnectionstatechange = () => handleConnState(pc.connectionState);
+
+  const snap = await roomRef.once('value');
+  const data = snap.val();
+  await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+  // Listen for caller ICE candidates
+  roomRef.child('callerCandidates').on('child_added', async snap => {
+    await pc.addIceCandidate(new RTCIceCandidate(snap.val()));
+  });
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp }, calleeName: myNick });
+}
+
+function setupDataChannel(ch) {
+  dataChannel = ch;
+  ch.onopen = () => {
+    addMsg('sys', '✓ Canal de dados aberto');
+  };
+  ch.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'chat') {
+      addMsg('them', d.text);
+    } else if (d.type === 'gesture') {
+      const info = gestureInfo[d.g];
+      if (info) addMsg('gesture', info.icon + ' Stranger fez: ' + info.label);
+    } else if (d.type === 'pose') {
+      // Apply remote pose to remote avatar
+      if (remoteAvatar && d.pose) {
+        const lms = d.pose.map(l => ({x:l.x, y:l.y, z:l.z, visibility:l.v}));
+        applyPoseToAvatar(remoteAvatar, lms, null);
+      }
+    }
+  };
+  ch.onclose = () => { if (connected) disconnected(); };
+}
+
+function handleConnState(state) {
+  if (state === 'connected') {
+    connected = true;
+    searching = false;
+    document.getElementById('waitingOverlay').classList.add('gone');
+    document.getElementById('btnNext').style.display = 'flex';
+    document.getElementById('btnEnd').style.display = 'flex';
+    document.getElementById('btnConnect').style.display = 'none';
+    setStatus('CONECTADO', 'ok');
+    showToast('🔗 Conectado!');
+    addMsg('sys', '✓ Conectado ao stranger!');
+  }
+  if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+    disconnected();
+  }
+}
+
+function disconnected() {
+  connected = false;
+  searching = false;
+  document.getElementById('waitingOverlay').classList.remove('gone');
+  document.getElementById('waitLabel').textContent = 'Aguardando...';
+  document.getElementById('btnNext').style.display = 'none';
+  document.getElementById('btnEnd').style.display = 'none';
+  document.getElementById('btnConnect').style.display = 'flex';
+  document.getElementById('btnConnect').disabled = false;
+  document.getElementById('remoteName').textContent = 'STRANGER';
+  document.getElementById('roomLabel').textContent = '—';
+  document.getElementById('remoteVideo').srcObject = null;
+  setStatus('DESCONECTADO', 'err');
+  addMsg('sys', '— Desconectado');
+  cleanupRoom();
+}
+
+async function cleanupRoom() {
+  try {
+    if (roomRef) { await roomRef.remove(); roomRef = null; }
+    await db.ref('handchat/waiting/' + myRoom).remove();
+  } catch(e) {}
+  if (pc) { pc.close(); pc = null; }
+}
+
+async function endCall() {
+  await cleanupRoom();
+  disconnected();
+}
+
+async function nextUser() {
+  await endCall();
+  setTimeout(findPartner, 400);
+}
+
+// ═══════════════════════════════════════════════
+//  ONLINE PRESENCE
+// ═══════════════════════════════════════════════
+function trackOnline() {
+  const presRef = db.ref('handchat/presence/' + myId);
+  presRef.set({ nick: myNick, ts: Date.now() });
+  presRef.onDisconnect().remove();
+
+  db.ref('handchat/presence').on('value', snap => {
+    const count = snap.numChildren();
+    document.getElementById('onlineN').textContent = count;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  CHAT
+// ═══════════════════════════════════════════════
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatDrawer').classList.toggle('open', chatOpen);
+}
+
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if (!text || !connected) return;
+  addMsg('me', text);
+  inp.value = '';
+  if (dataChannel?.readyState === 'open') {
+    try { dataChannel.send(JSON.stringify({ type:'chat', text })); } catch(e) {}
+  }
+}
+
+function addMsg(type, text) {
+  const box = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════
+function setStatus(text, cls) {
+  const el = document.getElementById('statusText');
+  el.textContent = text;
+  el.className = 'status-text ' + (cls||'');
+}
+
+let toastTimer;
+function showToast(text) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Resize Three.js on window resize
+window.addEventListener('resize', () => {
+  ['local','remote'].forEach(k => {
+    const panel = document.getElementById('panel' + k[0].toUpperCase() + k.slice(1));
+    const renderer = k==='local' ? localRenderer : remoteRenderer;
+    const cam = k==='local' ? localCamera3 : remoteCamera3;
+    if (!renderer || !panel) return;
+    const W = panel.clientWidth, H = panel.clientHeight;
+    renderer.setSize(W, H);
+    cam.aspect = W/H;
+    cam.updateProjectionMatrix();
+  });
+});
+</script>
+</body>
+</html>

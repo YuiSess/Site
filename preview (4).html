@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Pro+</title>
+
+<style>
+body{
+    margin:0;
+    background:#000;
+    color:white;
+    font-family:Arial;
+    overflow:hidden;
+}
+
+/* TELAS */
+.screen{position:absolute;width:100%;height:100%;display:none;}
+.active{display:block;}
+
+/* MENU */
+.menu{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100%;
+}
+
+.title{
+    font-size:55px;
+    text-shadow:0 0 30px cyan;
+}
+
+button{
+    padding:15px 40px;
+    margin:10px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(45deg,#00aaff,#0044ff);
+    color:white;
+    font-size:18px;
+    cursor:pointer;
+    transition:.2s;
+}
+button:hover{
+    transform:scale(1.1);
+    box-shadow:0 0 20px cyan;
+}
+
+/* GAME */
+.lane{
+    position:absolute;
+    width:25%;
+    height:100%;
+    border-right:1px solid #111;
+}
+
+.lane:nth-child(1){left:0;}
+.lane:nth-child(2){left:25%;}
+.lane:nth-child(3){left:50%;}
+.lane:nth-child(4){left:75%;}
+
+/* NOTA */
+.note{
+    position:absolute;
+    width:60px;
+    height:60px;
+    font-size:40px;
+    text-align:center;
+    line-height:60px;
+    text-shadow:0 0 15px cyan;
+}
+
+/* LINHA */
+.hitline{
+    position:absolute;
+    bottom:120px;
+    width:100%;
+    height:6px;
+    background:white;
+    box-shadow:0 0 15px white;
+}
+
+/* UI */
+.ui{
+    position:absolute;
+    top:10px;
+    left:10px;
+}
+
+.feedback{
+    position:absolute;
+    bottom:200px;
+    width:100%;
+    text-align:center;
+    font-size:40px;
+    opacity:0;
+    transform:scale(0.5);
+    transition:0.2s;
+}
+
+/* ANIMAÇÃO PERFECT */
+.perfectEffect{
+    position:absolute;
+    bottom:100px;
+    width:100%;
+    height:200px;
+    background:radial-gradient(circle, rgba(0,255,255,0.3), transparent);
+    animation:boom 0.3s;
+}
+
+@keyframes boom{
+    from{opacity:1; transform:scale(0.5);}
+    to{opacity:0; transform:scale(2);}
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu" class="screen active">
+    <div class="menu">
+        <div class="title">⚡ RHYTHM PRO</div>
+        <button onclick="goSelect()">PLAY</button>
+    </div>
+</div>
+
+<!-- SELECT -->
+<div id="select" class="screen">
+    <div class="menu">
+        <div class="title">ESCOLHA</div>
+        <button onclick="startGame('easy')">Fácil</button>
+        <button onclick="startGame('normal')">Normal</button>
+        <button onclick="startGame('hard')">Difícil</button>
+        <button onclick="toggleBot()">Auto Bot</button>
+        <button onclick="backMenu()">Voltar</button>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="lane"></div>
+    <div class="hitline"></div>
+
+    <div class="ui">
+        <div id="score">Score: 0</div>
+        <div id="combo">Combo: 0</div>
+        <button onclick="exitGame()">Sair</button>
+    </div>
+
+    <div class="feedback" id="fb"></div>
+</div>
+
+<audio id="music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+<script>
+let screens={
+    menu:document.getElementById("menu"),
+    select:document.getElementById("select"),
+    game:document.getElementById("game")
+}
+
+function show(s){
+    for(let k in screens){screens[k].classList.remove("active")}
+    screens[s].classList.add("active")
+}
+
+function goSelect(){show("select")}
+function backMenu(){show("menu")}
+
+let speed=6
+let spawnRate=500
+let bot=false
+
+function toggleBot(){
+    bot=!bot
+    alert("Auto Bot: "+bot)
+}
+
+function startGame(mode){
+    if(mode==="easy"){speed=4;spawnRate=800}
+    if(mode==="normal"){speed=6;spawnRate=500}
+    if(mode==="hard"){speed=12;spawnRate=180}
+    show("game")
+    document.getElementById("music").play()
+}
+
+function exitGame(){location.reload()}
+
+/* GAME */
+let notes=[]
+let score=0
+let combo=0
+
+let keys=["ArrowLeft","ArrowDown","ArrowUp","ArrowRight"]
+let sym=["←","↓","↑","→"]
+
+function spawn(){
+    let lane=Math.floor(Math.random()*4)
+    let n=document.createElement("div")
+    n.className="note"
+    n.innerText=sym[lane]
+    n.style.left=(lane*25+10)+"%"
+    n.style.top="0px"
+    screens.game.appendChild(n)
+    notes.push({el:n,lane:lane,y:0})
+}
+
+function feedback(text){
+    let fb=document.getElementById("fb")
+    fb.innerText=text
+    fb.style.opacity=1
+    fb.style.transform="scale(1.2)"
+    setTimeout(()=>{
+        fb.style.opacity=0
+        fb.style.transform="scale(0.5)"
+    },150)
+}
+
+function perfectEffect(){
+    let fx=document.createElement("div")
+    fx.className="perfectEffect"
+    screens.game.appendChild(fx)
+    setTimeout(()=>fx.remove(),300)
+}
+
+function hit(l){
+    for(let i=0;i<notes.length;i++){
+        let n=notes[i]
+        if(n.lane===l){
+            let diff=Math.abs(window.innerHeight-120-n.y)
+
+            if(diff<20){
+                score+=600 /* DUPLICADO */
+                combo++
+                feedback("PERFECT")
+                perfectEffect()
+            }
+            else if(diff<50){
+                score+=100
+                combo++
+                feedback("GOOD")
+            }
+            else{
+                combo=0
+                feedback("BAD")
+                return
+            }
+
+            n.el.remove()
+            notes.splice(i,1)
+            document.getElementById("score").innerText="Score: "+score
+            document.getElementById("combo").innerText="Combo: "+combo
+            return
+        }
+    }
+    combo=0
+    feedback("MISS")
+}
+
+document.addEventListener("keydown",e=>{
+    let l=keys.indexOf(e.key)
+    if(l!==-1) hit(l)
+})
+
+function update(){
+    notes.forEach((n,i)=>{
+        n.y+=speed
+        n.el.style.top=n.y+"px"
+
+        if(bot && n.y>window.innerHeight-130){
+            hit(n.lane)
+        }
+
+        if(n.y>window.innerHeight){
+            n.el.remove()
+            notes.splice(i,1)
+            combo=0
+            feedback("MISS")
+        }
+    })
+}
+
+setInterval(update,16)
+setInterval(spawn,spawnRate)
+</script>
+
+</body>
+</html>
