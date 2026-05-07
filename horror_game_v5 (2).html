@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A RUA — Horror v5</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#fff}
+#canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0}
+#rain-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.25;z-index:2}
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:all;background:#000}
+.screen.hidden{display:none!important}
+#menu-screen .tagline{font-size:11px;letter-spacing:8px;color:rgba(255,255,255,0.3);text-transform:uppercase}
+#menu-screen h1{font-size:clamp(44px,9vw,88px);letter-spacing:18px;text-transform:uppercase;text-shadow:0 0 60px rgba(200,0,0,0.4);animation:flicker 5s infinite}
+#menu-screen .sub{font-size:12px;letter-spacing:5px;color:rgba(255,255,255,0.25);font-style:italic;margin-bottom:10px}
+.menu-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.btn{background:transparent;border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.8);padding:13px 30px;font-family:'Courier New',monospace;font-size:12px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all 0.25s}
+.btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.55);color:#fff}
+.btn.primary{border-color:rgba(200,50,50,0.5);color:rgba(255,150,150,0.9)}
+.btn.primary:hover{background:rgba(180,0,0,0.12);border-color:rgba(255,80,80,0.8)}
+#lobby-screen h2{font-size:16px;letter-spacing:10px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:8px}
+.lobby-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.25);color:#fff;font-family:'Courier New',monospace;font-size:16px;letter-spacing:4px;padding:8px 4px;text-align:center;width:220px;outline:none}
+.lobby-input::placeholder{color:rgba(255,255,255,0.18)}
+.mode-tabs{display:flex;gap:12px}
+.tab{background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.4);padding:9px 22px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all 0.2s}
+.tab.active{border-color:rgba(255,255,255,0.6);color:#fff;background:rgba(255,255,255,0.05)}
+#hud{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:none;gap:28px;align-items:center;background:rgba(0,0,0,0.4);padding:10px 22px;border:1px solid rgba(255,255,255,0.06)}
+.hud-item{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.5)}
+.bar-wrap{width:70px;height:5px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15)}
+.bar-fill{height:100%;transition:width 0.4s}
+#stam-fill{background:#78b4ff}
+#san-fill{background:#ff78b0}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.35)}
+#crosshair::before{width:10px;height:1px;top:0;left:-5px}
+#crosshair::after{width:1px;height:10px;top:-5px;left:0}
+#vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 38%,rgba(0,0,0,0.72) 100%);pointer-events:none}
+#noise-overlay{position:absolute;inset:0;opacity:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;mix-blend-mode:multiply}
+#red-pulse{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 120px rgba(200,0,0,0.5)}
+#monster-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;opacity:0;pointer-events:none;box-shadow:0 0 60px 30px rgba(180,0,0,0.12)}
+#msg-box{position:absolute;top:28px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:5px;align-items:center;pointer-events:none}
+.msg{font-size:10px;letter-spacing:3px;color:rgba(255,180,180,0.8);text-transform:uppercase;animation:fadeMsg 4s forwards;white-space:nowrap}
+#nametags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.nametag{position:absolute;font-size:9px;letter-spacing:3px;color:rgba(150,200,255,0.7);text-transform:uppercase;transform:translateX(-50%);white-space:nowrap;text-shadow:0 0 8px rgba(0,0,0,1)}
+#chat-wrap{position:absolute;bottom:80px;left:20px;width:280px;pointer-events:all}
+#chat-log{height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;margin-bottom:6px;scrollbar-width:none}
+#chat-log::-webkit-scrollbar{display:none}
+.chat-msg{font-size:10px;letter-spacing:1px;line-height:1.5;color:rgba(255,255,255,0.55)}
+.chat-msg .name{color:rgba(150,200,255,0.8);margin-right:4px}
+.chat-msg.system{color:rgba(255,200,100,0.5);font-style:italic}
+#chat-input-wrap{display:flex;gap:6px}
+#chat-input{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);font-family:'Courier New',monospace;font-size:10px;letter-spacing:1px;padding:6px 8px;flex:1;outline:none}
+#chat-input::placeholder{color:rgba(255,255,255,0.2)}
+#chat-send{background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.4);font-family:'Courier New';font-size:10px;letter-spacing:2px;padding:6px 10px;cursor:pointer}
+#keys-hint{position:absolute;top:20px;left:20px;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.18);line-height:2.2;pointer-events:none}
+#found-items{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:3px;color:rgba(255,200,100,0.55);pointer-events:none}
+#online-list{position:absolute;top:18px;right:18px;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.25);line-height:2;text-align:right;pointer-events:none}
+#car-prompt{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:3px;color:rgba(255,255,200,0.7);pointer-events:none;display:none;background:rgba(0,0,0,0.5);padding:6px 14px;border:1px solid rgba(255,255,150,0.2)}
+#lore-popup{position:absolute;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;pointer-events:all;padding:40px}
+#lore-popup .lore-label{font-size:9px;letter-spacing:6px;color:rgba(255,50,50,0.6);text-transform:uppercase}
+#lore-popup p{font-size:14px;letter-spacing:2px;color:rgba(255,255,255,0.65);line-height:2.2;text-align:center;max-width:560px;font-style:italic}
+#lore-popup button{background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.35);font-family:'Courier New',monospace;font-size:11px;letter-spacing:4px;cursor:pointer;padding:10px 24px;pointer-events:all}
+#lore-popup button:hover{border-color:rgba(255,255,255,0.4);color:rgba(255,255,255,0.7)}
+/* PUZZLE UI */
+#puzzle-ui{position:absolute;inset:0;background:rgba(0,0,0,0.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;pointer-events:all;padding:40px}
+#puzzle-ui h3{font-size:14px;letter-spacing:6px;color:rgba(255,100,100,0.8);text-transform:uppercase}
+#puzzle-ui p{font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.5);text-align:center;line-height:2}
+.puzzle-grid{display:grid;gap:8px}
+.puzzle-btn{background:rgba(20,10,10,0.8);border:1px solid rgba(255,50,50,0.25);color:rgba(255,200,200,0.7);font-family:'Courier New';font-size:13px;letter-spacing:2px;padding:14px 20px;cursor:pointer;transition:all 0.2s;min-width:60px;text-align:center}
+.puzzle-btn:hover{background:rgba(80,10,10,0.8);border-color:rgba(255,80,80,0.6);color:#fff}
+.puzzle-btn.correct{background:rgba(0,80,20,0.5);border-color:rgba(0,255,80,0.4);color:rgba(150,255,150,0.9)}
+.puzzle-btn.wrong{background:rgba(80,0,0,0.5);border-color:rgba(255,0,0,0.4);color:rgba(255,100,100,0.9);animation:shake 0.3s}
+#puzzle-close{background:transparent;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);font-family:'Courier New';font-size:10px;letter-spacing:3px;padding:8px 20px;cursor:pointer}
+#puzzle-close:hover{border-color:rgba(255,255,255,0.4);color:#fff}
+/* NOISE LEVEL */
+#noise-meter{position:absolute;top:60px;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+#noise-label{font-size:8px;letter-spacing:4px;color:rgba(255,150,100,0.6);text-transform:uppercase}
+#noise-bar-wrap{width:120px;height:4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1)}
+#noise-bar{height:100%;background:rgba(255,80,30,0.7);width:0%;transition:width 0.3s}
+/* ROOM INTRO UI */
+#room-intro{position:absolute;inset:0;background:rgba(0,0,0,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;padding:40px}
+#room-intro .ri-title{font-size:11px;letter-spacing:8px;color:rgba(255,50,50,0.7);text-transform:uppercase}
+#room-intro .ri-text{font-size:13px;letter-spacing:2px;color:rgba(255,255,255,0.5);line-height:2.2;text-align:center;max-width:480px;font-style:italic}
+@keyframes flicker{0%,93%,100%{opacity:1}94%{opacity:0.3}95%{opacity:1}97%{opacity:0.1}98%{opacity:1}}
+@keyframes fadeMsg{0%{opacity:0;transform:translateY(-4px)}8%{opacity:1;transform:none}78%{opacity:1}100%{opacity:0}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<canvas id="rain-canvas"></canvas>
+<div id="ui">
+  <div id="vignette"></div>
+  <div id="noise-overlay"></div>
+  <div id="red-pulse"></div>
+  <div id="monster-ring"></div>
+  <div id="menu-screen" class="screen">
+    <p class="tagline">horror experience</p>
+    <h1>A RUA</h1>
+    <p class="sub">quando você começa a ver as mesmas coisas...</p>
+    <div class="menu-btns">
+      <button class="btn primary" onclick="UI.showLobby()">▶ JOGAR</button>
+      <button class="btn" onclick="UI.showControls()">CONTROLES</button>
+    </div>
+  </div>
+  <div id="lobby-screen" class="screen hidden">
+    <h2>como jogar?</h2>
+    <div class="mode-tabs">
+      <button class="tab active" id="tab-solo" onclick="UI.setMode('solo')">SOLO</button>
+      <button class="tab" id="tab-multi" onclick="UI.setMode('multi')">MULTIPLAYER</button>
+    </div>
+    <input class="lobby-input" id="name-input" placeholder="SEU NOME" maxlength="12">
+    <div id="multi-options" style="display:none;flex-direction:column;align-items:center;gap:12px">
+      <input class="lobby-input" id="room-input" placeholder="CÓDIGO DA SALA" maxlength="6" style="text-transform:uppercase">
+      <button class="quick-room-btn" style="font-size:10px;letter-spacing:3px;color:rgba(255,200,100,0.5);background:none;border:none;font-family:'Courier New';cursor:pointer;text-decoration:underline;text-underline-offset:3px" onclick="UI.quickRoom()">⚡ sala rápida</button>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:6px">
+      <button class="btn primary" id="start-btn" onclick="UI.startFromLobby()">ENTRAR</button>
+      <button class="btn" onclick="UI.showMenu()">← VOLTAR</button>
+    </div>
+  </div>
+  <div id="hud">
+    <div class="hud-item">🔦 <span style="font-size:9px;color:rgba(168,255,120,0.8)">∞</span></div>
+    <div class="hud-item">⚡ <div class="bar-wrap"><div class="bar-fill" id="stam-fill" style="width:100%"></div></div></div>
+    <div class="hud-item">🧠 <div class="bar-wrap"><div class="bar-fill" id="san-fill" style="width:100%"></div></div></div>
+    <div class="hud-item" id="car-hud" style="display:none">🚗 <span id="car-speed-txt" style="color:rgba(255,220,100,0.8);font-size:9px">0 km/h</span></div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="msg-box"></div>
+  <div id="found-items"></div>
+  <div id="online-list"></div>
+  <div id="car-prompt"></div>
+  <div id="noise-meter">
+    <div id="noise-label">barulho</div>
+    <div id="noise-bar-wrap"><div id="noise-bar"></div></div>
+  </div>
+  <div id="room-intro">
+    <div class="ri-title">▶ VOCÊ ACORDA...</div>
+    <div class="ri-text" id="room-intro-text"></div>
+  </div>
+  <div id="keys-hint">
+    WASD — mover<br>
+    SHIFT — correr<br>
+    F — lanterna<br>
+    E — interagir / entrar carro<br>
+    T — chat<br>
+    ESC — soltar mouse
+  </div>
+  <div id="nametags"></div>
+  <div id="chat-wrap" style="display:none">
+    <div id="chat-log"></div>
+    <div id="chat-input-wrap">
+      <input id="chat-input" placeholder="mensagem... (enter)" maxlength="80">
+      <button id="chat-send" onclick="Chat.send()">OK</button>
+    </div>
+  </div>
+  <div id="lore-popup">
+    <div class="lore-label" id="lore-label-txt">FITA VHS — ENCONTRADA</div>
+    <p id="lore-text"></p>
+    <button onclick="UI.closeLore()">[ continuar ]</button>
+  </div>
+  <div id="puzzle-ui">
+    <h3 id="puzzle-title">PUZZLE</h3>
+    <p id="puzzle-desc"></p>
+    <div id="puzzle-content"></div>
+    <button id="puzzle-close" onclick="closePuzzle()">[ cancelar ]</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ════ FIREBASE ════
+const FB_CFG={apiKey:"AIzaSyBMz-GuqiF4VyUKnCayURIvPGz0tR3W_7s",authDomain:"handtracking-78c3b.firebaseapp.com",databaseURL:"https://handtracking-78c3b-default-rtdb.firebaseio.com",projectId:"handtracking-78c3b",storageBucket:"handtracking-78c3b.appspot.com",messagingSenderId:"179317156904",appId:"1:179317156904:web:b9dede7364168804f9991d"};
+let fbApp=null,fbDB=null,roomRef=null;
+function loadFirebase(){return new Promise(r=>{if(fbDB){r(true);return;}const s1=document.createElement('script');s1.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';s1.onload=()=>{const s2=document.createElement('script');s2.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';s2.onload=()=>{try{fbApp=firebase.initializeApp(FB_CFG);fbDB=firebase.database();r(true);}catch(e){r(false);}};s2.onerror=()=>r(false);document.head.appendChild(s2);};s1.onerror=()=>r(false);document.head.appendChild(s1);});}
+
+// ════ RENDERER ════
+const canvas=document.getElementById('canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.0));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.BasicShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x040408,0.012);
+const camera=new THREE.PerspectiveCamera(74,window.innerWidth/window.innerHeight,0.1,800);
+camera.position.set(0,1.7,0);
+scene.add(camera);
+
+// Background
+scene.background=new THREE.Color(0x020206);
+
+// ════ LIGHTS ════
+scene.add(new THREE.AmbientLight(0x1a2535,1.8));
+const moon=new THREE.DirectionalLight(0x4466cc,0.5);
+moon.position.set(80,160,60);moon.castShadow=true;
+moon.shadow.mapSize.set(512,512);
+moon.shadow.camera.near=0.5;moon.shadow.camera.far=500;
+moon.shadow.camera.left=-300;moon.shadow.camera.right=300;
+moon.shadow.camera.top=300;moon.shadow.camera.bottom=-300;
+scene.add(moon);
+
+const flashlight=new THREE.SpotLight(0xfff0dd,4.5,55,Math.PI/5,0.45,1.5);
+flashlight.castShadow=false;
+const flTarget=new THREE.Object3D();flTarget.position.set(0,0,-8);
+camera.add(flashlight);camera.add(flTarget);flashlight.target=flTarget;
+let flashlightOn=true;
+
+// ════ GAME STATE ════
+const G={
+  running:false,solo:true,
+  battery:100,stamina:100,sanity:100,
+  foundTapes:0,monsterDist:999,nearMonster:false,
+  myId:Math.random().toString(36).slice(2),myName:'ANÔNIMO',roomCode:'',
+  inCar:false,drivingCar:null,
+  // ROOM STATE
+  inStartRoom:true,
+  puzzle1Solved:false,
+  puzzle2Solved:false,
+  roomEscaped:false,
+  noiseLevel:0,
+  monsterPreparing:false,
+  monsterPreparedness:0, // 0-1, when 1 monster bursts in
+};
+const keys={};
+let yaw=0,pitch=0,isLocked=false,monster=null,posTimer=0;
+let roomMonster=null; // separate monster for the starting room
+const streetLamps=[];
+const cars=[];
+const tapeObjects=[];
+
+// ════ PUZZLE STATE ════
+let activePuzzle=null;
+
+// ════ START ROOM GEOMETRY ════
+// Room bounds: X: -12 to 12, Z: -12 to 12 — large house
+const ROOM_MIN_X=-11.5,ROOM_MAX_X=11.5,ROOM_MIN_Z=-11.5,ROOM_MAX_Z=11.5;
+const ROOM_DOOR_Z=11.5; // door on +Z wall
+
+function buildStartRoom(){
+  const wallMat=new THREE.MeshLambertMaterial({color:0x3a2e1e});
+  const floorMat=new THREE.MeshLambertMaterial({color:0x2a2218});
+  const ceilMat=new THREE.MeshLambertMaterial({color:0x221a12});
+  const woodMat=new THREE.MeshLambertMaterial({color:0x4a3018});
+  const roofMat=new THREE.MeshLambertMaterial({color:0x1e1208,side:THREE.DoubleSide});
+  const roofTileMat=new THREE.MeshLambertMaterial({color:0x2a1a08});
+
+  // === LARGE HOUSE — 24x24 footprint ===
+  const HW=12, HD=12; // half width, half depth
+
+  // Floor
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(HW*2,HD*2),floorMat);
+  floor.rotation.x=-Math.PI/2;floor.position.set(0,0,0);floor.receiveShadow=true;scene.add(floor);
+
+  // Ceiling at 4.2m
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(HW*2,HD*2),ceilMat);
+  ceil.rotation.x=Math.PI/2;ceil.position.set(0,4.2,0);scene.add(ceil);
+
+  // Walls
+  const wallH=4.2;
+  // Back wall (Z=-HD)
+  const wBack=new THREE.Mesh(new THREE.BoxGeometry(HW*2,wallH,0.18),wallMat);wBack.position.set(0,wallH/2,-HD);wBack.castShadow=true;wBack.receiveShadow=true;scene.add(wBack);
+  // Left wall (X=-HW)
+  const wLeft=new THREE.Mesh(new THREE.BoxGeometry(0.18,wallH,HD*2),wallMat);wLeft.position.set(-HW,wallH/2,0);wLeft.castShadow=true;wLeft.receiveShadow=true;scene.add(wLeft);
+  // Right wall (X=HW) — with window
+  const wRightBack=new THREE.Mesh(new THREE.BoxGeometry(0.18,wallH,HD*2-6),wallMat);wRightBack.position.set(HW,wallH/2,-3);wRightBack.castShadow=true;wRightBack.receiveShadow=true;scene.add(wRightBack);
+  const wRightTop=new THREE.Mesh(new THREE.BoxGeometry(0.18,1.5,4),wallMat);wRightTop.position.set(HW,3.45,-2+ HD/2-1);scene.add(wRightTop); // above window
+  // Front wall with door gap (Z=+HD) — two side pieces + top
+  const wFrontL=new THREE.Mesh(new THREE.BoxGeometry(HW*2-5,wallH,0.18),wallMat);wFrontL.position.set(-(HW/2+1.1),wallH/2,HD);scene.add(wFrontL);
+  const wFrontR=new THREE.Mesh(new THREE.BoxGeometry(HW*2-5,wallH,0.18),wallMat);wFrontR.position.set(HW/2+1.1,wallH/2,HD);scene.add(wFrontR);
+  const wFrontTop=new THREE.Mesh(new THREE.BoxGeometry(4.2,0.9,0.18),wallMat);wFrontTop.position.set(0,wallH-0.3,HD);scene.add(wFrontTop);
+
+  // Door frame
+  const doorFrameMat=new THREE.MeshLambertMaterial({color:0x3a2010});
+  const dfL=new THREE.Mesh(new THREE.BoxGeometry(0.16,3.2,0.22),doorFrameMat);dfL.position.set(-1.85,1.6,HD);scene.add(dfL);
+  const dfR=new THREE.Mesh(new THREE.BoxGeometry(0.16,3.2,0.22),doorFrameMat);dfR.position.set(1.85,1.6,HD);scene.add(dfR);
+  const dfTop=new THREE.Mesh(new THREE.BoxGeometry(3.86,0.18,0.22),doorFrameMat);dfTop.position.set(0,3.26,HD);scene.add(dfTop);
+
+  // DOOR (closed initially)
+  const doorMat=new THREE.MeshLambertMaterial({color:0x2a1505});
+  const door=new THREE.Mesh(new THREE.BoxGeometry(3.68,3.1,0.12),doorMat);
+  door.position.set(0,1.55,HD-0.06);door.userData.isDoor=true;scene.add(door);
+  G.roomDoor=door;
+
+  // === WINDOW on right wall ===
+  const windowFrame=new THREE.MeshLambertMaterial({color:0x3a2010});
+  const windowGlass=new THREE.MeshLambertMaterial({color:0x112233,transparent:true,opacity:0.35});
+  const winFrTop=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.14,3.2),windowFrame);winFrTop.position.set(HW,2.9,-2);scene.add(winFrTop);
+  const winFrBot=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.14,3.2),windowFrame);winFrBot.position.set(HW,1.3,-2);scene.add(winFrBot);
+  const winFrL=new THREE.Mesh(new THREE.BoxGeometry(0.18,1.65,0.14),windowFrame);winFrL.position.set(HW,2.1,-3.6);scene.add(winFrL);
+  const winFrR=new THREE.Mesh(new THREE.BoxGeometry(0.18,1.65,0.14),windowFrame);winFrR.position.set(HW,2.1,-0.4);scene.add(winFrR);
+  const winGlass=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.5,3.0),windowGlass);winGlass.position.set(HW,2.1,-2);scene.add(winGlass);
+  G.windowPos=new THREE.Vector3(HW-0.5,1.7,-2);
+
+  // === ROOF — gabled pitched roof ===
+  // Ridge runs along Z axis at top center
+  const ridgeH=3.8; // height above ceiling
+  const roofY=wallH; // base of roof = top of walls
+  // Left slope
+  const roofLeft=new THREE.Mesh(new THREE.PlaneGeometry(Math.sqrt(HW*HW+ridgeH*ridgeH)*2+0.4,HD*2+0.4),roofMat);
+  const roofAngle=Math.atan2(ridgeH,HW);
+  roofLeft.rotation.z=roofAngle;
+  roofLeft.position.set(-HW*0.5+0.2,roofY+ridgeH*0.5,0);
+  roofLeft.rotation.order='YXZ';
+  // Recalculate proper slope geometry
+  // Use simple box slabs for roof slopes
+  const slopeLen=Math.sqrt(HW*HW+ridgeH*ridgeH)+0.6;
+  const roofL=new THREE.Mesh(new THREE.BoxGeometry(slopeLen,0.22,HD*2+0.8),roofTileMat);
+  roofL.position.set(-HW/2,roofY+ridgeH/2,0);
+  roofL.rotation.z=roofAngle;
+  roofL.castShadow=true;roofL.receiveShadow=true;
+  scene.add(roofL);
+
+  const roofR=new THREE.Mesh(new THREE.BoxGeometry(slopeLen,0.22,HD*2+0.8),roofTileMat);
+  roofR.position.set(HW/2,roofY+ridgeH/2,0);
+  roofR.rotation.z=-roofAngle;
+  roofR.castShadow=true;roofR.receiveShadow=true;
+  scene.add(roofR);
+
+  // Gable ends (triangular, approximate with box + shape)
+  // Front gable (Z=HD)
+  const gableFront=new THREE.Mesh(new THREE.BoxGeometry(HW*2+0.4,0.18,0.22),roofTileMat);
+  gableFront.position.set(0,roofY+ridgeH+0.08,HD+0.1);scene.add(gableFront);
+  // Gable triangles (use two slanted boxes as simplified triangle fill)
+  const gFL=new THREE.Mesh(new THREE.BoxGeometry(HW+0.3,0.18,0.22),roofTileMat);
+  gFL.position.set(-HW/2+0.15,roofY+ridgeH/2,HD+0.1);gFL.rotation.z=roofAngle;scene.add(gFL);
+  const gFR=new THREE.Mesh(new THREE.BoxGeometry(HW+0.3,0.18,0.22),roofTileMat);
+  gFR.position.set(HW/2-0.15,roofY+ridgeH/2,HD+0.1);gFR.rotation.z=-roofAngle;scene.add(gFR);
+  // Back gable
+  const gBL=new THREE.Mesh(new THREE.BoxGeometry(HW+0.3,0.18,0.22),roofTileMat);
+  gBL.position.set(-HW/2+0.15,roofY+ridgeH/2,-HD-0.1);gBL.rotation.z=roofAngle;scene.add(gBL);
+  const gBR=new THREE.Mesh(new THREE.BoxGeometry(HW+0.3,0.18,0.22),roofTileMat);
+  gBR.position.set(HW/2-0.15,roofY+ridgeH/2,-HD-0.1);gBR.rotation.z=-roofAngle;scene.add(gBR);
+  // Ridge cap
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.28,HD*2+1.2),roofTileMat);
+  ridge.position.set(0,roofY+ridgeH,0);scene.add(ridge);
+
+  // Roof eaves (overhangs)
+  const eaveMat=new THREE.MeshLambertMaterial({color:0x160b04});
+  [[0,HD+0.22],[0,-HD-0.22]].forEach(([ex,ez])=>{
+    const eave=new THREE.Mesh(new THREE.BoxGeometry(HW*2+1.2,0.12,0.6),eaveMat);
+    eave.position.set(ex,roofY-0.06,ez);scene.add(eave);
+  });
+  [[-HW-0.22,0],[HW+0.22,0]].forEach(([ex,ez])=>{
+    const eave=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.12,HD*2+1.2),eaveMat);
+    eave.position.set(ex,roofY-0.06,ez);scene.add(eave);
+  });
+
+  // === INTERIOR ROOMS (subdivide the large space) ===
+  // Internal wall dividing back bedroom from main hall
+  const intWall=new THREE.Mesh(new THREE.BoxGeometry(HW*2,wallH,0.16),wallMat);
+  intWall.position.set(0,wallH/2,-3);scene.add(intWall);
+  // Door gap in internal wall (opening at X: -2 to 2)
+  // Left side of gap
+  const intWL=new THREE.Mesh(new THREE.BoxGeometry(HW*2-4.2,wallH,0.16),wallMat);intWL.position.set(-(HW/2+1.05),wallH/2,-3);scene.add(intWL); // wait—use proper inset
+  scene.remove(intWall); // rebuild with gap
+  const intWallL=new THREE.Mesh(new THREE.BoxGeometry(HW-2.2,wallH,0.16),wallMat);intWallL.position.set(-(HW/2+1.1+HW/2-2.2/2),wallH/2,-3);
+  // Simpler: split wall by x position
+  const iWL=new THREE.Mesh(new THREE.BoxGeometry(7.8,wallH,0.16),wallMat);iWL.position.set(-6.1,wallH/2,-3);iWL.castShadow=true;iWL.receiveShadow=true;scene.add(iWL);
+  const iWR=new THREE.Mesh(new THREE.BoxGeometry(7.8,wallH,0.16),wallMat);iWR.position.set(6.1,wallH/2,-3);iWR.castShadow=true;iWR.receiveShadow=true;scene.add(iWR);
+  const iWTop=new THREE.Mesh(new THREE.BoxGeometry(4.4,0.9,0.16),wallMat);iWTop.position.set(0,wallH-0.3,-3);scene.add(iWTop);
+
+  // === FURNITURE: larger room, more items ===
+  const bedMat=new THREE.MeshLambertMaterial({color:0x221a14});
+  const mattMat=new THREE.MeshLambertMaterial({color:0x1a1510});
+  const pilMat=new THREE.MeshLambertMaterial({color:0x2a2520});
+  const deskMat=new THREE.MeshLambertMaterial({color:0x1e1208});
+
+  // Bed in back-left corner
+  const bed=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.4,4.4),bedMat);bed.position.set(-9,0.2,-8.5);bed.castShadow=true;scene.add(bed);
+  const matt=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.2,4.2),mattMat);matt.position.set(-9,0.5,-8.5);scene.add(matt);
+  const pil=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.16,0.44),pilMat);pil.position.set(-9,0.72,-10.3);scene.add(pil);
+
+  // Wardrobe
+  const wardMat=new THREE.MeshLambertMaterial({color:0x1a0f06});
+  const ward=new THREE.Mesh(new THREE.BoxGeometry(2.2,3.0,0.7),wardMat);ward.position.set(8.5,1.5,-9.5);ward.castShadow=true;scene.add(ward);
+
+  // Desk with puzzle item 1 — in main hall
+  const desk=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.08,0.9),deskMat);desk.position.set(-8,0.82,3);desk.castShadow=true;scene.add(desk);
+  const deskLeg1=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.82,0.08),deskMat);deskLeg1.position.set(-7.2,0.41,3);scene.add(deskLeg1);
+  const deskLeg2=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.82,0.08),deskMat);deskLeg2.position.set(-8.8,0.41,3);scene.add(deskLeg2);
+  const deskItem=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.22,0.22),new THREE.MeshLambertMaterial({color:0x881100}));
+  deskItem.position.set(-8,0.97,3);deskItem.userData={isPuzzle1:true};scene.add(deskItem);
+  G.puzzle1Obj=deskItem;
+
+  // Puzzle item 2 — near door in hallway
+  const keyItem=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.07,0.24),new THREE.MeshLambertMaterial({color:0xaaaa00}));
+  keyItem.position.set(5,0.06,9);keyItem.userData={isPuzzle2:true};scene.add(keyItem);
+  G.puzzle2Obj=keyItem;
+
+  // Couch in main hall
+  const couchMat=new THREE.MeshLambertMaterial({color:0x1a1018});
+  const couchBase=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.6,1.1),couchMat);couchBase.position.set(4,0.3,0);scene.add(couchBase);
+  const couchBack=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.7,0.3),couchMat);couchBack.position.set(4,0.95,-0.4);scene.add(couchBack);
+
+  // Table
+  const tableMat=new THREE.MeshLambertMaterial({color:0x1a1208});
+  const table=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.08,0.9),tableMat);table.position.set(4,0.76,1.8);scene.add(table);
+  const tLeg=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.76,0.08),tableMat);tLeg.position.set(4,0.38,1.8);scene.add(tLeg);
+
+  // Bookshelf on back wall
+  const shelfMat=new THREE.MeshLambertMaterial({color:0x1a0f06});
+  const shelf=new THREE.Mesh(new THREE.BoxGeometry(3.0,2.8,0.4),shelfMat);shelf.position.set(7,1.4,-11.5);shelf.castShadow=true;scene.add(shelf);
+
+  // Glow for puzzle items
+  const gl1=new THREE.PointLight(0x660000,1.0,3.5);gl1.position.copy(deskItem.position);scene.add(gl1);
+  G.puzzle1Light=gl1;
+  const gl2=new THREE.PointLight(0x666600,1.0,3.5);gl2.position.copy(keyItem.position);scene.add(gl2);
+  G.puzzle2Light=gl2;
+
+  // Room lights - brighter and wider to cover large room
+  const roomLight=new THREE.PointLight(0xffcc88,3.5,35);roomLight.position.set(0,3.8,2);scene.add(roomLight);
+  const roomLight2=new THREE.PointLight(0xddaa66,2.5,30);roomLight2.position.set(0,3.8,-7);scene.add(roomLight2);
+  const roomLight3=new THREE.PointLight(0xcc9955,2.0,28);roomLight3.position.set(-8,3.8,-5);scene.add(roomLight3);
+  const roomLight4=new THREE.PointLight(0xcc9955,2.0,28);roomLight4.position.set(8,3.8,-5);scene.add(roomLight4);
+  const redLight=new THREE.PointLight(0x660000,2.0,20);redLight.position.set(-4,3.8,2);scene.add(redLight);
+  G.roomRedLight=redLight;
+
+  // Lock icon
+  const lockMat=new THREE.MeshBasicMaterial({color:0xffaa00});
+  const lockIcon=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.16,0.06),lockMat);
+  lockIcon.position.set(1.7,1.5,HD-0.06);lockIcon.userData.isLockIcon=true;scene.add(lockIcon);
+  G.doorLockIcon=lockIcon;
+}
+
+// ════ ROOM MONSTER ════
+class RoomMonster{
+  constructor(){
+    this.grp=new THREE.Group();
+    this.build();
+    // Start in corner, crouching
+    this.grp.position.set(-10,0,-10);
+    scene.add(this.grp);
+    this.state='lurk'; // lurk, investigate, prepare, burst
+    this.investigateTarget=new THREE.Vector3();
+    this.timer=0;
+    this.burstTimer=0;
+  }
+  build(){
+    const m=new THREE.MeshLambertMaterial({color:0x080808});
+    const m2=new THREE.MeshLambertMaterial({color:0x100810});
+    // Tall, thin body
+    // Torso
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,1.4,8),m);torso.position.y=2.8;this.grp.add(torso);
+    // Neck
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.15,0.4,6),m2);neck.position.y=3.8;this.grp.add(neck);
+    // Head - distorted
+    const head=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.62,0.5),m2);head.position.set(0,4.22,0.05);head.rotation.z=0.12;this.grp.add(head);this.headMesh=head;
+    // Eyes
+    const eM=new THREE.MeshBasicMaterial({color:0xcc0000});
+    const e1=new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),eM);e1.position.set(-0.14,4.25,0.27);this.grp.add(e1);this.eye1=e1;
+    const e2=new THREE.Mesh(new THREE.SphereGeometry(0.06,6,6),eM);e2.position.set(0.14,4.25,0.27);this.grp.add(e2);this.eye2=e2;
+    // Eye light
+    const el=new THREE.PointLight(0x880000,1.5,6);el.position.set(0,4.25,0.4);this.grp.add(el);this.eyeLight=el;
+    // Pelvis
+    const pelvis=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.2,0.45,8),m);pelvis.position.y=2.0;this.grp.add(pelvis);
+    // Arms - long, spindly
+    this.armL=new THREE.Group();
+    const alUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.1,6),m);alUpper.position.y=-0.55;this.armL.add(alUpper);
+    const alLower=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,0.95,6),m2);alLower.position.y=-1.45;this.armL.add(alLower);
+    const alHand=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.25,0.1),m2);alHand.position.y=-2.0;this.armL.add(alHand);
+    this.armL.position.set(-0.38,3.5,0);this.armL.rotation.z=0.4;this.grp.add(this.armL);
+    this.armR=new THREE.Group();
+    const arUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.1,6),m);arUpper.position.y=-0.55;this.armR.add(arUpper);
+    const arLower=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,0.95,6),m2);arLower.position.y=-1.45;this.armR.add(arLower);
+    const arHand=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.25,0.1),m2);arHand.position.y=-2.0;this.armR.add(arHand);
+    this.armR.position.set(0.38,3.5,0);this.armR.rotation.z=-0.4;this.grp.add(this.armR);
+    // Legs
+    this.legL=new THREE.Group();
+    const llUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,1.2,7),m);llUpper.position.y=-0.6;this.legL.add(llUpper);
+    const llLower=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,1.0,6),m2);llLower.position.y=-1.6;this.legL.add(llLower);
+    const llFoot=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.14,0.38),m2);llFoot.position.set(0,-2.18,0.1);this.legL.add(llFoot);
+    this.legL.position.set(-0.22,2.1,0);this.grp.add(this.legL);
+    this.legR=new THREE.Group();
+    const lrUpper=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.12,1.2,7),m);lrUpper.position.y=-0.6;this.legR.add(lrUpper);
+    const lrLower=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.1,1.0,6),m2);lrLower.position.y=-1.6;this.legR.add(lrLower);
+    const lrFoot=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.14,0.38),m2);lrFoot.position.set(0,-2.18,0.1);this.legR.add(lrFoot);
+    this.legR.position.set(0.22,2.1,0);this.grp.add(this.legR);
+    // Scale taller
+    this.grp.scale.set(1,1.15,1);
+  }
+  update(dt,playerPos,noiseLevel){
+    if(!G.inStartRoom||G.roomEscaped){if(this.grp.parent)scene.remove(this.grp);return;}
+    const t=performance.now()*0.001;
+    this.timer+=dt;
+
+    // Animate
+    const spd=this.state==='burst'?14:this.state==='prepare'?6:3;
+    this.legL.rotation.x=Math.sin(t*spd)*0.5;
+    this.legR.rotation.x=-Math.sin(t*spd)*0.5;
+    this.armL.rotation.x=Math.sin(t*spd+0.5)*0.3;
+    this.armR.rotation.x=-Math.sin(t*spd+0.5)*0.3;
+    this.headMesh.rotation.y=Math.sin(t*0.7)*0.2;
+    // Eye pulse
+    const eyePulse=0.8+Math.sin(t*3)*0.4;
+    this.eyeLight.intensity=this.state==='lurk'?0.5*eyePulse:this.state==='prepare'?2.5*eyePulse:1.2*eyePulse;
+
+    if(this.state==='lurk'){
+      // Slowly patrol corners
+      const corners=[new THREE.Vector3(-10,0,-10),new THREE.Vector3(10,0,-10),new THREE.Vector3(-10,0,8),new THREE.Vector3(-5,0,10)];
+      if(!this._pIdx)this._pIdx=0;
+      const tgt=corners[this._pIdx];
+      const d=this.grp.position.distanceTo(tgt);
+      if(d<0.5){this._pIdx=(this._pIdx+1)%corners.length;}
+      else{
+        const dir=new THREE.Vector3().subVectors(tgt,this.grp.position);dir.y=0;dir.normalize();
+        this.grp.position.addScaledVector(dir,0.018);
+        this.grp.rotation.y=Math.atan2(dir.x,dir.z);
+      }
+      // React to noise
+      if(noiseLevel>0.3){
+        this.state='investigate';
+        this.investigateTarget.copy(playerPos).add(new THREE.Vector3((Math.random()-0.5)*3,(0),(Math.random()-0.5)*3));
+        showMsg('!');
+        G.monsterPreparedness=Math.min(1,G.monsterPreparedness+noiseLevel*0.15);
+      }
+    } else if(this.state==='investigate'){
+      const d=this.grp.position.distanceTo(this.investigateTarget);
+      if(d<0.6||this.timer>8){
+        this.state='lurk';this.timer=0;
+        if(G.monsterPreparedness>0.7){this.state='prepare';}
+      } else {
+        const dir=new THREE.Vector3().subVectors(this.investigateTarget,this.grp.position);dir.y=0;dir.normalize();
+        this.grp.position.addScaledVector(dir,0.035);
+        this.grp.rotation.y=Math.atan2(dir.x,dir.z);
+      }
+      if(noiseLevel>0.5){G.monsterPreparedness=Math.min(1,G.monsterPreparedness+dt*0.3);}
+    } else if(this.state==='prepare'){
+      // Monster goes to door, ready to burst
+      const doorPos=new THREE.Vector3(0,0,10.5);
+      const d=this.grp.position.distanceTo(doorPos);
+      if(d>0.4){
+        const dir=new THREE.Vector3().subVectors(doorPos,this.grp.position);dir.y=0;dir.normalize();
+        this.grp.position.addScaledVector(dir,0.05);
+        this.grp.rotation.y=Math.atan2(dir.x,dir.z);
+      }
+      G.monsterPreparing=true;
+      if(noiseLevel>0.4){G.monsterPreparedness=Math.min(1,G.monsterPreparedness+dt*0.6);}
+      if(G.monsterPreparedness>=1){this.state='burst';this.burstTimer=0;}
+    } else if(this.state==='burst'){
+      // Chase player in room
+      const dir=new THREE.Vector3().subVectors(playerPos,this.grp.position);dir.y=0;
+      if(dir.lengthSq()>0.001){dir.normalize();this.grp.position.addScaledVector(dir,0.1);this.grp.rotation.y=Math.atan2(dir.x,dir.z);}
+      const dist=this.grp.position.distanceTo(playerPos);
+      if(dist<1.2){roomCaught();}
+    }
+    G.monsterDist=this.grp.position.distanceTo(playerPos);
+    G.nearMonster=G.monsterDist<6;
+  }
+}
+
+function roomCaught(){
+  // Game over in room
+  G.running=false;
+  document.exitPointerLock();
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:rgba(60,0,0,0.97);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;font-family:Courier New,monospace;color:#fff;padding:60px';
+  o.innerHTML='<div style="font-size:9px;letter-spacing:8px;color:rgba(255,50,50,0.7)">ELE TE PEGOU</div><div style="font-size:clamp(32px,7vw,64px);letter-spacing:10px">FIM</div><div style="font-size:12px;letter-spacing:3px;color:rgba(255,255,255,0.3);text-align:center">você não foi rápido o suficiente<br>ou fez barulho demais</div><button onclick="location.reload()" style="background:transparent;border:1px solid rgba(255,80,80,0.4);color:rgba(255,150,150,0.7);font-family:Courier New;font-size:11px;letter-spacing:4px;padding:12px 28px;cursor:pointer">TENTAR NOVAMENTE</button>';
+  document.body.appendChild(o);
+}
+
+// ════ PUZZLE 1 — CÓDIGO NUMÉRICO ════
+const PUZZLE1_CODE=['7','3','1'];
+let puzzle1Input=[];
+function openPuzzle1(){
+  activePuzzle='puzzle1';
+  document.getElementById('puzzle-ui').style.display='flex';
+  document.getElementById('puzzle-title').textContent='CAIXA SECRETA';
+  document.getElementById('puzzle-desc').textContent='Uma sequência de 3 números está gravada na caixa. Qual é o código?';
+  const content=document.getElementById('puzzle-content');
+  puzzle1Input=[];
+  content.innerHTML='';
+  const display=document.createElement('div');
+  display.style.cssText='font-size:22px;letter-spacing:10px;color:rgba(255,200,100,0.8);margin-bottom:14px;min-height:30px;text-align:center;font-family:Courier New;min-width:120px;border-bottom:1px solid rgba(255,200,100,0.3);padding-bottom:8px';
+  display.id='p1-display';display.textContent='_ _ _';
+  content.appendChild(display);
+  const hint=document.createElement('div');
+  hint.style.cssText='font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.2);text-align:center;margin-bottom:10px;font-style:italic';
+  hint.textContent='dica: data na parede do quarto — 7-3-1';
+  content.appendChild(hint);
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
+  ['1','2','3','4','5','6','7','8','9','','0','⌫'].forEach(num=>{
+    const btn=document.createElement('button');
+    btn.className='puzzle-btn';btn.textContent=num||'';
+    if(!num){btn.style.visibility='hidden';}
+    btn.onclick=()=>{
+      if(num==='⌫'){puzzle1Input.pop();}
+      else if(num&&puzzle1Input.length<3){puzzle1Input.push(num);}
+      const display=document.getElementById('p1-display');
+      const arr=['_','_','_'];
+      puzzle1Input.forEach((v,i)=>arr[i]=v);
+      display.textContent=arr.join(' ');
+      if(puzzle1Input.length===3){
+        if(puzzle1Input.join('')===PUZZLE1_CODE.join('')){
+          btn.classList.add('correct');
+          setTimeout(()=>{closePuzzle();solvePuzzle1();},500);
+        } else {
+          display.style.color='rgba(255,80,80,0.9)';
+          makePuzzleNoise();
+          setTimeout(()=>{puzzle1Input=[];display.textContent='_ _ _';display.style.color='rgba(255,200,100,0.8)';},600);
+        }
+      }
+    };
+    grid.appendChild(btn);
+  });
+  content.appendChild(grid);
+  document.exitPointerLock();
+}
+
+// ════ PUZZLE 2 — PADRÃO DE SÍMBOLOS ════
+const PUZZLE2_PATTERN=['▲','■','●'];
+let puzzle2Seq=[];
+function openPuzzle2(){
+  activePuzzle='puzzle2';
+  document.getElementById('puzzle-ui').style.display='flex';
+  document.getElementById('puzzle-title').textContent='CHAVE ESTRANHA';
+  document.getElementById('puzzle-desc').textContent='Pressione os símbolos na ordem correta para ativar a fechadura. O padrão está no chão: ▲ ■ ●';
+  const content=document.getElementById('puzzle-content');
+  puzzle2Seq=[];
+  content.innerHTML='';
+  const display=document.createElement('div');
+  display.style.cssText='font-size:20px;letter-spacing:8px;color:rgba(150,200,255,0.8);margin-bottom:14px;min-height:30px;text-align:center;font-family:Courier New;min-width:160px;border-bottom:1px solid rgba(150,200,255,0.3);padding-bottom:8px';
+  display.id='p2-display';display.textContent='? ? ?';
+  content.appendChild(display);
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;gap:14px;';
+  ['▲','■','●'].forEach(sym=>{
+    const btn=document.createElement('button');
+    btn.className='puzzle-btn';btn.textContent=sym;btn.style.fontSize='24px';btn.style.padding='18px 24px';
+    btn.onclick=()=>{
+      puzzle2Seq.push(sym);
+      const arr=['?','?','?'];
+      puzzle2Seq.forEach((v,i)=>arr[i]=v);
+      document.getElementById('p2-display').textContent=arr.join(' ');
+      if(puzzle2Seq.length===3){
+        if(puzzle2Seq.join('')===PUZZLE2_PATTERN.join('')){
+          setTimeout(()=>{closePuzzle();solvePuzzle2();},500);
+        } else {
+          makePuzzleNoise();
+          setTimeout(()=>{puzzle2Seq=[];document.getElementById('p2-display').textContent='? ? ?';},700);
+        }
+      }
+    };
+    row.appendChild(btn);
+  });
+  content.appendChild(row);
+  document.exitPointerLock();
+}
+
+function closePuzzle(){
+  document.getElementById('puzzle-ui').style.display='none';
+  activePuzzle=null;
+  if(G.running)canvas.requestPointerLock();
+}
+
+function makePuzzleNoise(){
+  // Wrong input = NOISE
+  G.noiseLevel=Math.min(1,G.noiseLevel+0.35);
+  showMsg('BARULHO!');
+}
+
+function solvePuzzle1(){
+  G.puzzle1Solved=true;
+  if(G.puzzle1Obj){G.puzzle1Obj.visible=false;G.puzzle1Light.intensity=0;}
+  showMsg('CAIXA ABERTA — VOCÊ ENCONTROU UM PEDAÇO DA CHAVE');
+  if(G.puzzle2Solved)unlockDoor();
+}
+
+function solvePuzzle2(){
+  G.puzzle2Solved=true;
+  if(G.puzzle2Obj){G.puzzle2Obj.visible=false;G.puzzle2Light.intensity=0;}
+  showMsg('PADRÃO CORRETO — FECHADURA ATIVADA');
+  if(G.puzzle1Solved)unlockDoor();
+}
+
+function unlockDoor(){
+  showMsg('[ A PORTA ESTÁ DESTRANCADA — FUJA! ]');
+  if(G.roomDoor){
+    G.roomDoor.userData.unlocked=true;
+    // Animate door opening
+    G.roomDoor.position.x=3.5;G.roomDoor.rotation.y=Math.PI/2.2;
+  }
+  if(G.doorLockIcon)G.doorLockIcon.visible=false;
+}
+
+function tryEscapeWindow(){
+  if(!G.inStartRoom)return;
+  G.roomEscaped=true;
+  G.inStartRoom=false;
+  showMsg('VOCÊ SALTOU PELA JANELA!');
+  // Move player outside
+  camera.position.set(14,1.7,-2);
+  if(roomMonster)scene.remove(roomMonster.grp);
+  G.nearMonster=false;G.monsterDist=999;
+  setTimeout(()=>showMsg('VOCÊ ESTÁ NA RUA. ELE SABE.'),2000);
+  // The main monster now becomes extra aggressive because you escaped via window
+  if(monster){monster.speed*=1.4;monster.alertLv=0.6;}
+}
+
+// ════ MAIN MONSTER (street) ════
+class Monster{
+  constructor(){
+    this.grp=new THREE.Group();this.build();
+    this.grp.position.set(80,0,80);scene.add(this.grp);
+    this.speed=0.032;this.state='patrol';this.stTimer=0;this.alertLv=0;
+    this.patrol=[
+      new THREE.Vector3(80,0,80),new THREE.Vector3(-80,0,80),
+      new THREE.Vector3(-80,0,-80),new THREE.Vector3(80,0,-80),
+      new THREE.Vector3(0,0,120),new THREE.Vector3(120,0,0),
+      new THREE.Vector3(-120,0,-120),new THREE.Vector3(0,0,-100)
+    ];
+    this.pIdx=0;
+  }
+  build(){
+    const m=new THREE.MeshLambertMaterial({color:0x080808});
+    const m2=new THREE.MeshLambertMaterial({color:0x0d0812});
+    // Torso
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.34,1.6,8),m);torso.position.y=3.7;this.grp.add(torso);
+    // Chest details
+    const cDetail=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.6,0.1),m2);cDetail.position.set(0,3.9,0.29);this.grp.add(cDetail);
+    // Neck
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.17,0.45,7),m2);neck.position.y=4.6;this.grp.add(neck);
+    // Head
+    const head=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.7,0.56),m2);head.position.set(0,5.12,0.05);head.rotation.z=0.07;this.grp.add(head);this.headMesh=head;
+    // Jaw
+    const jaw=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.22,0.48),m);jaw.position.set(0,4.78,0.07);this.grp.add(jaw);
+    // Eyes
+    const eM=new THREE.MeshBasicMaterial({color:0xaa0000});
+    const e1=new THREE.Mesh(new THREE.SphereGeometry(0.065,6,6),eM);e1.position.set(-0.15,5.16,0.3);this.grp.add(e1);
+    const e2=new THREE.Mesh(new THREE.SphereGeometry(0.065,6,6),eM);e2.position.set(0.15,5.16,0.3);this.grp.add(e2);
+    const el=new THREE.PointLight(0x880000,1.2,8);el.position.set(0,5.16,0.5);this.grp.add(el);this.eyeLight=el;
+    // Shoulders
+    const shL=new THREE.Mesh(new THREE.SphereGeometry(0.22,7,7),m);shL.position.set(-0.52,4.4,0);this.grp.add(shL);
+    const shR=new THREE.Mesh(new THREE.SphereGeometry(0.22,7,7),m);shR.position.set(0.52,4.4,0);this.grp.add(shR);
+    // Arms
+    this.armL=new THREE.Group();
+    const alU=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,1.15,7),m);alU.position.y=-0.57;this.armL.add(alU);
+    const alL=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.0,6),m2);alL.position.y=-1.57;this.armL.add(alL);
+    const alH=new THREE.Mesh(new THREE.SphereGeometry(0.12,6,6),m2);alH.position.y=-2.1;this.armL.add(alH);
+    // Clawed fingers
+    for(let f=0;f<3;f++){const fi=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.015,0.22,4),m2);fi.position.set((f-1)*0.06,-2.28,0.04);fi.rotation.x=0.3;this.armL.add(fi);}
+    this.armL.position.set(-0.62,4.18,0);this.armL.rotation.z=0.38;this.grp.add(this.armL);
+    this.armR=new THREE.Group();
+    const arU=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,1.15,7),m);arU.position.y=-0.57;this.armR.add(arU);
+    const arL=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.0,6),m2);arL.position.y=-1.57;this.armR.add(arL);
+    const arH=new THREE.Mesh(new THREE.SphereGeometry(0.12,6,6),m2);arH.position.y=-2.1;this.armR.add(arH);
+    for(let f=0;f<3;f++){const fi=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.015,0.22,4),m2);fi.position.set((f-1)*0.06,-2.28,0.04);fi.rotation.x=0.3;this.armR.add(fi);}
+    this.armR.position.set(0.62,4.18,0);this.armR.rotation.z=-0.38;this.grp.add(this.armR);
+    // Pelvis
+    const pelvis=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.24,0.5,8),m);pelvis.position.y=2.2;this.grp.add(pelvis);
+    // Legs
+    this.legL=new THREE.Group();
+    const llU=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.15,1.4,7),m);llU.position.y=-0.7;this.legL.add(llU);
+    const llL=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.13,1.2,6),m2);llL.position.y=-1.9;this.legL.add(llL);
+    const llF=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.16,0.44),m2);llF.position.set(0,-2.58,0.12);this.legL.add(llF);
+    this.legL.position.set(-0.26,2.25,0);this.grp.add(this.legL);
+    this.legR=new THREE.Group();
+    const lrU=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.15,1.4,7),m);lrU.position.y=-0.7;this.legR.add(lrU);
+    const lrL=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.13,1.2,6),m2);lrL.position.y=-1.9;this.legR.add(lrL);
+    const lrF=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.16,0.44),m2);lrF.position.set(0,-2.58,0.12);this.legR.add(lrF);
+    this.legR.position.set(0.26,2.25,0);this.grp.add(this.legR);
+    this.grp.scale.set(1,1.1,1);
+  }
+  update(dt,playerPos){
+    if(G.inStartRoom){G.monsterDist=999;G.nearMonster=false;return;}
+    if(G.inCar){G.monsterDist=999;G.nearMonster=false;return;}
+    this.stTimer+=dt;
+    const dist=this.grp.position.distanceTo(playerPos);
+    G.monsterDist=dist;
+    if(dist<10&&flashlightOn){this.state='chase';this.alertLv=Math.min(1,this.alertLv+dt*0.6);}
+    else if(dist<30){this.alertLv=Math.min(1,this.alertLv+dt*0.08);if(this.alertLv>0.65)this.state='stalk';}
+    else{this.alertLv=Math.max(0,this.alertLv-dt*0.04);if(this.stTimer>12){this.state='patrol';this.stTimer=0;}}
+    let target;
+    if(this.state==='chase'){this.speed=0.07;target=playerPos;}
+    else if(this.state==='stalk'){this.speed=0.025;target=dist>35?playerPos:null;}
+    else{this.speed=0.026;target=this.patrol[this.pIdx];if(this.grp.position.distanceTo(target)<3)this.pIdx=(this.pIdx+1)%this.patrol.length;}
+    if(target){
+      const dir=new THREE.Vector3().subVectors(target,this.grp.position);dir.y=0;
+      if(dir.lengthSq()>0.001){dir.normalize();this.grp.position.addScaledVector(dir,this.speed);this.grp.rotation.y=Math.atan2(dir.x,dir.z);}
+    }
+    const t2=performance.now()*0.001;
+    const ws=this.state==='chase'?9:3;
+    this.legL.rotation.x=Math.sin(t2*ws)*0.42;this.legR.rotation.x=-Math.sin(t2*ws)*0.42;
+    this.armL.rotation.x=Math.sin(t2*ws)*0.28;this.armR.rotation.x=-Math.sin(t2*ws)*0.28;
+    this.headMesh.rotation.y=Math.sin(t2*0.65)*0.18;
+    this.grp.position.y=Math.abs(Math.sin(t2*ws))*0.08;
+    const eyePulse=0.7+Math.sin(t2*4)*0.5;
+    this.eyeLight.intensity=this.state==='chase'?2.5*eyePulse:1.0*eyePulse;
+    G.nearMonster=dist<20;
+  }
+}
+
+// ════ IMPROVED CAR MODEL ════
+class Car{
+  constructor(x,z,ry=0){
+    this.grp=new THREE.Group();
+    this.vel=new THREE.Vector3();
+    this.heading=ry;
+    this.speed=0;
+    this.occupied=false;
+    this.build();
+    this.grp.position.set(x,0,z);
+    this.grp.rotation.y=ry;
+    scene.add(this.grp);
+    this.items=[];
+    this.buildInterior();
+  }
+  build(){
+    const rnd=Math.floor(Math.random()*6);
+    const colors=[0x1a1a2e,0x16213e,0x0f3460,0x1b1b2f,0x2d132c,0x0a1a0a];
+    const carColor=colors[rnd];
+    const cMat=new THREE.MeshLambertMaterial({color:carColor});
+    const dkMat=new THREE.MeshLambertMaterial({color:0x080808});
+    const chromeMat=new THREE.MeshLambertMaterial({color:0x303030});
+    const glassMat=new THREE.MeshLambertMaterial({color:0x112233,transparent:true,opacity:0.38});
+    const tireMat=new THREE.MeshLambertMaterial({color:0x111111});
+    const rimMat=new THREE.MeshLambertMaterial({color:0x252525});
+
+    // Main body (lower)
+    const bodyLow=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.55,4.6),cMat);bodyLow.position.y=0.42;bodyLow.castShadow=true;bodyLow.receiveShadow=true;this.grp.add(bodyLow);
+    // Hood slope
+    const hood=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.22,1.2),cMat);hood.position.set(0,0.78,1.5);hood.rotation.x=0.15;this.grp.add(hood);
+    // Trunk slope
+    const trunk=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.22,1.0),cMat);trunk.position.set(0,0.78,-1.6);trunk.rotation.x=-0.12;this.grp.add(trunk);
+    // Cabin
+    const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.82,0.72,2.2),cMat);cabin.position.set(0,1.26,0.08);this.grp.add(cabin);
+    // Roof
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(1.72,0.14,2.0),cMat);roof.position.set(0,1.64,0.08);this.grp.add(roof);
+    // Front windshield
+    const wFront=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.52,0.06),glassMat);wFront.position.set(0,1.26,1.2);wFront.rotation.x=-0.18;this.grp.add(wFront);
+    // Rear windshield
+    const wRear=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.52,0.06),glassMat);wRear.position.set(0,1.26,-1.1);wRear.rotation.x=0.18;this.grp.add(wRear);
+    // Side windows
+    const wSideFL=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.4,0.8),glassMat);wSideFL.position.set(0.92,1.3,0.5);this.grp.add(wSideFL);
+    const wSideFR=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.4,0.8),glassMat);wSideFR.position.set(-0.92,1.3,0.5);this.grp.add(wSideFR);
+    const wSideRL=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.4,0.8),glassMat);wSideRL.position.set(0.92,1.3,-0.45);this.grp.add(wSideRL);
+    const wSideRR=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.4,0.8),glassMat);wSideRR.position.set(-0.92,1.3,-0.45);this.grp.add(wSideRR);
+    // Door lines (subtle)
+    const doorLineM=new THREE.MeshLambertMaterial({color:0x060606});
+    const dlL=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.48,1.9),doorLineM);dlL.position.set(1.06,0.72,0.05);this.grp.add(dlL);
+    const dlR=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.48,1.9),doorLineM);dlR.position.set(-1.06,0.72,0.05);this.grp.add(dlR);
+    // Bumpers
+    const bumperF=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.2,0.15),chromeMat);bumperF.position.set(0,0.3,2.38);this.grp.add(bumperF);
+    const bumperR=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.2,0.15),chromeMat);bumperR.position.set(0,0.3,-2.38);this.grp.add(bumperR);
+    // Grille
+    const grille=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.28,0.08),dkMat);grille.position.set(0,0.45,2.34);this.grp.add(grille);
+    // Wheels with rims
+    const wheelPositions=[[1.06,0,1.45],[-(1.06),0,1.45],[1.06,0,-1.45],[-(1.06),0,-1.45]];
+    wheelPositions.forEach(([wx,wy,wz])=>{
+      const w=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.24,12),tireMat);
+      w.rotation.z=Math.PI/2;w.position.set(wx,0.32,wz);w.castShadow=true;this.grp.add(w);
+      const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.26,8),rimMat);
+      rim.rotation.z=Math.PI/2;rim.position.set(wx,0.32,wz);this.grp.add(rim);
+      // Spokes
+      for(let sp=0;sp<4;sp++){
+        const spoke=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.28,0.04),rimMat);
+        spoke.position.set(wx,0.32,wz);spoke.rotation.set(0,0,sp*Math.PI/4+0.2);this.grp.add(spoke);
+      }
+    });
+    // Headlights (more detailed)
+    const hlMat=new THREE.MeshBasicMaterial({color:0xeeeebb});
+    const hlInnerMat=new THREE.MeshBasicMaterial({color:0xffffff});
+    // Left headlight
+    const hl1=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.2,0.06),hlMat);hl1.position.set(0.62,0.62,2.34);this.grp.add(hl1);
+    const hl1i=new THREE.Mesh(new THREE.SphereGeometry(0.07,8,6),hlInnerMat);hl1i.position.set(0.62,0.62,2.34);this.grp.add(hl1i);
+    // Right headlight
+    const hl2=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.2,0.06),hlMat);hl2.position.set(-0.62,0.62,2.34);this.grp.add(hl2);
+    const hl2i=new THREE.Mesh(new THREE.SphereGeometry(0.07,8,6),hlInnerMat);hl2i.position.set(-0.62,0.62,2.34);this.grp.add(hl2i);
+    // Headlight glow
+    const hl=new THREE.PointLight(0xffffdd,0,22,2);hl.position.set(0,0.62,3.0);this.grp.add(hl);this.headlightL=hl;
+    // Taillights
+    const tlMat=new THREE.MeshBasicMaterial({color:0x990000});
+    const tl1=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.16,0.05),tlMat);tl1.position.set(0.62,0.62,-2.34);this.grp.add(tl1);
+    const tl2=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.16,0.05),tlMat);tl2.position.set(-0.62,0.62,-2.34);this.grp.add(tl2);
+    // Exhaust
+    const exh=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.2,6),chromeMat);exh.position.set(-0.55,0.22,-2.4);exh.rotation.x=Math.PI/2;this.grp.add(exh);
+    // Roof rack / antenna detail
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.4,5),chromeMat);ant.position.set(0.7,1.74,0.5);this.grp.add(ant);
+  }
+  buildInterior(){
+    const tM=new THREE.MeshBasicMaterial({color:0x991100});
+    if(Math.random()>0.4){
+      const tape=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.06,0.08),tM);
+      tape.position.set(0.35,1.0,0.3);
+      tape.userData={type:'tape_car',collected:false,lore:'"Encontrei isso no banco de trás... era de alguém que passou por aqui. A rua consome tudo."'};
+      this.grp.add(tape);this.items.push(tape);
+    }
+    if(Math.random()>0.5){
+      const paper=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.01,0.12),new THREE.MeshLambertMaterial({color:0xddccaa}));
+      paper.position.set(-0.3,0.98,-0.3);
+      paper.userData={type:'note',collected:false,lore:'"Nota: NÃO SAIA DO CARRO. Ele não te vê se você estiver dentro."'};
+      this.grp.add(paper);this.items.push(paper);
+    }
+  }
+  update(dt){
+    if(!this.occupied)return;
+    const acc=keys['KeyW']?1:(keys['KeyS']?-0.6:0);
+    const str=keys['KeyA']?1:(keys['KeyD']?-1:0);
+    const maxSpd=keys['ShiftLeft']||keys['ShiftRight']?22:12;
+    this.speed+=acc*12*dt;
+    this.speed*=0.92;
+    this.speed=Math.max(-5,Math.min(maxSpd,this.speed));
+    if(Math.abs(this.speed)>0.2)this.heading+=str*(this.speed/maxSpd)*1.8*dt;
+    this.grp.rotation.y=this.heading;
+    this.grp.position.x+=Math.sin(this.heading)*this.speed*dt;
+    this.grp.position.z+=Math.cos(this.heading)*this.speed*dt;
+    this.grp.position.x=Math.max(-440,Math.min(440,this.grp.position.x));
+    this.grp.position.z=Math.max(-440,Math.min(440,this.grp.position.z));
+    this.headlightL.intensity=1.5;
+    const kmh=Math.round(Math.abs(this.speed)*3.6);
+    document.getElementById('car-speed-txt').textContent=kmh+' km/h';
+    camera.position.set(this.grp.position.x,this.grp.position.y+1.4,this.grp.position.z);
+    camera.position.x+=Math.sin(this.heading)*0.15;
+    camera.position.z+=Math.cos(this.heading)*0.15;
+  }
+}
+
+// ════ MAP ════
+const LORE=[
+  '"Ele está olhando. Três noites sem dormir. Toda vez que fecho os olhos, vejo a rua."',
+  '"Os outros acham que estou louco. Mas eu vi quando ele parou sob a lamparina e levantou o rosto."',
+  '"A cidade mudou. As ruas não são as mesmas. Aquela esquina não existia ontem."',
+  '"Gravação 47. Finalmente entendi. Aquilo não é um monstro."',
+  '"Esta é minha última gravação. Se alguém encontrar... não tente ver."',
+  '"Encontrei no banco de trás do carro. Estava lá há semanas. Motor ainda quente."',
+  '"Nota no painel: NÃO SAIA DO CARRO À NOITE."'
+];
+
+function buildMap(){
+  // HUGE ground 900x900
+  const gMat=new THREE.MeshLambertMaterial({color:0x0b0b0b});
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,900,1,1),gMat);
+  ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+  // Road grid — stretched map
+  const rMat=new THREE.MeshLambertMaterial({color:0x080808});
+  const lineM=new THREE.MeshBasicMaterial({color:0x1a1a1a});
+  for(let i=-16;i<=16;i++){
+    const r1=new THREE.Mesh(new THREE.PlaneGeometry(8,900),rMat);r1.rotation.x=-Math.PI/2;r1.position.set(i*26,0.01,0);scene.add(r1);
+    const r2=new THREE.Mesh(new THREE.PlaneGeometry(900,8),rMat);r2.rotation.x=-Math.PI/2;r2.position.set(0,0.01,i*26);scene.add(r2);
+    for(let j=-16;j<=16;j++){
+      const dl=new THREE.Mesh(new THREE.PlaneGeometry(0.12,3.5),lineM);dl.rotation.x=-Math.PI/2;dl.position.set(i*26,0.02,j*26);scene.add(dl);
+    }
+  }
+
+  // Buildings
+  const bMats=[
+    new THREE.MeshLambertMaterial({color:0x181818}),
+    new THREE.MeshLambertMaterial({color:0x141414}),
+    new THREE.MeshLambertMaterial({color:0x111116}),
+    new THREE.MeshLambertMaterial({color:0x0e0e12}),
+    new THREE.MeshLambertMaterial({color:0x100810})
+  ];
+  for(let x=-15;x<=15;x++) for(let z=-15;z<=15;z++){
+    if(Math.abs(x)<2&&Math.abs(z)<2)continue; // keep center clear (start room area)
+    if((x+z)%3===0&&Math.abs(x)>3)continue;
+    const bx=x*26+(Math.random()-0.5)*5,bz=z*26+(Math.random()-0.5)*5;
+    // Skip around start room (x=0,z=0)
+    if(Math.abs(bx)<12&&Math.abs(bz)<12)continue;
+    const h=4+Math.random()*28,w=6+Math.random()*8,d=6+Math.random()*8;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),bMats[Math.floor(Math.random()*5)]);
+    b.position.set(bx,h/2,bz);b.castShadow=true;b.receiveShadow=true;scene.add(b);
+    if(Math.random()>0.5){const wl=new THREE.PointLight(0x221000,0.3,10);wl.position.set(bx,h*0.6,bz+d/2+0.3);scene.add(wl);}
+    if(Math.random()>0.7){const wl2=new THREE.PointLight(0x001122,0.2,8);wl2.position.set(bx+w/2+0.3,h*0.4,bz);scene.add(wl2);}
+  }
+
+  // Street lamps — wider coverage
+  const lpMat=new THREE.MeshLambertMaterial({color:0x303030});
+  for(let i=-14;i<=14;i++){
+    [[4,i*26],[-(4),i*26+13],[i*26,4],[i*26+13,-(4)]].forEach(([lx,lz])=>{
+      if(Math.abs(lx)<8&&Math.abs(lz)<8)return;
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.09,7,6),lpMat);post.position.set(lx,3.5,lz);scene.add(post);
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.06,1.4),lpMat);arm.position.set(lx,7.1,lz+0.7);scene.add(arm);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.22,0.5),lpMat);head.position.set(lx,7.2,lz+1.3);scene.add(head);
+      const pl=new THREE.PointLight(0xff8833,0.9,22,2);pl.position.set(lx,6.8,lz+1.3);scene.add(pl);
+      streetLamps.push({light:pl,base:0.9,t:Math.random()*100});
+    });
+  }
+
+  // Cars — more spread
+  const carPositions=[
+    [6,20,0],[6,-15,0],[5,40,Math.PI*0.05],[-6,8,0],[-6,-30,0],
+    [0,56,0],[18,-12,Math.PI*0.5],[-18,22,Math.PI*0.5],[-8,45,0],
+    [35,15,Math.PI*0.3],[-(35),24,0],[15,-(35),Math.PI*0.1],
+    [60,0,Math.PI*0.5],[-(60),0,Math.PI*0.5],[0,60,0],[0,-(60),0],
+    [28,55,0],[-(28),55,0],[28,-(55),0],[-(28),-(55),0],
+    [80,10,0],[-(80),10,0],[15,80,Math.PI*0.5],[-(15),80,Math.PI*0.5],
+    [50,50,Math.PI*0.25],[-(50),50,Math.PI*0.75],[0,100,0],[100,0,Math.PI*0.5],
+    [-(100),0,Math.PI*0.5],[0,-(100),0]
+  ];
+  carPositions.forEach(([cx,cz,ry=0])=>{
+    cars.push(new Car(cx,cz,ry||((Math.random()-0.5)*0.3)));
+  });
+
+  // Structures
+  buildStructure(90,0,'hospital');
+  buildStructure(-90,30,'warehouse');
+  buildStructure(0,-90,'bridge');
+  buildStructure(140,140,'warehouse');
+  buildStructure(-120,80,'church');
+  buildStructure(60,-120,'hospital');
+
+  // VHS Tapes
+  placeTapes();
+
+  // Forest ring
+  const trM=new THREE.MeshLambertMaterial({color:0x080a06}),leM=new THREE.MeshLambertMaterial({color:0x060808});
+  for(let i=0;i<200;i++){
+    const a=Math.random()*Math.PI*2,r=230+Math.random()*160;
+    const tx=Math.cos(a)*r,tz=Math.sin(a)*r,th=7+Math.random()*22;
+    const tr2=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.5,th,5),trM);tr2.position.set(tx,th/2,tz);scene.add(tr2);
+    const lv=new THREE.Mesh(new THREE.ConeGeometry(2.8+Math.random()*2.5,th*0.7,6),leM);lv.position.set(tx,th*0.8,tz);scene.add(lv);
+  }
+
+  // Debris
+  const dbM=new THREE.MeshLambertMaterial({color:0x0d0d0d});
+  for(let i=0;i<80;i++){
+    d.position.set((Math.random()-0.5)*400,0.08,(Math.random()-0.5)*400);
+    d.rotation.y=Math.random()*Math.PI;scene.add(d);
+  }
+}
+
+function buildStructure(x,z,type){
+  const m=new THREE.MeshLambertMaterial({color:0x0e0e12});
+  if(type==='hospital'){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(22,22,22),m);b.position.set(x,11,z);b.castShadow=true;scene.add(b);
+    const w=new THREE.Mesh(new THREE.BoxGeometry(8,12,30),m);w.position.set(x+15,6,z);scene.add(w);
+    const cM=new THREE.MeshBasicMaterial({color:0x550000});
+    const cv=new THREE.Mesh(new THREE.BoxGeometry(0.5,4,0.1),cM);cv.position.set(x,14,z+11.05);scene.add(cv);
+    const hl=new THREE.PointLight(0x220000,0.7,30);hl.position.set(x,11,z);scene.add(hl);
+  }else if(type==='bridge'){
+    const br=new THREE.Mesh(new THREE.BoxGeometry(8,0.5,100),m);br.position.set(x,0.25,z+50);scene.add(br);
+    for(let i=0;i<20;i++){
+      [3.8,-(3.8)].forEach(rx=>{
+        const r=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.4,0.1),m);r.position.set(x+rx,1.0,z+i*5);scene.add(r);
+        const rail=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.06,100),m);rail.position.set(x+rx,1.7,z+50);scene.add(rail);
+      });
+    }
+  }else if(type==='warehouse'){
+    const w=new THREE.Mesh(new THREE.BoxGeometry(30,14,50),m);w.position.set(x,7,z);w.castShadow=true;scene.add(w);
+    const wl=new THREE.PointLight(0x110000,0.5,30);wl.position.set(x,9,z);scene.add(wl);
+  }else if(type==='church'){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(14,16,22),m);b.position.set(x,8,z);b.castShadow=true;scene.add(b);
+    const spire=new THREE.Mesh(new THREE.CylinderGeometry(0.3,1.5,14,5),m);spire.position.set(x,23,z);scene.add(spire);
+    const cl=new THREE.PointLight(0x000011,0.3,22);cl.position.set(x,14,z);scene.add(cl);
+  }
+}
+
+function placeTapes(){
+  const tM=new THREE.MeshBasicMaterial({color:0x990000});
+  [[5,18],[18,-8],[-14,32],[36,12],[-25,-20],[50,50],[-(40),22],[10,-(50)],
+   [70,-30],[-(70),40],[30,80],[-(50),-(60)]].forEach(([tx,tz],i)=>{
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.1,0.13),tM);
+    mesh.position.set(tx,0.1,tz);mesh.userData={collected:false};scene.add(mesh);
+    const gl=new THREE.PointLight(0x550000,0.6,4);gl.position.copy(mesh.position);scene.add(gl);
+    tapeObjects.push({mesh,gl,lore:LORE[i%LORE.length]});
+  });
+  document.getElementById('found-items').textContent='FITAS VHS: 0/'+tapeObjects.length;
+}
+
+// ════ REMOTE PLAYERS ════
+const PLAYER_COLORS=[0x334488,0x884433,0x338855,0x664488,0x886633];
+const remotePlayers={};
+function getOrCreateRemote(key,name){
+  if(remotePlayers[key])return remotePlayers[key];
+  const color=PLAYER_COLORS[Object.keys(remotePlayers).length%PLAYER_COLORS.length];
+  const grp=new THREE.Group();const mat=new THREE.MeshLambertMaterial({color});
+  // Better remote player model
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.25,1.35,8),mat);body.position.y=1.08;grp.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.24,8,8),mat);head.position.y=2.05;grp.add(head);
+  const aL=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,1.05,6),mat);aL.position.set(-0.38,0.95,0);aL.rotation.z=0.2;grp.add(aL);
+  const aR=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,1.05,6),mat);aR.position.set(0.38,0.95,0);aR.rotation.z=-0.2;grp.add(aR);
+  const lL=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,1.05,6),mat);lL.position.set(-0.18,0.35,0);grp.add(lL);
+  const lR=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,1.05,6),mat);lR.position.set(0.18,0.35,0);grp.add(lR);
+  scene.add(grp);
+  const tag=document.createElement('div');tag.className='nametag';tag.textContent=name;
+  document.getElementById('nametags').appendChild(tag);
+  remotePlayers[key]={grp,tag,name,color,aL,aR,lL,lR,animT:0,lastPos:new THREE.Vector3()};
+  return remotePlayers[key];
+}
+function removeRemote(key){if(!remotePlayers[key])return;scene.remove(remotePlayers[key].grp);remotePlayers[key].tag.remove();delete remotePlayers[key];}
+function updateNametagsDOM(){Object.values(remotePlayers).forEach(p=>{const pos=p.grp.position.clone();pos.y+=2.6;const v=pos.clone().project(camera);if(v.z>1){p.tag.style.display='none';return;}const sx=(v.x*0.5+0.5)*window.innerWidth;const sy=(-0.5*v.y+0.5)*window.innerHeight-10;p.tag.style.display='block';p.tag.style.left=sx+'px';p.tag.style.top=sy+'px';});}
+function animateRemotePlayers(dt){Object.values(remotePlayers).forEach(p=>{const moved=p.grp.position.distanceTo(p.lastPos);p.lastPos.copy(p.grp.position);p.animT+=dt*(moved>0.01?8:2);p.lL.rotation.x=Math.sin(p.animT)*(moved>0.01?0.38:0.05);p.lR.rotation.x=-Math.sin(p.animT)*(moved>0.01?0.38:0.05);p.aL.rotation.x=Math.sin(p.animT)*(moved>0.01?0.25:0.03);p.aR.rotation.x=-Math.sin(p.animT)*(moved>0.01?0.25:0.03);p.grp.position.y=moved>0.01?Math.abs(Math.sin(p.animT))*0.05:0;});}
+
+// ════ RAIN ════
+const rc=document.getElementById('rain-canvas'),rCtx=rc.getContext('2d');
+rc.width=window.innerWidth;rc.height=window.innerHeight;
+const drops=Array.from({length:120},()=>({x:Math.random()*rc.width,y:Math.random()*rc.height,s:7+Math.random()*9,l:12+Math.random()*18}));
+function drawRain(){rCtx.clearRect(0,0,rc.width,rc.height);rCtx.strokeStyle='rgba(180,210,255,0.22)';rCtx.lineWidth=0.6;drops.forEach(d=>{rCtx.beginPath();rCtx.moveTo(d.x,d.y);rCtx.lineTo(d.x-0.8,d.y+d.l);rCtx.stroke();d.y+=d.s;d.x-=0.4;if(d.y>rc.height){d.y=-15;d.x=Math.random()*rc.width;}});}
+
+// ════ CHAT ════
+const Chat={
+  focused:false,
+  addMsg(name,text,isSystem=false){const log=document.getElementById('chat-log');const div=document.createElement('div');div.className='chat-msg'+(isSystem?' system':'');div.innerHTML=isSystem?text:`<span class="name">${name}</span>${text}`;log.appendChild(div);log.scrollTop=log.scrollHeight;while(log.children.length>40)log.removeChild(log.firstChild);},
+  send(){const inp=document.getElementById('chat-input');const txt=inp.value.trim();if(!txt)return;inp.value='';Chat.addMsg(G.myName,txt);if(roomRef&&!G.solo){roomRef.child('chat').push({name:G.myName,text:txt,t:Date.now()});}},
+  focus(){this.focused=true;document.getElementById('chat-input').focus();if(isLocked)document.exitPointerLock();},
+  blur(){this.focused=false;document.getElementById('chat-input').blur();}
+};
+document.getElementById('chat-input').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){Chat.send();Chat.blur();}if(e.key==='Escape')Chat.blur();});
+
+// ════ UI ════
+const UI={
+  _mode:'solo',
+  showMenu(){show('menu-screen');hide('lobby-screen');},
+  showLobby(){hide('menu-screen');show('lobby-screen');},
+  showControls(){document.getElementById('lore-label-txt').textContent='CONTROLES';document.getElementById('lore-text').textContent='WASD — Mover  ·  SHIFT — Correr  ·  F — Lanterna (∞)  ·  E — Interagir / Entrar carro  ·  T — Chat  ·  ESC — Liberar mouse  ·  Dentro do carro: WASD = dirigir, SHIFT = turbo';document.getElementById('lore-popup').style.display='flex';},
+  setMode(mode){this._mode=mode;document.getElementById('tab-solo').classList.toggle('active',mode==='solo');document.getElementById('tab-multi').classList.toggle('active',mode==='multi');document.getElementById('multi-options').style.display=mode==='multi'?'flex':'none';},
+  quickRoom(){const code=Math.random().toString(36).slice(2,8).toUpperCase();document.getElementById('room-input').value=code;showMsg('SALA: '+code+' — compartilhe!');},
+  async startFromLobby(){
+    const name=(document.getElementById('name-input').value.trim()||'ANÔNIMO').toUpperCase().slice(0,12);
+    G.myName=name;G.solo=this._mode==='solo';
+    if(!G.solo){const code=document.getElementById('room-input').value.trim().toUpperCase();if(!code||code.length<3){showMsg('CÓDIGO INVÁLIDO');return;}G.roomCode=code;document.getElementById('start-btn').textContent='CONECTANDO...';const ok=await loadFirebase();if(!ok){showMsg('FIREBASE OFFLINE — MODO SOLO');G.solo=true;}else{await connectRoom();}document.getElementById('start-btn').textContent='ENTRAR';}
+    startGame();
+  },
+  closeLore(){document.getElementById('lore-popup').style.display='none';document.getElementById('lore-label-txt').textContent='FITA VHS — ENCONTRADA';if(G.running&&!activePuzzle)canvas.requestPointerLock();}
+};
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+function showMsg(txt){const d=document.createElement('div');d.className='msg';d.textContent=txt;document.getElementById('msg-box').appendChild(d);setTimeout(()=>d.remove(),4000);}
+
+// ════ FIREBASE ROOM ════
+async function connectRoom(){
+  roomRef=fbDB.ref('horror_rooms/'+G.roomCode);
+  const myRef=roomRef.child('players/'+G.myId);
+  myRef.set({name:G.myName,x:0,y:1.7,z:0,ry:0,t:Date.now(),online:true});
+  myRef.onDisconnect().remove();
+  // If master disconnects, clear master slot so others can take over
+  roomRef.child('masterPlayer').onDisconnect().remove();
+  roomRef.child('players').on('child_added',snap=>{if(snap.key===G.myId)return;const d=snap.val()||{};getOrCreateRemote(snap.key,d.name||'???');Chat.addMsg('','⟶ '+(d.name||'???')+' entrou na sala',true);updateOnlineList();});
+  roomRef.child('players').on('child_changed',snap=>{if(snap.key===G.myId)return;const d=snap.val()||{},p=remotePlayers[snap.key];if(p){p.grp.position.set(d.x||0,d.y||0,d.z||0);p.grp.rotation.y=d.ry||0;}});
+  roomRef.child('players').on('child_removed',snap=>{if(remotePlayers[snap.key])Chat.addMsg('','⟵ '+(remotePlayers[snap.key].name)+' saiu',true);removeRemote(snap.key);updateOnlineList();});
+  roomRef.child('chat').limitToLast(1).on('child_added',snap=>{const d=snap.val();if(!d||d.name===G.myName)return;Chat.addMsg(d.name,d.text);});
+  // Monster sync: listen to monster position from Firebase (master = first connected player)
+  roomRef.child('monster').on('value',snap=>{
+    const d=snap.val();
+    if(!d||G._isMonsterMaster)return;
+    // Apply synced monster position to local monster
+    if(monster&&!G.inStartRoom){
+      monster.grp.position.set(d.x||80,0,d.z||80);
+      monster.grp.rotation.y=d.ry||0;
+      monster.state=d.state||'patrol';
+      monster.alertLv=d.alertLv||0;
+    }
+    if(roomMonster&&G.inStartRoom){
+      roomMonster.grp.position.set(d.rx||-10,0,d.rz||-10);
+      roomMonster.state=d.rstate||'lurk';
+    }
+  });
+  // Elect monster master (first player in room is master)
+  roomRef.child('masterPlayer').once('value',snap2=>{
+    if(!snap2.val()){
+      roomRef.child('masterPlayer').set(G.myId);
+      G._isMonsterMaster=true;
+    } else {
+      G._isMonsterMaster=(snap2.val()===G.myId);
+    }
+  });
+  roomRef.child('masterPlayer').on('value',snap3=>{
+    if(!snap3.val()){roomRef.child('masterPlayer').set(G.myId);G._isMonsterMaster=true;}
+    else G._isMonsterMaster=(snap3.val()===G.myId);
+  });
+  updateOnlineList();
+}
+function updateOnlineList(){const names=Object.values(remotePlayers).map(p=>p.name);const el=document.getElementById('online-list');if(names.length===0){el.textContent='';return;}el.textContent='👥 '+names.join('\n');}
+
+// ════ START GAME ════
+function startGame(){
+  hide('lobby-screen');hide('menu-screen');
+  document.getElementById('hud').style.display='flex';
+  document.getElementById('keys-hint').style.display='block';
+  document.getElementById('chat-wrap').style.display='block';
+  document.getElementById('found-items').textContent='FITAS VHS: 0/'+tapeObjects.length;
+
+  buildStartRoom();
+  buildMap();
+  monster=new Monster();
+  roomMonster=new RoomMonster();
+
+  // Start player inside room
+  camera.position.set(-3,1.7,-5);
+  yaw=Math.PI; // face the door direction
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=0;
+  G.running=true;
+  G.inStartRoom=true;
+  lastT=performance.now();
+
+  // Show intro text
+  const introEl=document.getElementById('room-intro');
+  document.getElementById('room-intro-text').textContent=
+    'Você acorda num quarto escuro.\nA porta está trancada. Há uma criatura aqui dentro.\nFaça silêncio. Resolva os puzzles — ou pule pela janela.\nEle está te ouvindo.';
+  introEl.style.display='flex';
+  setTimeout(()=>introEl.style.display='none',5500);
+
+  // Noise meter visible in room
+  document.getElementById('noise-meter').style.display='flex';
+
+  if(!G.solo)Chat.addMsg('','[ sala: '+G.roomCode+' ]',true);
+
+  // Show click-to-start prompt then lock pointer
+  const clickPrompt=document.createElement('div');
+  clickPrompt.id='click-prompt';
+  clickPrompt.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+  clickPrompt.innerHTML='<div style="font-family:Courier New;font-size:13px;letter-spacing:6px;color:rgba(255,255,255,0.6);text-transform:uppercase;text-align:center;pointer-events:none">CLIQUE PARA JOGAR<br><span style="font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.3)">mova o mouse para olhar</span></div>';
+  document.body.appendChild(clickPrompt);
+  const lockAndStart=()=>{
+    clickPrompt.remove();
+    canvas.requestPointerLock();
+  };
+  clickPrompt.addEventListener('click',lockAndStart,{once:true});
+}
+
+// ════ INPUT ════
+canvas.addEventListener('click',()=>{
+  if(G.running&&!Chat.focused&&!activePuzzle&&!document.getElementById('click-prompt'))
+    canvas.requestPointerLock();
+});
+document.addEventListener('pointerlockchange',()=>{isLocked=document.pointerLockElement===canvas;});
+document.addEventListener('mousemove',e=>{
+  if(!isLocked||!G.running||G.inCar)return;
+  yaw-=e.movementX*0.002;
+  pitch=Math.max(-1.2,Math.min(0.8,pitch-e.movementY*0.002));
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+});
+document.addEventListener('keydown',e=>{
+  if(Chat.focused)return;
+  keys[e.code]=true;
+  if(!G.running)return;
+  if(e.code==='KeyF')toggleFlash();
+  if(e.code==='KeyE')interact();
+  if(e.code==='KeyT'){e.preventDefault();Chat.focus();}
+  if(e.code==='Escape'){if(activePuzzle)closePuzzle();else document.exitPointerLock();}
+});
+document.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+function toggleFlash(){
+  if(G.inCar)return;
+  flashlightOn=!flashlightOn;
+  flashlight.intensity=flashlightOn?4.5:0;
+  // Turning on flashlight in room = noise
+  if(G.inStartRoom&&flashlightOn){G.noiseLevel=Math.min(1,G.noiseLevel+0.1);}
+  showMsg(flashlightOn?'LANTERNA LIGADA':'LANTERNA DESLIGADA');
+}
+
+// ════ CAR NEARBY PROMPT ════
+function checkCarProximity(){
+  if(G.inCar){document.getElementById('car-prompt').style.display='none';return;}
+  if(G.inStartRoom){document.getElementById('car-prompt').style.display='none';return;}
+  for(const car of cars){
+    const d=camera.position.distanceTo(car.grp.position);
+    if(d<4&&!car.occupied){
+      const el=document.getElementById('car-prompt');
+      el.style.display='block';el.textContent='[ E ] — ENTRAR NO CARRO';return;
+    }
+  }
+  // Check window
+  if(G.inStartRoom&&G.windowPos&&camera.position.distanceTo(G.windowPos)<1.8){
+    const el=document.getElementById('car-prompt');
+    el.style.display='block';el.textContent='[ E ] — PULAR PELA JANELA';return;
+  }
+  // Check puzzles
+  if(G.inStartRoom){
+    if(G.puzzle1Obj&&!G.puzzle1Solved&&camera.position.distanceTo(G.puzzle1Obj.position)<2.2){
+      const el=document.getElementById('car-prompt');el.style.display='block';el.textContent='[ E ] — EXAMINAR CAIXA';return;
+    }
+    if(G.puzzle2Obj&&!G.puzzle2Solved&&camera.position.distanceTo(G.puzzle2Obj.position)<2.2){
+      const el=document.getElementById('car-prompt');el.style.display='block';el.textContent='[ E ] — EXAMINAR CHAVE';return;
+    }
+    if(G.roomDoor&&G.roomDoor.userData.unlocked&&camera.position.distanceTo(new THREE.Vector3(0,1.7,11.5))<3.0){
+      const el=document.getElementById('car-prompt');el.style.display='block';el.textContent='[ E ] — SAIR PELA PORTA';return;
+    }
+  }
+  document.getElementById('car-prompt').style.display='none';
+}
+
+// ════ INTERACT ════
+function interact(){
+  if(activePuzzle){closePuzzle();return;}
+  if(G.inCar){
+    const car=G.drivingCar;
+    G.inCar=false;G.drivingCar=null;car.occupied=false;car.headlightL.intensity=0;
+    camera.position.set(car.grp.position.x+2,1.7,car.grp.position.z+2);
+    document.getElementById('car-hud').style.display='none';
+    document.getElementById('car-prompt').style.display='none';
+    showMsg('SAIU DO CARRO');return;
+  }
+  // Window escape
+  if(G.inStartRoom&&G.windowPos&&camera.position.distanceTo(G.windowPos)<2.0){
+    tryEscapeWindow();return;
+  }
+  // Door exit
+  if(G.inStartRoom&&G.roomDoor&&G.roomDoor.userData.unlocked&&camera.position.distanceTo(new THREE.Vector3(0,1.7,11.5))<3.0){
+    G.inStartRoom=false;G.roomEscaped=true;
+    camera.position.set(0,1.7,16);
+    if(roomMonster)scene.remove(roomMonster.grp);
+    document.getElementById('noise-meter').style.display='none';
+    showMsg('VOCÊ ESCAPOU DO QUARTO!');
+    setTimeout(()=>showMsg('ELE ESTÁ LÁ FORA. CUIDADO.'),2500);
+    return;
+  }
+  // Puzzle 1
+  if(G.inStartRoom&&G.puzzle1Obj&&!G.puzzle1Solved&&camera.position.distanceTo(G.puzzle1Obj.position)<2.5){
+    openPuzzle1();return;
+  }
+  // Puzzle 2
+  if(G.inStartRoom&&G.puzzle2Obj&&!G.puzzle2Solved&&camera.position.distanceTo(G.puzzle2Obj.position)<2.5){
+    openPuzzle2();return;
+  }
+  // Car entry
+  for(const car of cars){
+    const d=camera.position.distanceTo(car.grp.position);
+    if(d<3.5&&!car.occupied){
+      car.occupied=true;G.inCar=true;G.drivingCar=car;
+      document.getElementById('car-hud').style.display='flex';
+      showMsg('DENTRO DO CARRO — WASD PARA DIRIGIR');
+      car.items.forEach(item=>{
+        if(!item.userData.collected&&new THREE.Vector3().copy(item.getWorldPosition(new THREE.Vector3())).distanceTo(camera.position)<4){
+          item.userData.collected=true;item.visible=false;
+          G.foundTapes++;
+          document.getElementById('found-items').textContent='FITAS VHS: '+G.foundTapes+'/'+tapeObjects.length;
+          document.getElementById('lore-label-txt').textContent=item.userData.type==='note'?'NOTA ENCONTRADA':'FITA VHS — ENCONTRADA';
+          document.getElementById('lore-text').textContent=item.userData.lore;
+          document.getElementById('lore-popup').style.display='flex';
+          if(isLocked)document.exitPointerLock();
+        }
+      });
+      return;
+    }
+  }
+  // Ground tapes
+  tapeObjects.forEach((t,i)=>{
+    if(t.mesh.userData.collected)return;
+    if(camera.position.distanceTo(t.mesh.position)<3){
+      t.mesh.userData.collected=true;t.mesh.visible=false;t.gl.intensity=0;
+      G.foundTapes++;
+      document.getElementById('found-items').textContent='FITAS VHS: '+G.foundTapes+'/'+tapeObjects.length;
+      document.getElementById('lore-label-txt').textContent='FITA VHS — ENCONTRADA';
+      document.getElementById('lore-text').textContent=t.lore;
+      document.getElementById('lore-popup').style.display='flex';
+      if(isLocked)document.exitPointerLock();
+      if(roomRef&&!G.solo)roomRef.child('events').push({player:G.myName,tape:i,t:Date.now()});
+    }
+  });
+}
+
+// ════ MAIN LOOP ════
+let lastT=performance.now();
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt=Math.min((ts-lastT)*0.001,0.05);lastT=ts;
+  const t=ts*0.001;
+  if(G.running){
+    if(G.inCar&&G.drivingCar){
+      G.drivingCar.update(dt);
+      camera.rotation.order='YXZ';
+      camera.rotation.y=G.drivingCar.heading+Math.PI;
+      camera.rotation.x=-0.05;
+    } else {
+      const running=keys['ShiftLeft']||keys['ShiftRight'];
+      const spd=running?5.8:2.8;
+      const mv=new THREE.Vector3();
+      if(keys['KeyW'])mv.z=-1;
+      if(keys['KeyS'])mv.z=1;
+      if(keys['KeyA'])mv.x=-1;
+      if(keys['KeyD'])mv.x=1;
+      if(mv.lengthSq()>0){
+        mv.normalize().applyEuler(new THREE.Euler(0,yaw,0));
+        const nx=camera.position.x+mv.x*spd*dt;
+        const nz=camera.position.z+mv.z*spd*dt;
+        // Room collision
+        if(G.inStartRoom){
+          const okX=nx>ROOM_MIN_X&&nx<ROOM_MAX_X;
+          const okZ=nz>ROOM_MIN_Z&&nz<ROOM_MAX_Z;
+          // Allow exit via door if unlocked
+          const nearDoor=Math.abs(nx)<1.8&&nz>10.5;
+          const nearWindow=nx>11.2&&nz>-4&&nz<0;
+          if(okX)camera.position.x=nx;
+          if(okZ||nearDoor||(nearWindow&&false))camera.position.z=nz;
+          // Don't let player leave unless escaped
+          if(!G.roomEscaped){
+            if(nz>11.3&&!(G.roomDoor&&G.roomDoor.userData.unlocked&&Math.abs(nx)<1.8)){
+              camera.position.z=11.0; // blocked by closed door
+            }
+            if(nx>11.3)camera.position.x=11.0; // blocked by wall (window is just visual)
+          }
+        } else {
+          camera.position.x=Math.max(-440,Math.min(440,nx));
+          camera.position.z=Math.max(-440,Math.min(440,nz));
+        }
+        // Noise from running
+        if(running&&G.inStartRoom){G.noiseLevel=Math.min(1,G.noiseLevel+dt*0.4);}
+        else if(G.inStartRoom&&mv.lengthSq()>0){G.noiseLevel=Math.min(1,G.noiseLevel+dt*0.04);}
+      }
+      const moving=mv.lengthSq()>0;
+      camera.position.y=1.7+Math.sin(t*(running?12:6))*(moving?0.04:0);
+
+      if(running&&moving){G.stamina-=dt*18;if(G.stamina<=0){G.stamina=0;keys['ShiftLeft']=false;keys['ShiftRight']=false;}}
+      else G.stamina=Math.min(100,G.stamina+dt*9);
+    }
+
+    // Noise decay
+    G.noiseLevel=Math.max(0,G.noiseLevel-dt*0.12);
+
+    if(G.nearMonster)G.sanity-=dt*7;else G.sanity=Math.min(100,G.sanity+dt*1.8);
+
+    // HUD
+    document.getElementById('stam-fill').style.width=G.stamina+'%';
+    document.getElementById('san-fill').style.width=G.sanity+'%';
+    // Noise bar
+    document.getElementById('noise-bar').style.width=(G.noiseLevel*100)+'%';
+    document.getElementById('noise-bar').style.background=G.noiseLevel>0.6?'rgba(255,40,20,0.9)':G.noiseLevel>0.3?'rgba(255,150,30,0.8)':'rgba(255,80,30,0.6)';
+
+    // Effects
+    document.getElementById('noise-overlay').style.opacity=(1-G.sanity/100)*0.18;
+    const ri=Math.max(0,1-G.monsterDist/20);
+    document.getElementById('red-pulse').style.opacity=ri*0.7;
+    document.getElementById('monster-ring').style.opacity=ri*0.5;
+
+    // Room red light pulse
+    if(G.roomRedLight&&G.inStartRoom){G.roomRedLight.intensity=0.3+Math.sin(t*2.2)*0.15*(G.monsterPreparedness+0.2);}
+
+    // Flashlight
+    if(flashlightOn&&G.monsterDist<18){flashlight.intensity=4.5-Math.sin(t*18)*0.8*(1-G.monsterDist/18);}
+    else if(flashlightOn&&!G.inCar){flashlight.intensity=4.5;}
+
+    // Street lamp flicker
+    streetLamps.forEach(l=>{l.t+=dt;const f=Math.sin(l.t*6.5)*0.06+Math.sin(l.t*22.3)*0.04;l.light.intensity=l.base+f;if(Math.random()<0.0006)l.light.intensity=0;});
+
+    // Monsters
+    if(roomMonster&&G.inStartRoom)roomMonster.update(dt,camera.position,G.noiseLevel);
+    if(monster)monster.update(dt,camera.position);
+
+    // Tapes spin
+    tapeObjects.forEach(tp=>{if(!tp.mesh.userData.collected)tp.mesh.rotation.y+=dt*2.2;});
+
+    // Remote
+    animateRemotePlayers(dt);
+    updateNametagsDOM();
+    checkCarProximity();
+
+    // Firebase sync
+    posTimer+=dt;
+    if(posTimer>0.1&&roomRef&&!G.solo){
+      posTimer=0;
+      roomRef.child('players/'+G.myId).update({x:+(camera.position.x.toFixed(2)),y:+(camera.position.y.toFixed(2)),z:+(camera.position.z.toFixed(2)),ry:+(yaw.toFixed(2)),t:Date.now()});
+      // Broadcast monster if master
+      if(G._isMonsterMaster){
+        const md={};
+        if(monster&&!G.inStartRoom){md.x=+(monster.grp.position.x.toFixed(2));md.z=+(monster.grp.position.z.toFixed(2));md.ry=+(monster.grp.rotation.y.toFixed(2));md.state=monster.state;md.alertLv=+(monster.alertLv.toFixed(2));}
+        if(roomMonster&&G.inStartRoom){md.rx=+(roomMonster.grp.position.x.toFixed(2));md.rz=+(roomMonster.grp.position.z.toFixed(2));md.rstate=roomMonster.state;}
+        if(Object.keys(md).length)roomRef.child('monster').update(md);
+      }
+    }
+  }
+  drawRain();
+  renderer.render(scene,camera);
+}
+
+function showEnding(){
+  const o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:#000;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;font-family:Courier New,monospace;color:#fff;padding:60px';
+  o.innerHTML='<p style="font-size:clamp(13px,2vw,17px);letter-spacing:2px;color:rgba(255,255,255,0.5);text-align:center;line-height:2.8;max-width:560px;font-style:italic">"Eu tentei mostrar pra todos..."<br>"Mas ninguém queria enxergar..."<br>"Pra eles eu era louco..."<br>"Pra mim... isso era normal..."</p><div style="width:60px;height:1px;background:rgba(255,255,255,0.15)"></div><p style="font-size:10px;letter-spacing:7px;color:rgba(255,255,255,0.25)">A HISTÓRIA NUNCA TERMINOU.</p><button onclick="location.reload()" style="background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.35);font-family:Courier New;font-size:10px;letter-spacing:4px;padding:12px 28px;cursor:pointer;margin-top:16px">JOGAR NOVAMENTE</button>';
+  document.body.appendChild(o);
+}
+
+window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();rc.width=window.innerWidth;rc.height=window.innerHeight;});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
