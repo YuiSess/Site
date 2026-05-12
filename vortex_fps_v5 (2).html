@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>VORTEX TACTICAL — V4 WAR MAP</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;user-select:none}
+#gameCanvas{display:block;width:100vw;height:100vh;cursor:none}
+
+/* ── CROSSHAIR ── */
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20}
+.ch-line{position:absolute;background:rgba(255,255,255,0.95);box-shadow:0 0 3px #00ff88}
+#ch-t{width:1px;height:8px;top:-14px;left:0}
+#ch-b{width:1px;height:8px;top:6px;left:0}
+#ch-l{height:1px;width:8px;left:-14px;top:0}
+#ch-r{height:1px;width:8px;left:6px;top:0}
+#ch-dot{width:2px;height:2px;background:#00ff88;top:-1px;left:-1px;border-radius:50%}
+#crosshair.spread .ch-line{animation:spreadAnim 0.1s ease-out}
+@keyframes spreadAnim{0%{transform:scale(1)}100%{transform:scale(1.5)}}
+#crosshair.aiming #ch-t,#crosshair.aiming #ch-b,#crosshair.aiming #ch-l,#crosshair.aiming #ch-r{opacity:0}
+
+/* ── HUD ── */
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;display:none}
+.hud-bottom{position:absolute;bottom:0;left:0;right:0;padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-end}
+.ammo-wrap{text-align:right}
+.ammo-main{font-size:42px;font-weight:900;color:#fff;letter-spacing:3px;line-height:1;text-shadow:0 0 20px #fff8}
+.ammo-sep{font-size:22px;color:#fff4;margin:0 4px}
+.ammo-res{font-size:24px;color:#fff6}
+.ammo-label{font-size:9px;letter-spacing:4px;color:#00ff8888;margin-bottom:3px}
+.weapon-name{font-size:11px;letter-spacing:3px;color:#ffffff66;margin-top:2px}
+.health-wrap{min-width:180px}
+.hp-label{font-size:9px;letter-spacing:4px;color:#ff444488;margin-bottom:5px}
+.hp-bar{height:3px;background:#fff1;border-radius:2px;overflow:hidden;margin-bottom:4px}
+.hp-fill{height:100%;background:linear-gradient(90deg,#ff3333,#ff9900);transition:width .3s;border-radius:2px}
+.hp-num{font-size:28px;font-weight:700;color:#fff;letter-spacing:2px}
+.armor-bar{height:2px;background:#fff1;border-radius:1px;overflow:hidden;margin-top:3px}
+.armor-fill{height:100%;background:linear-gradient(90deg,#3388ff,#88ccff);transition:width .3s}
+
+/* ── TOP HUD ── */
+.hud-top{position:absolute;top:0;left:0;right:0;padding:12px 24px;display:flex;justify-content:space-between;align-items:center}
+.round-timer{font-size:28px;font-weight:700;color:#fff;letter-spacing:6px;text-shadow:0 0 20px #fff8}
+.round-mode{font-size:9px;letter-spacing:5px;color:#00ff8888;text-align:center;margin-top:2px}
+.score-wrap{display:flex;gap:20px;align-items:center;font-size:13px;letter-spacing:2px}
+.score-item{color:#fff;display:flex;flex-direction:column;align-items:center;gap:2px}
+.score-num{font-size:22px;font-weight:700}
+.score-label{font-size:8px;color:#fff6;letter-spacing:3px}
+
+/* ── MINIMAP ── */
+#minimapWrap{position:fixed;top:16px;right:16px;pointer-events:none;z-index:15}
+#minimapCanvas{border:1px solid #00ff8433;border-radius:3px;display:block}
+.mm-label{font-size:8px;letter-spacing:3px;color:#00ff8466;text-align:center;margin-top:3px}
+
+/* ── WEAPON SWITCHER ── */
+#weaponBar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:none;z-index:15;display:none}
+.w-slot{width:60px;height:60px;border:1px solid #ffffff22;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:8px;color:#fff6;letter-spacing:1px;border-radius:3px;background:rgba(0,0,0,0.4)}
+.w-slot.active{border-color:#00ff88;color:#00ff88;background:rgba(0,255,136,0.08);box-shadow:0 0 10px #00ff8833}
+.w-icon{font-size:16px}
+
+/* ── KILL FEED ── */
+#killFeed{position:fixed;top:60px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:15;pointer-events:none}
+.kill-item{padding:4px 10px;font-size:11px;color:#fff;border-radius:2px;animation:kfIn 3.5s forwards;background:rgba(0,0,0,0.55);border-left:2px solid #ff4444}
+.kill-item.mine{border-left-color:#00ff88}
+@keyframes kfIn{0%{opacity:0;transform:translateX(20px)}10%{opacity:1;transform:translateX(0)}85%{opacity:1}100%{opacity:0}}
+
+/* ── CHAT ── */
+#chatBox{position:fixed;bottom:90px;left:20px;width:260px;z-index:15;pointer-events:none}
+.chat-msg{font-size:11px;padding:3px 8px;border-left:1px solid #00ff8444;background:rgba(0,0,0,0.5);margin-bottom:2px;border-radius:0 2px 2px 0;animation:fadeIn .2s ease;color:#ddd}
+.chat-msg .sender{color:#00ff88}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── DAMAGE / EFFECTS ── */
+#dmgVignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse,transparent 55%,#ff000044);opacity:0;transition:opacity .1s;z-index:8}
+#dmgVignette.show{opacity:1}
+#lowHpVignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse,transparent 45%,#ff000066);animation:breathe 1.5s ease-in-out infinite;display:none;z-index:8}
+@keyframes breathe{0%,100%{opacity:.3}50%{opacity:.9}}
+#screenFlash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0;transition:opacity .05s;z-index:9}
+
+/* ── SCOPE ── */
+#scopeOverlay{position:fixed;inset:0;pointer-events:none;z-index:18;display:none}
+#scopeRing{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;border:3px solid #111;box-shadow:0 0 0 9999px rgba(0,0,0,.97)}
+.scope-line{position:absolute;background:#00ff8866}
+#sl-h{height:1px;width:100%;top:50%;transform:translateY(-50%)}
+#sl-v{width:1px;height:100%;left:50%;transform:translateX(-50%)}
+#sl-tl{width:40%;height:1px;top:50%;right:55%;transform:translateY(-50%) scaleX(1)}
+#sl-tr{width:40%;height:1px;top:50%;left:55%;transform:translateY(-50%)}
+.scope-mil{position:absolute;background:#00ff8833;font-size:8px;color:#00ff8888;text-align:center}
+
+/* ── GRENADE WARN ── */
+#grenWarn{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);color:#ff8800;font-size:12px;letter-spacing:4px;display:none;pointer-events:none;z-index:20;animation:blinkW .4s infinite}
+@keyframes blinkW{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── INTERACTION PROMPT ── */
+#interactPrompt{position:fixed;top:55%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20;display:none;text-align:center}
+.interact-key{display:inline-block;padding:4px 10px;border:1px solid #fff6;font-size:11px;letter-spacing:3px;color:#fff;background:rgba(0,0,0,.6);border-radius:3px;margin-bottom:4px}
+.interact-label{font-size:10px;letter-spacing:2px;color:#ffffff88;display:block}
+
+/* ── RESPAWN ── */
+#respawnScreen{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:60;pointer-events:none}
+.respawn-title{color:#ff4444;font-size:18px;letter-spacing:8px;text-shadow:0 0 20px #ff4444}
+.respawn-num{font-size:56px;font-weight:700;color:#fff;letter-spacing:8px}
+
+/* ── MOD MENU ── */
+#modMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:380px;background:rgba(5,10,18,.97);border:1px solid #00ff8833;border-radius:4px;z-index:80;display:none;pointer-events:all;font-family:'Courier New',monospace}
+#modMenu.open{display:block}
+.mm-header{padding:14px 18px;border-bottom:1px solid #00ff8822;display:flex;justify-content:space-between;align-items:center}
+.mm-title{font-size:13px;letter-spacing:6px;color:#00ff88}
+.mm-close{background:none;border:none;color:#ff4444;cursor:pointer;font-size:16px;font-family:inherit;letter-spacing:2px}
+.mm-tabs{display:flex;border-bottom:1px solid #00ff8811}
+.mm-tab{flex:1;padding:8px;text-align:center;font-size:10px;letter-spacing:2px;color:#ffffff44;cursor:pointer;border:none;background:none;font-family:inherit;transition:all .2s}
+.mm-tab.active{color:#00ff88;border-bottom:1px solid #00ff88}
+.mm-tab:hover{color:#fff}
+.mm-content{padding:12px 18px;max-height:320px;overflow-y:auto}
+.mm-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff08}
+.mm-row-label{font-size:11px;letter-spacing:2px;color:#fff}
+.mm-row-sub{font-size:9px;color:#ffffff44;letter-spacing:1px;margin-top:2px}
+.mm-toggle{width:36px;height:18px;border-radius:9px;background:#ffffff22;border:none;cursor:pointer;position:relative;transition:background .2s}
+.mm-toggle.on{background:#00ff88}
+.mm-toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.mm-toggle.on::after{left:20px}
+.mm-slider-wrap{display:flex;align-items:center;gap:8px}
+.mm-slider{width:100px;accent-color:#00ff88}
+.mm-val{font-size:10px;color:#00ff88;min-width:28px;text-align:right;letter-spacing:1px}
+.mm-btn{padding:6px 14px;background:transparent;border:1px solid #00ff8844;color:#00ff88;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;border-radius:2px;transition:all .2s}
+.mm-btn:hover{background:#00ff8811;border-color:#00ff88}
+.mm-section{font-size:8px;letter-spacing:4px;color:#00ff8866;margin:10px 0 6px}
+
+/* ── MAIN MENU ── */
+#mainScreen{position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:90;pointer-events:all}
+.ms-inner{width:440px;text-align:center}
+.ms-title{font-size:52px;font-weight:900;letter-spacing:10px;color:#fff;text-shadow:0 0 40px #00ff88,0 0 80px #00ff8833;margin-bottom:4px}
+.ms-sub{font-size:10px;letter-spacing:8px;color:#00ff88;margin-bottom:32px}
+.ms-btn{display:block;width:100%;padding:13px;background:transparent;border:1px solid #00ff8866;color:#00ff88;font-family:'Courier New',monospace;font-size:12px;letter-spacing:5px;cursor:pointer;margin-bottom:8px;transition:all .2s;border-radius:2px}
+.ms-btn:hover{background:#00ff8811;letter-spacing:7px;border-color:#00ff88;box-shadow:0 0 20px #00ff8822}
+.ms-btn.sec{border-color:#ffffff22;color:#ffffff66;font-size:10px;letter-spacing:3px}
+.ms-btn.sec:hover{border-color:#ffffff44;color:#fff;background:#ffffff08}
+.ms-players{margin:16px 0;padding:14px;border:1px solid #ffffff0a;text-align:left;border-radius:2px}
+.ms-pl-title{font-size:8px;letter-spacing:4px;color:#00ff8877;margin-bottom:8px}
+.ms-pl-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;color:#fff;border-bottom:1px solid #ffffff08}
+.ms-pl-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;animation:pulse 1.2s ease-in-out infinite}
+.ms-pl-dot.e{background:#ff4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.controls-panel{text-align:left;margin:10px 0;padding:12px;border:1px solid #ffffff08;font-size:10px;color:#ffffff66;line-height:2;letter-spacing:1px;display:none;border-radius:2px}
+
+/* ── MUZZLE FLASH ── */
+#muzzleFlash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:180px;height:180px;background:radial-gradient(circle,#ffffa0cc,#ff880000);border-radius:50%;pointer-events:none;z-index:7;transition:transform .04s}
+#muzzleFlash.fire{transform:translate(-50%,-50%) scale(1)}
+
+/* ── STATUS BAR LEFT ── */
+#statusBar{position:fixed;left:20px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;pointer-events:none;z-index:15;display:none}
+.stat-row{display:flex;align-items:center;gap:6px;font-size:9px;color:#ffffff55;letter-spacing:2px}
+.stat-icon{width:14px;height:14px;border:1px solid #ffffff22;display:flex;align-items:center;justify-content:center;font-size:7px;color:#00ff88}
+
+/* ── VEHICLE HUD ── */
+#vehicleHUD{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);display:none;pointer-events:none;z-index:15;text-align:center}
+.vhud-speed{font-size:32px;font-weight:700;color:#fff;letter-spacing:4px}
+.vhud-label{font-size:8px;letter-spacing:4px;color:#00ff8888}
+.vhud-name{font-size:10px;letter-spacing:3px;color:#ffffff66;margin-top:2px}
+
+/* ── HIT MARKER ── */
+.hit-marker{position:fixed;top:50%;left:50%;pointer-events:none;z-index:20;animation:hmAnim .4s ease-out forwards}
+@keyframes hmAnim{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
+
+/* ── LOADING SCREEN ── */
+#loadScreen{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;pointer-events:none}
+.load-title{font-size:48px;font-weight:900;letter-spacing:10px;color:#fff;text-shadow:0 0 40px #00ff88;margin-bottom:8px}
+.load-sub{font-size:10px;letter-spacing:6px;color:#00ff8888;margin-bottom:40px}
+.load-bar-wrap{width:280px;height:3px;background:#ffffff11;border-radius:2px;overflow:hidden;margin-bottom:14px}
+.load-bar-fill{height:100%;background:linear-gradient(90deg,#00ff88,#00aaff);width:0%;transition:width .15s ease;border-radius:2px}
+.load-status{font-size:9px;letter-spacing:3px;color:#ffffff44}
+
+/* ── SANDBOX PANEL ── */
+#sandboxPanel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;background:rgba(5,10,18,.97);border:1px solid #ffaa0033;border-radius:4px;z-index:80;display:none;pointer-events:all;font-family:'Courier New',monospace;max-height:88vh;overflow-y:auto}
+#sandboxPanel.open{display:block}
+.sb-header{padding:14px 18px;border-bottom:1px solid #ffaa0022;display:flex;justify-content:space-between;align-items:center}
+.sb-title{font-size:13px;letter-spacing:6px;color:#ffaa00}
+.sb-close{background:none;border:none;color:#ff4444;cursor:pointer;font-size:16px;font-family:inherit;letter-spacing:2px}
+.sb-section{font-size:8px;letter-spacing:4px;color:#ffaa0066;margin:12px 18px 6px}
+.sb-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 18px 8px}
+.sb-btn{padding:8px 10px;background:transparent;border:1px solid #ffaa0033;color:#ffaa00;font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;border-radius:2px;transition:all .2s;text-align:left}
+.sb-btn:hover{background:#ffaa0011;border-color:#ffaa00}
+.sb-btn.red{border-color:#ff444433;color:#ff6666}.sb-btn.red:hover{background:#ff444411;border-color:#ff4444}
+.sb-btn.blue{border-color:#4488ff33;color:#88aaff}.sb-btn.blue:hover{background:#4488ff11;border-color:#4488ff}
+.sb-btn.green{border-color:#00ff8833;color:#00ff88}.sb-btn.green:hover{background:#00ff8811;border-color:#00ff88}
+.sb-row{display:flex;justify-content:space-between;align-items:center;padding:7px 18px;border-bottom:1px solid #ffffff08}
+.sb-row-label{font-size:11px;letter-spacing:2px;color:#fff}
+.sb-row-sub{font-size:9px;color:#ffffff44;letter-spacing:1px;margin-top:2px}
+.sb-input{background:#ffffff08;border:1px solid #ffaa0033;color:#ffaa00;font-family:'Courier New',monospace;font-size:10px;padding:4px 8px;width:80px;border-radius:2px;text-align:center}
+.sb-input:focus{outline:none;border-color:#ffaa00}
+
+::-webkit-scrollbar-track{background:#ffffff08}
+::-webkit-scrollbar-thumb{background:#00ff8844;border-radius:2px}
+
+/* ── TURRET HUD ── */
+#turretHUD{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);display:none;pointer-events:none;z-index:22}
+#turretCrosshair{width:80px;height:80px;border:2px solid #ff4444;border-radius:50%;position:relative}
+#turretCrosshair::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:#ff4444;margin-top:-.5px}
+#turretCrosshair::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:#ff4444;margin-left:-.5px}
+.turret-label{font-size:9px;letter-spacing:4px;color:#ff4444;text-align:center;margin-top:4px;text-shadow:0 0 8px #ff4444}
+
+/* ── SECRET WEAPON INDICATOR ── */
+#secretWeaponPulse{position:fixed;bottom:200px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:20;display:none;text-align:center}
+.sw-label{font-size:10px;letter-spacing:4px;color:#ff00ff;text-shadow:0 0 12px #ff00ff;animation:swPulse 1s ease-in-out infinite}
+@keyframes swPulse{0%,100%{opacity:1;text-shadow:0 0 12px #ff00ff}50%{opacity:.4;text-shadow:0 0 24px #ff00ff}}
+
+/* ── CAR SPEED LINES ── */
+#speedLines{position:fixed;inset:0;pointer-events:none;z-index:7;display:none;overflow:hidden}
+.spd-line{position:absolute;background:linear-gradient(to bottom,transparent,rgba(255,255,255,0.06),transparent);width:2px;animation:speedAnim linear infinite}
+@keyframes speedAnim{0%{transform:translateY(-100vh)}100%{transform:translateY(100vh)}}
+
+/* ── TURRET MOUNT PROMPT ── */
+.turret-prompt{border-left-color:#ff4444 !important}
+
+/* ── SECRET WEAPON CROSSHAIR ── */
+#crosshair.minigun .ch-line{background:rgba(255,0,255,0.95);box-shadow:0 0 6px #ff00ff}
+#crosshair.minigun #ch-dot{background:#ff00ff}
+
+/* ── DAMAGE NUMBER POPUP ── */
+.dmg-popup{position:fixed;pointer-events:none;z-index:25;font-family:'Courier New',monospace;font-weight:900;letter-spacing:2px;animation:dmgFloat 1.1s ease-out forwards}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-55px) scale(.8)}}
+.dmg-popup.headshot{color:#ffee00;text-shadow:0 0 8px #ffaa00}
+.dmg-popup.normal{color:#ff6644;text-shadow:0 0 6px #ff3300}
+
+/* ── TEAM HUD ── */
+#teamBar{position:fixed;top:55px;left:50%;transform:translateX(-50%);display:none;pointer-events:none;z-index:16;background:rgba(0,0,0,.55);padding:5px 14px;border-radius:3px;border:1px solid #ffffff11;display:flex;gap:20px;align-items:center}
+.team-score{font-size:22px;font-weight:900;letter-spacing:4px}
+.team-score.blue{color:#4488ff;text-shadow:0 0 10px #4488ff88}
+.team-score.red{color:#ff4444;text-shadow:0 0 10px #ff444488}
+.team-sep{color:#ffffff33;font-size:18px}
+
+/* ── ROOM PANEL (tela de salas) ── */
+#roomScreen{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:91;pointer-events:all}
+#roomScreen.open{display:flex}
+.room-inner{width:520px;font-family:'Courier New',monospace}
+.room-title{font-size:28px;font-weight:900;letter-spacing:8px;color:#fff;text-shadow:0 0 20px #00ff88;margin-bottom:6px;text-align:center}
+.room-sub{font-size:9px;letter-spacing:5px;color:#00ff8888;text-align:center;margin-bottom:20px}
+.room-tabs{display:flex;border-bottom:1px solid #00ff8822;margin-bottom:14px}
+.room-tab{flex:1;padding:9px;text-align:center;font-size:10px;letter-spacing:3px;color:#ffffff44;cursor:pointer;border:none;background:none;font-family:inherit;transition:all .2s}
+.room-tab.active{color:#00ff88;border-bottom:2px solid #00ff88}
+.room-list{max-height:220px;overflow-y:auto;margin-bottom:14px}
+.room-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #ffffff0a;border-radius:3px;margin-bottom:5px;cursor:pointer;transition:all .2s}
+.room-item:hover{border-color:#00ff8844;background:#00ff8808}
+.room-item-name{flex:1;font-size:12px;letter-spacing:2px;color:#fff}
+.room-item-mode{font-size:9px;color:#00ff8888;letter-spacing:2px}
+.room-item-count{font-size:10px;color:#ffffff55}
+.room-create{padding:14px;border:1px solid #00ff8833;border-radius:3px;margin-bottom:12px}
+.room-create-title{font-size:9px;letter-spacing:4px;color:#00ff8888;margin-bottom:10px}
+.room-input{width:100%;background:#ffffff08;border:1px solid #00ff8833;color:#fff;font-family:'Courier New',monospace;font-size:11px;padding:7px 10px;border-radius:2px;margin-bottom:8px;letter-spacing:2px}
+.room-input:focus{outline:none;border-color:#00ff88}
+.room-mode-sel{display:flex;gap:6px;margin-bottom:10px}
+.room-mode-btn{flex:1;padding:7px;border:1px solid #ffffff22;color:#ffffff66;font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;background:none;border-radius:2px;transition:all .2s}
+.room-mode-btn.sel{border-color:#00ff88;color:#00ff88;background:#00ff8811}
+.room-team-sel{display:flex;gap:6px;margin-bottom:10px}
+.room-team-btn{flex:1;padding:7px;border:1px solid #ffffff11;cursor:pointer;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;background:none;border-radius:2px;transition:all .2s}
+.room-team-btn.blue-sel{border-color:#4488ff;color:#4488ff;background:#4488ff11}
+.room-team-btn.red-sel{border-color:#ff4444;color:#ff4444;background:#ff444411}
+
+/* ── CROSSHAIR PER WEAPON ── */
+#crosshair.pistol #ch-t,#crosshair.pistol #ch-b{height:5px;top:-9px}
+#crosshair.pistol #ch-t{top:-9px}#crosshair.pistol #ch-b{top:4px}
+#crosshair.pistol #ch-l,#crosshair.pistol #ch-r{width:5px}
+#crosshair.pistol #ch-l{left:-9px}#crosshair.pistol #ch-r{left:4px}
+#crosshair.rpg #ch-t,#crosshair.rpg #ch-b{height:12px}
+#crosshair.rpg #ch-t{top:-18px}#crosshair.rpg #ch-b{top:8px}
+#crosshair.rpg #ch-l,#crosshair.rpg #ch-r{width:12px}
+#crosshair.rpg #ch-l{left:-18px}#crosshair.rpg #ch-r{left:8px}
+#crosshair.rpg .ch-line{background:rgba(255,120,0,.9);box-shadow:0 0 4px #ff8800}
+#crosshair.shotgun .ch-line{background:rgba(255,80,80,.9);box-shadow:0 0 4px #ff4444}
+#crosshair.sniper .ch-line{opacity:0}
+
+/* ── INSIDE ROOM indicator ── */
+#insideLabel{position:fixed;top:48%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:19;display:none;font-size:9px;letter-spacing:4px;color:#ffffff44;text-align:center}
+
+/* ── STAT COUNTERS (headshot / dmg) ── */
+#statPanel{position:fixed;bottom:160px;right:16px;pointer-events:none;z-index:15;text-align:right;display:none}
+.stat-line{font-size:10px;letter-spacing:2px;color:#ffffff55;margin-bottom:2px}
+.stat-line span{color:#fff;font-weight:700}</style>
+</head>
+<body>
+<!-- LOADING SCREEN -->
+<div id="loadScreen">
+  <div class="load-title">VORTEX</div>
+  <div class="load-sub">TACTICAL WARFARE V4 — WAR MAP CARREGANDO</div>
+  <div class="load-bar-wrap"><div class="load-bar-fill" id="loadBar"></div></div>
+  <div class="load-status" id="loadStatus">INICIALIZANDO...</div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<!-- CROSSHAIR -->
+<div id="crosshair">
+  <div class="ch-line" id="ch-t"></div>
+  <div class="ch-line" id="ch-b"></div>
+  <div class="ch-line" id="ch-l"></div>
+  <div class="ch-line" id="ch-r"></div>
+  <div class="ch-line" id="ch-dot"></div>
+</div>
+
+<!-- SCOPE -->
+<div id="scopeOverlay">
+  <div id="scopeRing">
+    <div class="scope-line" id="sl-h"></div>
+    <div class="scope-line" id="sl-v"></div>
+  </div>
+</div>
+
+<!-- MUZZLE -->
+<div id="muzzleFlash"></div>
+
+<!-- EFFECTS -->
+<div id="dmgVignette"></div>
+<div id="lowHpVignette"></div>
+<div id="screenFlash"></div>
+
+<!-- GRENADE WARN -->
+<div id="grenWarn">⚠ GRANADA EM VOO</div>
+
+<!-- INTERACT PROMPT -->
+<div id="interactPrompt">
+  <div class="interact-key">E</div>
+  <span class="interact-label" id="interactLabel">INTERAGIR</span>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <div class="score-wrap">
+      <div class="score-item"><span class="score-num" id="killsNum">0</span><span class="score-label">KILLS</span></div>
+      <div class="score-item"><span class="score-num" id="deathsNum">0</span><span class="score-label">MORTES</span></div>
+    </div>
+    <div style="text-align:center">
+      <div class="round-timer" id="roundTimer">05:00</div>
+      <div class="round-mode" id="roundMode">MATA-MATA</div>
+    </div>
+    <div class="score-wrap">
+      <div class="score-item"><span class="score-num" id="pingVal">--</span><span class="score-label">PING</span></div>
+      <div class="score-item"><span class="score-num" id="playersOnline">1</span><span class="score-label">ONLINE</span></div>
+    </div>
+  </div>
+  <div class="hud-bottom">
+    <div class="health-wrap">
+      <div class="hp-label">VIDA</div>
+      <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width:100%"></div></div>
+      <div class="hp-num" id="hpNum">100</div>
+      <div class="armor-bar"><div class="armor-fill" id="armorFill" style="width:75%"></div></div>
+    </div>
+    <div class="ammo-wrap">
+      <div class="ammo-label" id="ammoLabel">RIFLE DE ASSALTO</div>
+      <div><span class="ammo-main" id="ammoMain">30</span><span class="ammo-sep">/</span><span class="ammo-res" id="ammoRes">90</span></div>
+      <div class="weapon-name" id="weaponNameHUD">M4A1-S</div>
+    </div>
+  </div>
+</div>
+
+<!-- MINIMAP -->
+<div id="minimapWrap">
+  <canvas id="minimapCanvas" width="160" height="160"></canvas>
+  <div class="mm-label">MINIMAPA</div>
+</div>
+
+<!-- WEAPON BAR -->
+<div id="weaponBar" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:none;z-index:15">
+  <div class="w-slot active" id="ws0"><div class="w-icon">🔫</div><div>M4A1</div></div>
+  <div class="w-slot" id="ws1"><div class="w-icon">🎯</div><div>AWP</div></div>
+  <div class="w-slot" id="ws2"><div class="w-icon">💥</div><div>SPAS</div></div>
+  <div class="w-slot" id="ws3"><div class="w-icon">🔧</div><div>DESERT</div></div>
+  <div class="w-slot" id="ws4"><div class="w-icon">💣</div><div>RPG</div></div>
+  <div class="w-slot" id="ws5" style="border-color:#ff00ff44;color:#ff00ff66;font-size:7px"><div class="w-icon">🔒</div><div>SECRET</div></div>
+</div>
+
+<!-- KILL FEED -->
+<div id="killFeed"></div>
+
+<!-- CHAT -->
+<div id="chatBox"></div>
+
+<!-- VEHICLE HUD -->
+<div id="vehicleHUD">
+  <div class="vhud-speed" id="vhudSpeed">0</div>
+  <div class="vhud-label">KM/H</div>
+  <div class="vhud-name" id="vhudName">JEEP MILITAR</div>
+</div>
+
+<!-- RESPAWN -->
+<div id="respawnScreen">
+  <div class="respawn-title">VOCÊ FOI ELIMINADO</div>
+  <div class="respawn-num" id="respawnNum">5</div>
+  <div style="font-size:10px;letter-spacing:4px;color:#ffffff44">RENASCENDO...</div>
+</div>
+
+<!-- MOD MENU -->
+<div id="modMenu">
+  <div class="mm-header">
+    <div class="mm-title">MOD MENU</div>
+    <button class="mm-close" onclick="toggleModMenu()">✕ FECHAR</button>
+  </div>
+  <div class="mm-tabs">
+    <button class="mm-tab active" onclick="setMMTab(this,'combat')">COMBATE</button>
+    <button class="mm-tab" onclick="setMMTab(this,'visual')">VISUAL</button>
+    <button class="mm-tab" onclick="setMMTab(this,'player')">JOGADOR</button>
+    <button class="mm-tab" onclick="setMMTab(this,'misc')">MISC</button>
+  </div>
+  <div class="mm-content" id="mmContent"></div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="mainScreen">
+  <div class="ms-inner">
+    <div class="ms-title">VORTEX</div>
+    <div class="ms-sub">TACTICAL WARFARE V4 — WAR MAP 800x800</div>
+    <div class="ms-players"><div class="ms-pl-title">JOGADORES NA SALA</div><div id="msPlayerList"></div></div>
+    <button class="ms-btn" onclick="startGame()">▶ ENTRAR NA PARTIDA</button>
+    <button class="ms-btn" style="border-color:#4488ff66;color:#4488ff" onclick="openRoomScreen()">🏠 SALAS PERSONALIZADAS</button>
+    <button class="ms-btn" style="border-color:#ffaa0066;color:#ffaa00" onclick="startSandbox()">🔧 MODO SANDBOX</button>
+    <button class="ms-btn sec" onclick="document.querySelector('.controls-panel').style.display=document.querySelector('.controls-panel').style.display==='block'?'none':'block'">CONTROLES</button>
+    <div class="controls-panel">
+      WASD — MOVER &nbsp;|&nbsp; MOUSE — MIRAR<br>
+      CLIQUE ESQ — ATIRAR &nbsp;|&nbsp; CLIQUE DIR — MIRA<br>
+      R — RECARREGAR &nbsp;|&nbsp; G — GRANADA<br>
+      1-5 — TROCAR ARMA &nbsp;|&nbsp; E — INTERAGIR/ENTRAR CASA<br>
+      SHIFT — CORRER &nbsp;|&nbsp; CTRL — AGACHAR<br>
+      F — ENTRAR/SAIR VEÍCULO &nbsp;|&nbsp; P — MOD MENU<br>
+      TAB — PLACAR &nbsp;|&nbsp; ESC — MENU
+    </div>
+  </div>
+</div>
+
+<!-- ROOM SCREEN -->
+<div id="roomScreen">
+  <div class="room-inner">
+    <div class="room-title">VORTEX</div>
+    <div class="room-sub">SALAS PERSONALIZADAS</div>
+    <div class="room-tabs">
+      <button class="room-tab active" onclick="setRoomTab(this,'join')">ENTRAR EM SALA</button>
+      <button class="room-tab" onclick="setRoomTab(this,'create')">CRIAR SALA</button>
+    </div>
+    <div id="roomJoinPanel">
+      <div style="font-size:9px;letter-spacing:3px;color:#ffffff44;margin-bottom:8px">SALAS DISPONÍVEIS</div>
+      <div class="room-list" id="roomList"><div style="padding:12px;color:#ffffff33;font-size:10px;letter-spacing:2px">Carregando salas...</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="room-input" id="roomCodeInput" placeholder="CÓDIGO DA SALA" style="margin:0;flex:1">
+        <button class="ms-btn" style="width:auto;padding:7px 14px;margin:0;font-size:10px" onclick="joinRoomByCode()">ENTRAR</button>
+      </div>
+    </div>
+    <div id="roomCreatePanel" style="display:none">
+      <div class="room-create">
+        <div class="room-create-title">CONFIGURAR SALA</div>
+        <input class="room-input" id="roomNameInput" placeholder="NOME DA SALA (ex: GUERRA_BR)">
+        <div style="font-size:9px;letter-spacing:3px;color:#ffffff44;margin-bottom:6px">MODO DE JOGO</div>
+        <div class="room-mode-sel">
+          <button class="room-mode-btn sel" id="rm_dm" onclick="selRoomMode('dm',this)">DEATHMATCH</button>
+          <button class="room-mode-btn" id="rm_tdm" onclick="selRoomMode('tdm',this)">TIME vs TIME</button>
+          <button class="room-mode-btn" id="rm_ctf" onclick="selRoomMode('ctf',this)">DOMINATION</button>
+        </div>
+        <div style="font-size:9px;letter-spacing:3px;color:#ffffff44;margin-bottom:6px" id="teamSelLabel" style="display:none">SEU TIME</div>
+        <div class="room-team-sel" id="teamSelWrap" style="display:none">
+          <button class="room-team-btn blue-sel" id="tb_blue" onclick="selTeam('blue',this)">🔵 TIME AZUL</button>
+          <button class="room-team-btn" id="tb_red" onclick="selTeam('red',this)">🔴 TIME VERMELHO</button>
+        </div>
+        <input class="room-input" id="roomPassInput" placeholder="SENHA (opcional)">
+        <button class="ms-btn" style="width:100%;margin:0;font-size:11px" onclick="createRoom()">▶ CRIAR E ENTRAR</button>
+      </div>
+    </div>
+    <button class="ms-btn sec" style="width:100%;margin-top:4px" onclick="closeRoomScreen()">✕ VOLTAR</button>
+  </div>
+</div>
+
+<!-- TEAM BAR -->
+<div id="teamBar" style="display:none">
+  <span class="team-score blue" id="teamBlueScore">0</span>
+  <span class="team-sep">vs</span>
+  <span class="team-score red" id="teamRedScore">0</span>
+  <span style="font-size:9px;letter-spacing:3px;color:#ffffff44;margin-left:8px" id="teamModeLabel">TDM</span>
+</div>
+
+<!-- STAT PANEL -->
+<div id="statPanel" style="display:block;position:fixed;bottom:160px;right:16px;pointer-events:none;z-index:15;text-align:right">
+  <div class="stat-line">DMG TOTAL <span id="totalDmgVal">0</span></div>
+  <div class="stat-line">HEADSHOTS <span id="headshotVal">0</span></div>
+  <div class="stat-line">PRECISÃO <span id="accuracyVal">--%</span></div>
+</div>
+
+<!-- INSIDE LABEL -->
+<div id="insideLabel">INTERIOR</div>
+
+<!-- TURRET HUD -->
+<div id="turretHUD">
+  <div id="turretCrosshair"></div>
+  <div class="turret-label">⚙ TORRETA — [CLICK] ATIRAR · [E] SAIR</div>
+</div>
+
+<!-- SECRET WEAPON PULSE -->
+<div id="secretWeaponPulse">
+  <div class="sw-label">⬛ MINIGUN-X · ARMA SECRETA ATIVA ⬛</div>
+</div>
+
+<!-- SPEED LINES (car effect) -->
+<div id="speedLines" id="speedLines"></div>
+
+<!-- SANDBOX PANEL -->
+<div id="sandboxPanel">
+  <div class="sb-header">
+    <div class="sb-title">🔧 MODO SANDBOX</div>
+    <button class="sb-close" onclick="toggleSandbox()">✕ FECHAR</button>
+  </div>
+
+  <div class="sb-section">🚗 SPAWNAR VEÍCULO</div>
+  <div class="sb-grid">
+    <button class="sb-btn" onclick="sbSpawnVehicle('jeep')">🚙 Jeep Militar</button>
+    <button class="sb-btn" onclick="sbSpawnVehicle('tank')">🛡️ Tanque T-90</button>
+    <button class="sb-btn" onclick="sbSpawnVehicle('truck')">🚚 Caminhão</button>
+    <button class="sb-btn red" onclick="sbRemoveAllVehicles()">✕ Remover Todos</button>
+  </div>
+
+  <div class="sb-section">🎯 SPAWNAR INIMIGO</div>
+  <div class="sb-grid">
+    <button class="sb-btn red" onclick="sbSpawnEnemy(1)">+ 1 Inimigo</button>
+    <button class="sb-btn red" onclick="sbSpawnEnemy(5)">+ 5 Inimigos</button>
+    <button class="sb-btn red" onclick="sbSpawnEnemy(10)">+ 10 Inimigos</button>
+    <button class="sb-btn" onclick="sbClearEnemies()">✕ Limpar Inimigos</button>
+  </div>
+
+  <div class="sb-section">💣 EFEITOS & AÇÕES</div>
+  <div class="sb-grid">
+    <button class="sb-btn blue" onclick="sbExplosion()">💥 Explosão Aqui</button>
+    <button class="sb-btn blue" onclick="sbNuke()">☢️ Nuke (Área)</button>
+    <button class="sb-btn green" onclick="sbRefillAll()">❤️ Vida + Munição</button>
+    <button class="sb-btn green" onclick="sbToggleFlying()">✈️ Voar ON/OFF</button>
+  </div>
+
+  <div class="sb-section">⚙️ MUNDO</div>
+  <div class="sb-grid">
+    <button class="sb-btn" onclick="sbDayNight(true)">☀️ Dia</button>
+    <button class="sb-btn" onclick="sbDayNight(false)">🌙 Noite</button>
+    <button class="sb-btn blue" onclick="sbToggleGravity()">🌀 Gravidade x0</button>
+    <button class="sb-btn" onclick="sbSlowMo()">⏱️ Slow Motion</button>
+  </div>
+
+  <div class="sb-section">📍 TELEPORTE</div>
+  <div class="sb-grid">
+    <button class="sb-btn" onclick="sbTeleport(0,0)">📍 Centro (0,0)</button>
+    <button class="sb-btn" onclick="sbTeleport(140,130)">🚢 Porto</button>
+    <button class="sb-btn" onclick="sbTeleport(0,-80)">⚔️ Base Aliada</button>
+    <button class="sb-btn" onclick="sbTeleport(100,0)">✈️ Aeroporto</button>
+    <button class="sb-btn" onclick="sbTeleport(-80,-30)">🔬 Lab Secreto</button>
+    <button class="sb-btn" onclick="sbTeleport(180,180)">💀 Base Inimiga</button>
+    <button class="sb-btn" onclick="sbTeleport(120,100)">🏚️ Cidade Destruída</button>
+    <button class="sb-btn" onclick="sbTeleport(-150,60)">🏘️ Favela West</button>
+  </div>
+
+  <div class="sb-section">💜 ARMA SECRETA</div>
+  <div class="sb-grid">
+    <button class="sb-btn" style="border-color:#ff00ff44;color:#ff00ff" onclick="secretWeaponFound=true;wAmmo[5]=500;wReserve[5]=2000;switchWeapon(5);addChat('','⬛ MINIGUN-X desbloqueada via Sandbox!',true)">⬛ Desbloquear MINIGUN-X</button>
+    <button class="sb-btn red" onclick="switchWeapon(0);addChat('','Voltou para M4A1',true)">↩ Voltar M4A1</button>
+  </div>
+
+  <div class="sb-section">🔧 POSIÇÃO MANUAL</div>
+  <div class="sb-row">
+    <div><div class="sb-row-label">X</div></div>
+    <input class="sb-input" id="sbX" type="number" value="0" step="5">
+  </div>
+  <div class="sb-row">
+    <div><div class="sb-row-label">Z</div></div>
+    <input class="sb-input" id="sbZ" type="number" value="0" step="5">
+  </div>
+  <div style="padding:8px 18px">
+    <button class="sb-btn green" style="width:100%" onclick="sbTeleport(+document.getElementById('sbX').value,+document.getElementById('sbZ').value)">📍 IR PARA COORDENADA</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG & GLOBALS
+// ═══════════════════════════════════════════════
+const FB={apiKey:"AIzaSyBMz-GuqiF4VyUKnCayURIvPGz0tR3W_7s",databaseURL:"https://handtracking-78c3b-default-rtdb.firebaseio.com",projectId:"handtracking-78c3b",appId:"1:179317156904:web:b9dede7364168804f9991d"};
+let db=null,playerRef=null,playerId=null;
+let gameActive=false,isPointerLocked=false;
+let kills=0,deaths=0,health=100,armor=75;
+let isAiming=false,isSprinting=false,isCrouching=false;
+let canShoot=true,isReloading=false,inVehicle=false;
+let currentWeapon=0,roundTime=300;
+let shakeAmt=0,weaponBob=0,weaponRecoil=0,reloadAnim=0;
+let doorAnims={},vehicleObjects={},vehicleSpeeds={};
+const remotePlayers={},playerMeshes={},remoteWeaponMeshes={};
+const bullets=[],particles=[],decals=[];
+const keys={};
+const NAMES=["SHADOW","VIPER","GHOST","FALCON","REAPER","PHANTOM","COBRA","TITAN","STORM","NOVA","WRAITH","OXIDE","RAVEN","BLAZE","SURGE"];
+const playerName=NAMES[Math.floor(Math.random()*NAMES.length)]+"_"+Math.floor(Math.random()*99);
+const PCOLORS=[0x00ff88,0xff4444,0x4488ff,0xffaa00,0xff88ff,0x88ffff,0xff6600,0xaaff00];
+let nearDoor=null,nearVehicle=null,currentVehicle=null;
+let nearRoom=null,insideRoom=false;
+
+// TURRET SYSTEM
+const turretObjects={};
+let inTurret=false,currentTurret=null,nearTurret=null;
+let turretYaw=0,turretPitch=0;
+let turretCooldown=false;
+
+// SECRET WEAPON PICKUP
+const secretWeaponPickups=[];
+let secretWeaponFound=false;
+
+// STATS
+let totalDamage=0,headshots=0,shotsFired=0,shotsHit=0;
+
+// TEAM / ROOM
+let playerTeam='none'; // 'blue','red','none'
+let roomMode='dm'; // 'dm','tdm','ctf'
+let currentRoom='default';
+let teamBlueScore=0,teamRedScore=0;
+const roomInteriors={}; // room interior data
+
+// MOD MENU SETTINGS
+const mods={
+  aimbot:false,wallhack:false,noRecoil:false,infiniteAmmo:false,
+  godMode:false,fastReload:false,speedHack:false,explosiveAmmo:false,
+  nightVision:false,fov:75,sensitivity:3,moveSpeed:8,gravity:1,
+  wireframe:false,showFPS:false,rainToggle:true,fogDensity:15,
+  instantBullet:false,superDamage:false,rapidFire:false,autoHeal:false,
+  bigHead:false,slowEnemies:false,magnetBullets:false
+};
+
+// WEAPONS DB
+const WEAPONS=[
+  {name:"M4A1-S",label:"RIFLE DE ASSALTO",ammo:30,reserve:90,dmg:22,rate:120,spread:0.015,reload:2200,semi:false,color:0x222233},
+  {name:"AWP",label:"SNIPER ANTI-MATERIAL",ammo:5,reserve:25,dmg:95,rate:1200,spread:0.002,reload:3500,semi:true,scope:true,color:0x334433},
+  {name:"SPAS-12",label:"SHOTGUN PESADA",ammo:8,reserve:32,dmg:60,rate:700,spread:0.08,reload:3000,semi:true,pellets:8,color:0x443322},
+  {name:"DESERT EAGLE",label:"PISTOLA .50",ammo:7,reserve:35,dmg:45,rate:500,spread:0.025,reload:1800,semi:true,color:0x332211},
+  {name:"RPG-7",label:"LANÇA MÍSSIL",ammo:1,reserve:4,dmg:200,rate:3000,spread:0,reload:4000,semi:true,explosive:true,color:0x334422},
+  {name:"MINIGUN-X",label:"⬛ ARMA SECRETA ⬛",ammo:500,reserve:2000,dmg:55,rate:45,spread:0.022,reload:1000,semi:false,secret:true,color:0xff00ff},
+];
+let wAmmo=[30,5,8,7,1,500],wReserve=[90,25,32,35,4,2000];
+
+// PLAYER SPAWN POINTS — zonas abertas
+const SPAWNS=[
+  [0,0],[22,22],[-22,22],[22,-22],[-22,-22],
+  [42,0],[-42,0],[0,42],[0,-42],[32,32],
+  [-62,2],[62,2],[2,-72],[2,72],
+  [-50,-52],[52,-52],[52,52],[-52,52],
+  [8,0],[-8,0],[0,8],[0,-8]
+];
+let spawnIdx=Math.floor(Math.random()*SPAWNS.length);
+
+// Testa se posição está livre de colisão
+function isSafeSpawn(x,z,r=1.8){
+  if(Math.abs(x)>390||Math.abs(z)>390)return false;
+  for(const obj of collidables){
+    if(x-r<obj.max.x&&x+r>obj.min.x&&z-r<obj.max.z&&z+r>obj.min.z)return false;
+  }
+  return true;
+}
+
+// Retorna ponto seguro: testa lista, depois variações, depois grid
+function getSafeSpawn(){
+  for(let i=0;i<SPAWNS.length;i++){
+    const [sx,sz]=SPAWNS[(spawnIdx+i)%SPAWNS.length];
+    if(isSafeSpawn(sx,sz))return{x:sx,z:sz};
+  }
+  for(let t=0;t<80;t++){
+    const [sx,sz]=SPAWNS[Math.floor(Math.random()*SPAWNS.length)];
+    const ox=sx+(Math.random()*12-6),oz=sz+(Math.random()*12-6);
+    if(isSafeSpawn(ox,oz))return{x:ox,z:oz};
+  }
+  for(let gx=-60;gx<=60;gx+=4){
+    for(let gz=-60;gz<=60;gz+=4){
+      if(isSafeSpawn(gx,gz))return{x:gx,z:gz};
+    }
+  }
+  return{x:0,z:0};
+}
+
+const playerPos={x:SPAWNS[spawnIdx][0],y:1.7,z:SPAWNS[spawnIdx][1]};
+
+// ═══════════════════════════════════════════════
+// THREE.JS SETUP
+// ═══════════════════════════════════════════════
+const canvas=document.getElementById('gameCanvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x080e1a);
+scene.fog=new THREE.FogExp2(0x080e1a,0.003);
+
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.05,1600);
+camera.position.set(playerPos.x,playerPos.y,playerPos.z);
+scene.add(camera);
+
+const clock=new THREE.Clock();
+const weapLight=new THREE.PointLight(0xffffff,1.2,2);weapLight.position.set(0,0,0);camera.add(weapLight);
+let yaw=0,pitch=0;
+let frameCount=0,fps=0,lastFPSTime=0;
+
+// WEAPON MODEL (attached to camera)
+const weapGroup=new THREE.Group();
+camera.add(weapGroup);
+
+function buildWeaponModel(idx){
+  while(weapGroup.children.length)weapGroup.remove(weapGroup.children[0]);
+  const w=WEAPONS[idx];
+
+  // Textura procedural canvas para arma
+  function makeTexture(r,g,b,scratch=true){
+    const cv=document.createElement('canvas');cv.width=128;cv.height=128;
+    const cx=cv.getContext('2d');
+    cx.fillStyle=`rgb(${r},${g},${b})`;cx.fillRect(0,0,128,128);
+    if(scratch){
+      for(let i=0;i<40;i++){
+        cx.strokeStyle=`rgba(${Math.min(r+40,255)},${Math.min(g+40,255)},${Math.min(b+40,255)},${Math.random()*.3})`;
+        cx.lineWidth=Math.random()*1.5;
+        cx.beginPath();cx.moveTo(Math.random()*128,Math.random()*128);
+        cx.lineTo(Math.random()*128,Math.random()*128);cx.stroke();
+      }
+      // metal flakes
+      for(let i=0;i<20;i++){
+        cx.fillStyle=`rgba(255,255,255,${Math.random()*.08})`;
+        cx.fillRect(Math.random()*128,Math.random()*128,2,1);
+      }
+    }
+    const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+  }
+
+  function matTex(r,g,b,rough=0.6,metal=0.8){
+    return new THREE.MeshStandardMaterial({map:makeTexture(r,g,b),roughness:rough,metalness:metal});
+  }
+
+  const darkMetal=matTex(28,28,35,0.55,0.9);
+  const gunMetal=matTex(38,40,48,0.5,0.85);
+  const stockMat=matTex(55,38,22,0.85,0.1); // madeira
+  const gripMat=matTex(22,22,22,0.9,0.3);   // borracha
+
+  if(idx===0){ // M4A1-S — Rifle Assalto
+    // Corpo principal
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.07,.075,.42),gunMetal);body.position.set(.14,-.10,-.32);weapGroup.add(body);
+    // Tampa superior (rail)
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.065,.018,.38),darkMetal);rail.position.set(.14,-.062,-.32);weapGroup.add(rail);
+    // Cano
+    const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.22,8),darkMetal);barrel.rotation.x=Math.PI/2;barrel.position.set(.14,-.10,-.52);weapGroup.add(barrel);
+    // Bocal/compensador
+    const muzzle=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.04,8),matTex(40,40,40,0.4,0.95));muzzle.rotation.x=Math.PI/2;muzzle.position.set(.14,-.10,-.64);weapGroup.add(muzzle);
+    // Carregador
+    const mag=new THREE.Mesh(new THREE.BoxGeometry(.032,.14,.038),darkMetal);mag.position.set(.14,-.185,-.27);weapGroup.add(mag);
+    // Coronha (stock)
+    const stock=new THREE.Mesh(new THREE.BoxGeometry(.06,.055,.18),stockMat);stock.position.set(.14,-.10,-.09);weapGroup.add(stock);
+    const stockEnd=new THREE.Mesh(new THREE.BoxGeometry(.06,.08,.04),gripMat);stockEnd.position.set(.14,-.10,-.01);weapGroup.add(stockEnd);
+    // Punho pistola
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.034,.11,.04),gripMat);grip.position.set(.14,-.186,-.20);weapGroup.add(grip);
+    // Forend/guardamão
+    const fore=new THREE.Mesh(new THREE.BoxGeometry(.068,.055,.16),darkMetal);fore.position.set(.14,-.10,-.44);weapGroup.add(fore);
+    // Mira frontal
+    const sight=new THREE.Mesh(new THREE.BoxGeometry(.006,.022,.006),darkMetal);sight.position.set(.14,-.048,-.59);weapGroup.add(sight);
+
+  }else if(idx===1){ // AWP — Sniper
+    const snipMat=matTex(40,55,40,0.6,0.75);
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.07,.08,.5),snipMat);body.position.set(.14,-.10,-.35);weapGroup.add(body);
+    // Cano longo
+    const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.32,8),darkMetal);barrel.rotation.x=Math.PI/2;barrel.position.set(.14,-.10,-.60);weapGroup.add(barrel);
+    // Scope tubo
+    const scopeTube=new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,.14,10),darkMetal);scopeTube.rotation.z=Math.PI/2;scopeTube.position.set(.14,-.043,-.34);weapGroup.add(scopeTube);
+    // Scope lente frente
+    const lensF=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.012,10),matTex(30,60,80,0.1,0.1));lensF.rotation.z=Math.PI/2;lensF.position.set(.114,-.043,-.34);weapGroup.add(lensF);
+    // Scope lente tras
+    const lensB=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.012,10),matTex(30,60,80,0.1,0.1));lensB.rotation.z=Math.PI/2;lensB.position.set(.166,-.043,-.34);weapGroup.add(lensB);
+    // Carregador
+    const mag=new THREE.Mesh(new THREE.BoxGeometry(.03,.1,.04),darkMetal);mag.position.set(.14,-.175,-.30);weapGroup.add(mag);
+    // Coronha
+    const stock=new THREE.Mesh(new THREE.BoxGeometry(.065,.06,.2),stockMat);stock.position.set(.14,-.10,-.10);weapGroup.add(stock);
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.032,.12,.04),gripMat);grip.position.set(.14,-.182,-.22);weapGroup.add(grip);
+    // Bipod perna
+    const b1=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.12,6),darkMetal);b1.rotation.x=Math.PI/4;b1.position.set(.155,-.165,-.52);weapGroup.add(b1);
+    const b2=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.12,6),darkMetal);b2.rotation.x=Math.PI/4;b2.position.set(.125,-.165,-.52);weapGroup.add(b2);
+
+  }else if(idx===2){ // SPAS-12 — Shotgun
+    const shotMat=matTex(50,42,30,0.75,0.6);
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.08,.085,.38),darkMetal);body.position.set(.14,-.10,-.32);weapGroup.add(body);
+    // Cano duplo (shotgun)
+    const bar1=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,.2,8),darkMetal);bar1.rotation.x=Math.PI/2;bar1.position.set(.148,-.10,-.47);weapGroup.add(bar1);
+    const bar2=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,.2,8),darkMetal);bar2.rotation.x=Math.PI/2;bar2.position.set(.132,-.10,-.47);weapGroup.add(bar2);
+    // Guardamão madeira
+    const fore=new THREE.Mesh(new THREE.BoxGeometry(.075,.06,.16),shotMat);fore.position.set(.14,-.10,-.42);weapGroup.add(fore);
+    // Coronha dobrada
+    const stockL=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.15,6),darkMetal);stockL.rotation.x=Math.PI/2*0.3;stockL.position.set(.155,-.085,-.07);weapGroup.add(stockL);
+    const stockR=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.15,6),darkMetal);stockR.rotation.x=Math.PI/2*0.3;stockR.position.set(.125,-.085,-.07);weapGroup.add(stockR);
+    // Carregador tubular
+    const magTube=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,.32,8),darkMetal);magTube.rotation.x=Math.PI/2;magTube.position.set(.14,-.13,-.32);weapGroup.add(magTube);
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.04,.11,.05),gripMat);grip.position.set(.14,-.185,-.22);weapGroup.add(grip);
+
+  }else if(idx===3){ // Desert Eagle — Pistola
+    const eagleMat=matTex(55,50,40,0.45,0.92);
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.06,.095,.22),eagleMat);body.position.set(.14,-.10,-.25);weapGroup.add(body);
+    // Slide
+    const slide=new THREE.Mesh(new THREE.BoxGeometry(.055,.065,.20),darkMetal);slide.position.set(.14,-.08,-.25);weapGroup.add(slide);
+    // Cano
+    const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.01,.01,.14,8),darkMetal);barrel.rotation.x=Math.PI/2;barrel.position.set(.14,-.10,-.37);weapGroup.add(barrel);
+    // Guarda-gatilho
+    const guard=new THREE.Mesh(new THREE.TorusGeometry(.025,.004,6,8,Math.PI),darkMetal);guard.rotation.x=Math.PI/2;guard.position.set(.14,-.148,-.25);weapGroup.add(guard);
+    // Grip
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.05,.12,.06),gripMat);grip.position.set(.14,-.183,-.19);weapGroup.add(grip);
+    // Mira
+    const sightF=new THREE.Mesh(new THREE.BoxGeometry(.006,.016,.006),darkMetal);sightF.position.set(.14,-.052,-.34);weapGroup.add(sightF);
+    const sightB=new THREE.Mesh(new THREE.BoxGeometry(.025,.012,.006),darkMetal);sightB.position.set(.14,-.052,-.16);weapGroup.add(sightB);
+
+  }else if(idx===5){ // MINIGUN-X — Arma Secreta
+    const mg1=matTex(80,0,80,0.3,0.95);
+    const mg2=matTex(40,0,60,0.4,0.9);
+    // Corpo central
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.38,8),mg1);body.rotation.x=Math.PI/2;body.position.set(.14,-.09,-.32);weapGroup.add(body);
+    // 6 canos rotativos
+    for(let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2;
+      const r=0.038;
+      const brl=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.38,6),mg2);
+      brl.rotation.x=Math.PI/2;
+      brl.position.set(.14+Math.cos(a)*r,-.09+Math.sin(a)*r,-.32);
+      brl.userData.mgBarrel=true;
+      brl.userData.mgAngleOffset=a;
+      weapGroup.add(brl);
+    }
+    // Caixa de munição
+    const box=new THREE.Mesh(new THREE.BoxGeometry(.06,.1,.06),mg2);box.position.set(.14,-.17,-.28);weapGroup.add(box);
+    // Punho
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.04,.1,.05),new THREE.MeshStandardMaterial({color:0x220022,roughness:.9,metalness:.1}));
+    grip.position.set(.14,-.18,-.22);weapGroup.add(grip);
+    // Brilho roxo
+    const glow=new THREE.PointLight(0xff00ff,1.5,1.2);glow.position.set(.14,-.09,-.45);weapGroup.add(glow);
+  }else{ // RPG-7
+    const rpgMat=matTex(52,64,40,0.8,0.5);
+    // Tubo principal
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.54,10),rpgMat);tube.rotation.x=Math.PI/2;tube.position.set(.14,-.09,-.32);weapGroup.add(tube);
+    // Bocal traseiro (clapeta)
+    const backFlare=new THREE.Mesh(new THREE.CylinderGeometry(.055,.038,.06,10),rpgMat);backFlare.rotation.x=Math.PI/2;backFlare.position.set(.14,-.09,-.06);weapGroup.add(backFlare);
+    // Míssil saindo na frente
+    const rocket=new THREE.Mesh(new THREE.CylinderGeometry(.032,.032,.25,8),matTex(80,65,25,0.7,0.6));rocket.rotation.x=Math.PI/2;rocket.position.set(.14,-.09,-.65);weapGroup.add(rocket);
+    // Ponta ogiva
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.032,.1,8),matTex(100,80,30,0.6,0.7));tip.rotation.x=-Math.PI/2;tip.position.set(.14,-.09,-.81);weapGroup.add(tip);
+    // Alça de mira
+    const sight=new THREE.Mesh(new THREE.BoxGeometry(.006,.06,.04),darkMetal);sight.position.set(.14,-.03,-.28);weapGroup.add(sight);
+    // Punho traseiro
+    const grip=new THREE.Mesh(new THREE.BoxGeometry(.04,.1,.05),gripMat);grip.position.set(.14,-.175,-.18);weapGroup.add(grip);
+    // Punho frontal
+    const grip2=new THREE.Mesh(new THREE.BoxGeometry(.04,.09,.05),gripMat);grip2.position.set(.14,-.165,-.40);weapGroup.add(grip2);
+    // Aletas estabilizadoras
+    for(let a=0;a<4;a++){
+      const fin=new THREE.Mesh(new THREE.BoxGeometry(a%2===0?.001:.06,.06,a%2===0?.06:.001),matTex(70,55,20,0.7,0.5));
+      fin.position.set(.14+(a%2===0?.0:.04*(a<2?1:-1)),-.09+.03,-.08);weapGroup.add(fin);
+    }
+  }
+}
+buildWeaponModel(0);
+
+// ═══════════════════════════════════════════════
+// LOADING HELPER
+// ═══════════════════════════════════════════════
+function setLoad(pct,msg){
+  const bar=document.getElementById('loadBar');
+  const status=document.getElementById('loadStatus');
+  if(bar)bar.style.width=pct+'%';
+  if(status)status.textContent=msg;
+}
+function loadStep(fn,pct,msg){
+  return new Promise(res=>setTimeout(()=>{setLoad(pct,msg);fn();res()},20));
+}
+
+// ═══════════════════════════════════════════════
+// MAP BUILDER — LARGE MAP 400x400
+// ═══════════════════════════════════════════════
+const collidables=[];
+const interactables=[];
+
+function mat(color,emit=0){
+  const c=(color===undefined||color===null)?0x222222:color;
+  return new THREE.MeshLambertMaterial({color:c,emissive:emit?c:0,emissiveIntensity:emit?0.3:0});
+}
+
+function addBox(x,y,z,w,h,d,color,castShadow=true){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
+  m.position.set(x,y,z);
+  m.castShadow=castShadow;
+  m.receiveShadow=true;
+  scene.add(m);
+  return m;
+}
+
+function registerWall(x,z,w,d,offset=0){
+  collidables.push({min:{x:x-w/2+offset,z:z-d/2+offset},max:{x:x+w/2-offset,z:z+d/2-offset}});
+}
+
+function buildBuilding(x,z,w,h,d,color=0x2a3050){
+  const mesh=addBox(x,h/2,z,w,h,d,color);
+  registerWall(x,z,w,d);
+  // windows
+  const sides=[[0,z+d/2+.01,w*.6,h*.6,0],[0,z-d/2-.01,w*.6,h*.6,Math.PI],[w/2+.01,0,d*.6,h*.6,Math.PI/2],[-w/2-.01,0,d*.6,h*.6,-Math.PI/2]];
+  sides.forEach(([ox,oz,ww,hh,ry])=>{
+    if(Math.random()>.3){
+      const wm=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(ww*.4,3),Math.min(hh*.5,2.5)),new THREE.MeshLambertMaterial({color:0x2244aa,emissive:0x112244,transparent:true,opacity:.75}));
+      wm.position.set(x+ox,h*.35+Math.random()*h*.3,z+oz);
+      wm.rotation.y=ry;
+      scene.add(wm);
+    }
+  });
+  return mesh;
+}
+
+function addDoor(x,y,z,ry,label='PORTA'){
+  const doorGroup=new THREE.Group();
+  doorGroup.position.set(x,y,z);
+  doorGroup.rotation.y=ry;
+  const doorMesh=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.4,.08),new THREE.MeshLambertMaterial({color:0x4a3010}));
+  doorMesh.position.set(.6,1.2,0);
+  doorMesh.castShadow=true;
+  doorGroup.add(doorMesh);
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(1.3,2.6,.04),new THREE.MeshLambertMaterial({color:0x2a1a00}));
+  frame.position.set(.6,1.3,-.06);
+  doorGroup.add(frame);
+  scene.add(doorGroup);
+  const id='door_'+Date.now()+'_'+Math.random();
+  doorAnims[id]={group:doorGroup,open:false,angle:0,targetAngle:0,pivot:{x,z},label};
+  interactables.push({type:'door',id,x,z,range:2.5,label:'ABRIR '+label,labelClose:'FECHAR '+label});
+  return doorGroup;
+}
+
+function addVehicle(x,z,type='jeep'){
+  const g=new THREE.Group();
+  g.position.set(x,0,z);
+  let bodyColor=0x3a5a2a,h=1.2,bodyH=.7;
+  if(type==='tank'){bodyColor=0x4a5a2a;h=1.6;bodyH=1}
+  if(type==='truck'){bodyColor=0x3a3a4a;h=2;bodyH=1.2}
+  const body=new THREE.Mesh(new THREE.BoxGeometry(type==='tank'?4:3,bodyH,type==='tank'?6:5),new THREE.MeshLambertMaterial({color:bodyColor}));
+  body.position.y=h/2;body.castShadow=true;g.add(body);
+  if(type==='tank'){
+    const turret=new THREE.Mesh(new THREE.BoxGeometry(2,.7,2.5),new THREE.MeshLambertMaterial({color:0x3a4a1a}));
+    turret.position.set(0,h+.35,0);g.add(turret);
+    const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,3,8),new THREE.MeshLambertMaterial({color:0x222222}));
+    barrel.rotation.x=Math.PI/2;barrel.position.set(0,h+.35,-2.2);g.add(barrel);
+  }else{
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.4,bodyH*.8,2),new THREE.MeshLambertMaterial({color:bodyColor}));
+    cab.position.set(0,h/2+bodyH*.6,type==='truck'?1.2:.8);g.add(cab);
+    const wind=new THREE.Mesh(new THREE.PlaneGeometry(2,.8),new THREE.MeshLambertMaterial({color:0x4488cc,transparent:true,opacity:.6}));
+    wind.position.set(0,h/2+bodyH*.6,type==='truck'?.15:-.2);wind.rotation.x=-.3;g.add(wind);
+  }
+  [[1.1,-.35,1.6],[1.1,-.35,-1.6],[-1.1,-.35,1.6],[-1.1,-.35,-1.6]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,.3,10),new THREE.MeshLambertMaterial({color:0x111111}));
+    w.rotation.z=Math.PI/2;w.position.set(wx,wy+h/2,wz);g.add(w);
+    const rim=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.32,10),new THREE.MeshLambertMaterial({color:0x333333}));
+    rim.rotation.z=Math.PI/2;rim.position.set(wx,wy+h/2,wz);g.add(rim);
+  });
+  scene.add(g);
+  const vid='veh_'+Date.now()+'_'+Math.random();
+  vehicleObjects[vid]={group:g,type,speed:0,yaw:0,x,z,occupied:false};
+  vehicleSpeeds[vid]=0;
+  interactables.push({type:'vehicle',id:vid,x,z:z,range:3,label:'ENTRAR NO '+(type==='tank'?'TANQUE':type==='truck'?'CAMINHÃO':'JEEP'),labelClose:'SAIR DO VEÍCULO'});
+  return g;
+}
+
+async function buildMap(){
+  await loadStep(()=>{}, 5, 'PREPARANDO CENA...');
+
+  await loadStep(()=>{
+  // GROUND — GIGANTESCO 800x800
+  const floorGeo=new THREE.PlaneGeometry(800,800,120,120);
+  const floor=new THREE.Mesh(floorGeo,mat(0x111510));
+  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;
+  scene.add(floor);
+  // Segundo plano (área de terra batida central)
+  const centerFloor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),mat(0x1a1a10));
+  centerFloor.rotation.x=-Math.PI/2;centerFloor.position.set(0,.002,0);scene.add(centerFloor);
+  const grid=new THREE.GridHelper(800,200,0x002211,0x001108);
+  grid.position.y=.01;scene.add(grid);
+
+  // ROADS — principais e secundárias
+  [[0,0,400,8],[0,0,8,400],[-100,0,200,6],[100,0,200,6],[0,-100,6,200],[0,100,6,200]].forEach(([x,z,w,d])=>{
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(0x0d1015));
+    road.rotation.x=-Math.PI/2;road.position.set(x,.005,z);scene.add(road);
+    for(let i=-180;i<180;i+=8){
+      const mark=new THREE.Mesh(new THREE.PlaneGeometry(w>d?.3:Math.min(d,8),.3),mat(0xffff00));
+      mark.rotation.x=-Math.PI/2;mark.position.set(w>d?i:.15,.01,d>w?i:.15);scene.add(mark);
+    }
+  });
+  }, 15, 'CONSTRUINDO TERRENO...');
+
+  await loadStep(()=>{
+  // DISTRICT 1: URBAN CITY (center-west)
+  const buildings=[
+    [-30,0,10,12,8],[-40,-10,8,10,10],[-20,-15,12,8,10],[-45,10,7,14,9],[-35,20,9,9,12],
+    [-25,25,11,7,8],[-50,-20,8,11,7],[-15,-30,10,10,9],[-40,-30,6,8,8],[-55,0,7,12,10],
+    [-60,15,9,10,7],[-50,25,8,9,11],[-20,35,12,8,8],[-35,35,7,12,9],[-45,-40,9,9,10],
+    // Novos prédios urbanos estendidos
+    [-70,40,8,10,8],[-80,10,10,8,10],[-65,-50,9,9,9],[-75,-60,7,12,8],[-55,50,8,8,9],
+  ];
+  buildings.forEach(([x,z,w,h,d])=>buildBuilding(x,z,w,h,d,[0x2a3050,0x1e2440,0x252d4a][Math.floor(Math.random()*3)]));
+
+  // DISTRICT 2: INDUSTRIAL (east)
+  const industrial=[
+    [40,10,15,6,20],[55,-5,12,8,15],[45,-20,10,10,10],[65,15,8,12,8],[70,-10,10,6,18],
+    [50,30,18,5,12],[35,25,10,7,10],[75,25,8,9,8],[60,-25,12,8,10],[80,5,6,10,12],
+    [90,20,14,5,16],[95,-15,10,8,12],[85,-30,8,6,10],[100,5,6,9,8],
+  ];
+  industrial.forEach(([x,z,w,h,d])=>buildBuilding(x,z,w,h,d,0x2a2a35));
+
+  // CONTAINERS — industrial zone (mais containers)
+  [[45,-5],[50,5],[42,2],[48,-12],[55,10],[58,-3],[62,8],[40,-15],[52,18],[65,-15],
+   [90,-10],[92,12],[85,25],[78,-20],[70,30],[88,-5],[95,30]].forEach(([x,z])=>{
+    const c=addBox(x,.75,z,4,1.5,2,[0x8B1010,0x107030,0x103070,0x505010][Math.floor(Math.random()*4)]);
+    c.rotation.y=Math.random()>.5?Math.PI/2:0;
+    collidables.push({min:{x:x-2,z:z-1},max:{x:x+2,z:z+1}});
+  });
+
+  // DISTRICT 3: FAVELA (south)
+  for(let i=0;i<60;i++){
+    const x=-80+Math.random()*160;const z=60+Math.random()*140;
+    const w=3+Math.random()*5;const h=3+Math.random()*5;const d=3+Math.random()*5;
+    buildBuilding(x,z,w,h,d,0x5a3a2a);
+  }
+
+  // DISTRICT 3b: FAVELA WEST (extra — mapa grande)
+  for(let i=0;i<40;i++){
+    const x=-170+Math.random()*80;const z=20+Math.random()*120;
+    const w=3+Math.random()*6;const h=2+Math.random()*6;const d=3+Math.random()*6;
+    buildBuilding(x,z,w,h,d,0x4a3020);
+  }
+
+  // DISTRICT 11: CIDADE DESTRUÍDA (far south-east) — prédios em ruínas de guerra
+  for(let i=0;i<35;i++){
+    const x=80+Math.random()*120;const z=60+Math.random()*120;
+    const w=5+Math.random()*8;const h=1+Math.random()*8;const d=5+Math.random()*8;
+    buildBuilding(x,z,w,h,d,[0x3a2510,0x2a1a0a,0x1a1a15][Math.floor(Math.random()*3)]);
+    // Escombros no chão
+    addBox(x+(Math.random()*8-4),.2,z+(Math.random()*8-4),w*.8,.4,d*.8,0x333325);
+  }
+
+  // DISTRICT 12: TRINCHEIRAS (linha de batalha central) — reduzido para performance
+  for(let tz=-100;tz<100;tz+=10){
+    addBox(-5,.3,tz,1.5,1.5,9,0x2a2015);
+    addBox(5,.3,tz,1.5,1.5,9,0x2a2015);
+    collidables.push({min:{x:-6,z:tz-4.5},max:{x:-4,z:tz+4.5}});
+    collidables.push({min:{x:4,z:tz-4.5},max:{x:6,z:tz+4.5}});
+  }
+  // Arame farpado (decorativo)
+  for(let i=0;i<12;i++){
+    const fx=-150+Math.random()*300;const fz=-50+Math.random()*100;
+    addBox(fx,.4,fz,6,.12,.15,0x555544);
+  }
+  }, 35, 'CONSTRUINDO CIDADE...');
+
+  await loadStep(()=>{
+  // DISTRICT 7: PORTO / DOCKS
+  addBox(140,.1,130,80,.2,60,0x1a1a22);// pier expandido
+  buildBuilding(140,110,20,6,15,0x2a2a3a);
+  buildBuilding(160,130,12,4,20,0x2a3040);
+  buildBuilding(120,140,16,5,18,0x2a2a35);
+  for(let i=0;i<12;i++){
+    const c=addBox(125+i*5,.75,140,4,1.5,2,[0x8B1010,0x107030,0x103070][Math.floor(Math.random()*3)]);
+    c.rotation.y=Math.random()>.5?Math.PI/2:0;
+  }
+  // Guindaste do porto
+  addBox(170,5,120,2,10,2,0x444433);
+  addBox(165,9,120,12,.5,2,0x444433);
+
+  // DISTRICT 8: RUÍNAS (far west)
+  for(let i=0;i<30;i++){
+    const x=-180+Math.random()*60;const z=-80+Math.random()*160;
+    const w=4+Math.random()*8;const h=2+Math.random()*4;const d=4+Math.random()*8;
+    buildBuilding(x,z,w,h,d,[0x3a2a1a,0x2a2a1a,0x1a2a2a][Math.floor(Math.random()*3)]);
+  }
+
+  // DISTRICT 9: FLORESTA DENSA (norte)
+  for(let i=0;i<80;i++){
+    const tx=-150+Math.random()*300;const tz=-380+Math.random()*100;
+    const trunkH=4+Math.random()*6;
+    addBox(tx,trunkH/2,tz,.3,trunkH,.3,0x3a2510);
+    const topR=2+Math.random()*2;
+    const top=new THREE.Mesh(new THREE.SphereGeometry(topR,6,6),mat(0x1a4a10));
+    top.position.set(tx,trunkH+topR*.6,tz);scene.add(top);
+    collidables.push({min:{x:tx-.25,z:tz-.25},max:{x:tx+.25,z:tz+.25}});
+  }
+  // Floresta sul
+  for(let i=0;i<60;i++){
+    const tx=-150+Math.random()*300;const tz=280+Math.random()*80;
+    const trunkH=3+Math.random()*5;
+    addBox(tx,trunkH/2,tz,.3,trunkH,.3,0x3a2510);
+    const topR=1.5+Math.random()*2;
+    const top=new THREE.Mesh(new THREE.SphereGeometry(topR,6,6),mat(0x1a4a10));
+    top.position.set(tx,trunkH+topR*.6,tz);scene.add(top);
+    collidables.push({min:{x:tx-.25,z:tz-.25},max:{x:tx+.25,z:tz+.25}});
+  }
+
+  // DISTRICT 10: CIDADE NOVA (far east-north)
+  const newCity=[
+    [130,-80,14,10,10],[145,-65,10,14,10],[120,-60,8,18,8],[155,-80,9,12,9],
+    [140,-95,12,8,12],[125,-100,10,10,8],[160,-95,8,14,8],[135,-50,11,16,11],
+    [170,-70,10,10,10],[180,-90,8,12,8],[190,-70,12,9,12],[175,-50,9,14,9],
+  ];
+  newCity.forEach(([x,z,w,h,d])=>buildBuilding(x,z,w,h,d,[0x1e2a40,0x253050,0x2a2540][Math.floor(Math.random()*3)]));
+
+  // DISTRICT 13: BASE INIMIGA (far south-east)
+  buildBuilding(180,180,30,4,20,0x3a2a20);// quartel-general inimigo
+  buildBuilding(160,190,15,6,15,0x3a2a20);
+  buildBuilding(195,170,12,5,12,0x2a2020);
+  // Parede da base inimiga
+  [[180,155,60,2,3],[155,180,3,2,50],[205,180,3,2,50],[180,205,60,2,3]].forEach(([x,z,w,h,d])=>{
+    addBox(x,h/2,z,w,h,d,0x3a2a10);registerWall(x,z,w,d);
+  });
+  // Tanques inimigos na base
+  addVehicle(175,175,'tank');
+  addVehicle(185,170,'tank');
+  addVehicle(175,185,'jeep');
+
+  // VEHICLES EXTRAS no mapa grande
+  addVehicle(-100,30,'jeep');
+  addVehicle(120,-80,'tank');
+  addVehicle(-80,80,'truck');
+  addVehicle(150,60,'jeep');
+  addVehicle(-150,-60,'tank');
+  addVehicle(100,100,'truck');
+  addVehicle(-120,-100,'jeep');
+  addVehicle(-160,100,'tank');
+  addVehicle(160,-150,'truck');
+  addVehicle(-50,160,'jeep');
+  addVehicle(50,-160,'tank');
+  }, 55, 'CONSTRUINDO DISTRITOS...');
+
+  await loadStep(()=>{
+  // DISTRICT 4: BASE MILITAR ALIADA (north)
+  [[-20,-80],[0,-80],[20,-80],[-30,-70],[30,-70],[0,-70],[-15,-90],[15,-90]].forEach(([x,z])=>buildBuilding(x,z,12,4,10,0x354030));
+  // Base perimeter wall - maior
+  const wallSeg=[[0,-110,120,1,4],[-60,-80,1,4,60],[60,-80,1,4,60],[0,-50,120,1,4]];
+  wallSeg.forEach(([x,z,w,h,d])=>{addBox(x,h/2,z,w,h,d,0x2a3020);registerWall(x,z,w,d)});
+  // Torre de guarda
+  addBox(-58,-80,4,4,8,4,0x354030);addBox(-58,-80,5,5,.5,5,0x2a3020);
+  addBox(58,-80,4,4,8,4,0x354030);addBox(58,-80,5,5,.5,5,0x2a3020);
+  // Depósito de munição
+  addBox(0,-85,8,3,8,0x2a3020);buildBuilding(20,-85,8,5,8,0x354030);
+
+  // DISTRICT 5: AIRPORT (far east)
+  addBox(100,0.1,0,80,0.2,120,0x1a1a22);// runway expandida
+  buildBuilding(100,-55,40,8,20,0x2a3040);// terminal maior
+  buildBuilding(100,40,30,7,30,0x252535);// hangar grande
+  buildBuilding(130,10,15,5,15,0x252535);// hangar 2
+  // Torre de controle
+  addBox(120,-40,2,4,2,4,0x2a3040);addBox(120,-40,6,6,1,6,0x2a3040);
+  // Aviões (decorativo)
+  addBox(95,0.5,15,12,1.5,2,0x888899);addBox(90,0.5,15,.5,1,20,0x888899);
+  addBox(95,0.5,-15,12,1.5,2,0x888899);addBox(90,0.5,-15,.5,1,20,0x888899);
+
+  // DISTRICT 6: UNDERGROUND LAB (markers only — visual)
+  addBox(-80,0,-30,20,2,20,0x1a1a2a);
+  buildBuilding(-80,-30,16,5,14,0x1a2a3a);
+  buildBuilding(-80,-10,12,4,10,0x1a2a3a);
+  buildBuilding(-70,-20,8,6,8,0x1a2a3a);
+  // Lab expandido
+  buildBuilding(-100,-25,10,4,10,0x1a2a3a);
+  buildBuilding(-90,-40,8,3,8,0x1a2a3a);
+  addBox(-85,-30,2,2,6,0x334433);// torre antena
+
+  // DISTRICT 14: CAMPO DE BATALHA (centro-sul) — crateras e escombros
+  for(let i=0;i<15;i++){
+    // Crateras (depressão visual com borda)
+    const cx=-60+Math.random()*120;const cz=30+Math.random()*80;
+    const cr=2+Math.random()*4;
+    // Borda da cratera
+    addBox(cx,.25,cz,cr*2+1,.5,cr*2+1,0x1a1408);
+    // Entulho ao redor
+    for(let j=0;j<4;j++){
+      addBox(cx+(Math.random()*cr*2-cr),.3,cz+(Math.random()*cr*2-cr),
+        1+Math.random()*2,.5+Math.random(),1+Math.random()*2,0x2a2010);
+    }
+  }
+
+  // DISTRICT 15: BUNKERS (linha entre bases)
+  [[-80,0],[0,0],[80,0],[-40,-30],[40,-30],[-40,30],[40,30]].forEach(([bx,bz])=>{
+    const bunker=addBox(bx,1,bz,8,2,6,0x2a3020);
+    collidables.push({min:{x:bx-4,z:bz-3},max:{x:bx+4,z:bz+3}});
+    // Abertura frontal
+    addBox(bx,1.2,bz-3.1,6,.8,.1,0x1a2010);// janela
+    // Sacos de areia
+    for(let s=0;s<4;s++){
+      addBox(bx+(s-1.5)*2,1.1,bz-3.2,1.8,.8,.5,0x6a5a30);
+    }
+  });
+  }, 68, 'BASES E INSTALAÇÕES...');
+
+  await loadStep(()=>{
+  // BARRIERS & COVER (distribuídos pelo mapa maior)
+  for(let i=0;i<200;i++){
+    const x=(Math.random()*760-380);const z=(Math.random()*760-380);
+    if(Math.abs(x)<6&&Math.abs(z)<6)continue;
+    const t=Math.random();
+    if(t<.3){addBox(x,.4,z,2,0.8,.6,0x555555);collidables.push({min:{x:x-1,z:z-.3},max:{x:x+1,z:z+.3}});}
+    else if(t<.55){addBox(x,.6,z,1.5,1.2,.8,0x6a4a2a);collidables.push({min:{x:x-.75,z:z-.4},max:{x:x+.75,z:z+.4}});}
+    else if(t<.75){addBox(x,.3,z,3,0.6,.5,0x444444);collidables.push({min:{x:x-1.5,z:z-.25},max:{x:x+1.5,z:z+.25}});}
+    else if(t<.88){addBox(x,.5,z,2.5,1,1,0x6a5a30);collidables.push({min:{x:x-1.25,z:z-.5},max:{x:x+1.25,z:z+.5}});}
+    else{addBox(x,.8,z,2,1.6,.2,0x334433);collidables.push({min:{x:x-1,z:z-.1},max:{x:x+1,z:z+.1}});}
+  }
+  }, 78, 'ESPALHANDO COBERTURA...');
+
+  await loadStep(()=>{
+  // STREET LIGHTS — apenas postes visuais, poucas luzes reais (limite GPU)
+  // Postes (só geometria, sem luz) — espalhados no mapa
+  for(let lx=-360;lx<=360;lx+=40){
+    for(let lz=-360;lz<=360;lz+=40){
+      if(Math.random()>.55){
+        addBox(lx,.9,lz,.08,5,.08,0x333333);
+        addBox(lx,.2,lz,.3,.2,.3,0xffee88);
+      }
+    }
+  }
+  // Apenas 12 luzes reais (PointLights) perto da área central — GPU suporta sem estourar uniforms
+  const lightPositions=[
+    [0,0],[25,0],[-25,0],[0,25],[0,-25],
+    [50,0],[-50,0],[0,50],[0,-50],
+    [25,25],[-25,-25],[25,-25]
+  ];
+  lightPositions.forEach(([lx,lz])=>{
+    const lamp=new THREE.PointLight(Math.random()>.5?0x4488ff:0xffaa44,1.2,35);
+    lamp.position.set(lx,5,lz);scene.add(lamp);
+  });
+
+  // BOUNDARY WALL — 800x800
+  const bwalls=[[0,-405,800,4,10],[0,405,800,4,10],[405,0,10,4,800],[-405,0,10,4,800]];
+  bwalls.forEach(([x,z,w,h,d])=>{addBox(x,h/2,z,w,h,d,0x151a20);registerWall(x,z,w,d)});
+
+  // DOORS
+  addDoor(-28,.01,-8,0,'EDIFÍCIO A');
+  addDoor(-40,.01,-5,0,'EDIFÍCIO B');
+  addDoor(40,.01,15,Math.PI/2,'GALPÃO');
+  addDoor(35,.01,-18,0,'FÁBRICA');
+  addDoor(0,.01,-78,0,'BASE NORTE');
+  addDoor(-78,.01,-28,Math.PI/2,'LAB SECRETO');
+  addDoor(100,.01,-54,0,'TERMINAL');
+  addDoor(175,.01,175,0,'BASE INIMIGA');
+
+  // VEHICLES ALIADOS (central)
+  addVehicle(10,10,'jeep');
+  addVehicle(-15,15,'jeep');
+  addVehicle(50,0,'tank');
+  addVehicle(55,-15,'tank');
+  addVehicle(70,20,'truck');
+  addVehicle(-25,-50,'jeep');
+  addVehicle(100,-20,'jeep');
+  addVehicle(-75,-25,'truck');
+  addVehicle(-30,-80,'tank');
+  addVehicle(25,-90,'jeep');
+  }, 88, 'POSICIONANDO VEÍCULOS...');
+
+  await loadStep(()=>{
+  // ═══ TORRETAS AUTOMÁTICAS ═══
+  // Posicionadas em pontos estratégicos do mapa
+  const turretPositions=[
+    {x:-30,z:-85,team:'ally'},   // Base aliada N
+    {x:30,z:-85,team:'ally'},
+    {x:0,z:-90,team:'ally'},
+    {x:170,z:170,team:'enemy'},  // Base inimiga
+    {x:185,z:170,team:'enemy'},
+    {x:170,z:185,team:'enemy'},
+    {x:50,z:50,team:'neutral'},  // Posições neutras
+    {x:-50,z:50,team:'neutral'},
+    {x:100,z:-55,team:'neutral'},// Aeroporto
+    {x:-30,z:30,team:'neutral'},
+  ];
+  turretPositions.forEach((tp,i)=>{
+    addTurret(tp.x,tp.z,tp.team,i);
+  });
+
+  // ═══ ARMA SECRETA (MINIGUN-X) — ESCONDIDA EM LOCAL SECRETO ═══
+  // Posições escondidas no mapa — 3 pickups
+  const secretPositions=[
+    {x:-78,z:-28,label:'LAB SECRETO'},
+    {x:100,z:-56,label:'TERMINAL'},
+    {x:0,z:-92,label:'BASE NORTE'},
+  ];
+  secretPositions.forEach(sp=>{
+    spawnSecretWeaponPickup(sp.x,sp.z,sp.label);
+  });
+  }, 90, 'TORRETAS E ARMAS SECRETAS...');
+
+  await loadStep(()=>{
+  // LIGHTING
+  const ambLight=new THREE.AmbientLight(0x334455,1.0);scene.add(ambLight);
+  const fillLight=new THREE.DirectionalLight(0x8899cc,0.6);fillLight.position.set(5,8,5);scene.add(fillLight);
+  const moon=new THREE.DirectionalLight(0x8899cc,0.8);
+  moon.position.set(-30,80,20);moon.castShadow=true;
+  moon.shadow.mapSize.set(2048,2048);
+  moon.shadow.camera.left=-420;moon.shadow.camera.right=420;
+  moon.shadow.camera.top=420;moon.shadow.camera.bottom=-420;
+  moon.shadow.camera.far=1200;
+  scene.add(moon);
+
+  // STARS
+  const starGeo=new THREE.BufferGeometry();
+  const starPos=new Float32Array(600);
+  for(let i=0;i<600;i+=3){
+    const t2=Math.random()*Math.PI*2,p=Math.random()*Math.PI*.5;
+    starPos[i]=Math.cos(t2)*Math.sin(p)*450;
+    starPos[i+1]=Math.cos(p)*450;
+    starPos[i+2]=Math.sin(t2)*Math.sin(p)*450;
+  }
+  starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+  scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:.8})));
+  }, 96, 'ILUMINAÇÃO E ESTRELAS...');
+}
+
+// RAIN
+const rainLines=[];
+function buildRain(){
+  for(let i=0;i<500;i++){
+    const g=new THREE.BufferGeometry();
+    const p=new Float32Array(6);
+    p[0]=Math.random()*180-90;p[1]=Math.random()*25+2;p[2]=Math.random()*180-90;
+    p[3]=p[0];p[4]=p[1]-.6;p[5]=p[2];
+    g.setAttribute('position',new THREE.BufferAttribute(p,3));
+    const l=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x3366aa,transparent:true,opacity:.35}));
+    scene.add(l);rainLines.push({mesh:l,spd:.25+Math.random()*.35});
+  }
+}
+function updateRain(){
+  if(!mods.rainToggle)return;
+  rainLines.forEach(r=>{
+    const p=r.mesh.geometry.attributes.position;
+    const cx=camera.position.x,cz=camera.position.z;
+    p.array[1]-=r.spd;p.array[4]-=r.spd;
+    if(p.array[1]<0){p.array[0]=cx+Math.random()*80-40;p.array[1]=22+Math.random()*5;p.array[2]=cz+Math.random()*80-40;p.array[3]=p.array[0];p.array[4]=p.array[1]-.6;p.array[5]=p.array[2];}
+    p.needsUpdate=true;
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PLAYER MESH
+// ═══════════════════════════════════════════════
+function createPlayerMesh(color){
+  const g=new THREE.Group();
+  const bm=new THREE.MeshLambertMaterial({color});
+  const hm=new THREE.MeshLambertMaterial({color:0x111111});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,1.5,8),bm);body.position.y=.75;body.castShadow=true;g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.22,8,8),bm);head.position.y=1.65;g.add(head);
+  const helm=new THREE.Mesh(new THREE.SphereGeometry(.245,8,8),hm);helm.position.y=1.72;g.add(helm);
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(.52,.6,.3),new THREE.MeshLambertMaterial({color:0x2a2a1a}));vest.position.set(0,.85,.05);g.add(vest);
+  const gun=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.45),new THREE.MeshLambertMaterial({color:0x111111}));gun.position.set(.32,1.15,.35);g.add(gun);
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.18,6),new THREE.MeshLambertMaterial({color:0x222}));barrel.rotation.x=Math.PI/2;barrel.position.set(.32,1.16,.56);g.add(barrel);
+  return g;
+}
+
+// ═══════════════════════════════════════════════
+// SHOOTING SYSTEM
+// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// TRACER SYSTEM — rastro de bala com fade
+// ═══════════════════════════════════════════════
+const tracerLines=[];
+
+function spawnTracerLine(fromPos, toPos, w){
+  let tracerColor = 0xffee44;
+  if(w.explosive) tracerColor = 0xff6600;
+  else if(w.pellets) tracerColor = 0xff9944;
+  else if(w.scope) tracerColor = 0x88ffcc;
+
+  // Linha principal brilhante
+  const points=[fromPos.clone(), toPos.clone()];
+  const geo=new THREE.BufferGeometry().setFromPoints(points);
+  const mat=new THREE.LineBasicMaterial({color:tracerColor,transparent:true,opacity:0.9,linewidth:2});
+  const line=new THREE.Line(geo,mat);
+  scene.add(line);
+
+  // Linha de brilho mais larga (simulada com linha paralela levemente offset)
+  const geo2=new THREE.BufferGeometry().setFromPoints([
+    fromPos.clone().add(new THREE.Vector3(0,.01,0)),
+    toPos.clone().add(new THREE.Vector3(0,.01,0))
+  ]);
+  const mat2=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.5});
+  const glow=new THREE.Line(geo2,mat2);
+  scene.add(glow);
+
+  tracerLines.push({line, mat, glow, mat2, life:18, maxLife:18});
+}
+
+function updateTracers(){
+  for(let i=tracerLines.length-1;i>=0;i--){
+    const t=tracerLines[i];
+    t.life--;
+    const pct=t.life/t.maxLife;
+    t.mat.opacity=pct*0.9;
+    t.mat2.opacity=pct*0.4;
+    if(t.life<=0){
+      scene.remove(t.line);scene.remove(t.glow);
+      t.line.geometry.dispose();t.mat.dispose();
+      t.glow.geometry.dispose();t.mat2.dispose();
+      tracerLines.splice(i,1);
+    }
+  }
+}
+
+// Muzzle flash light pré-criada (sem criar nova toda vez)
+const muzzleLight=new THREE.PointLight(0xffff88,0,4);
+scene.add(muzzleLight);
+let muzzleLightTimer=0;
+
+function spawnBullet(fromPos,dir,wep){
+  const g=new THREE.SphereGeometry(.04,4,4);
+  const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xffee00}));
+  m.position.copy(fromPos);
+  scene.add(m);
+  const vel=dir.clone().multiplyScalar(wep.explosive?0.6:1.0);
+  bullets.push({mesh:m,velocity:vel,life:wep.explosive?80:50,wep,born:Date.now()});
+  // doMuzzleFlash é chamado uma única vez em shoot(), não aqui
+}
+
+function doMuzzleFlash(){
+  const mf=document.getElementById('muzzleFlash');
+  mf.classList.add('fire');
+  setTimeout(()=>mf.classList.remove('fire'),65);
+  // Ativa luz pré-criada sem criar nova
+  muzzleLight.position.copy(camera.position);
+  muzzleLight.intensity=8;
+  muzzleLightTimer=4; // frames
+}
+
+function spawnExplosion(pos,radius=8){
+  for(let i=0;i<24;i++){
+    const em=new THREE.Mesh(new THREE.SphereGeometry(.1+Math.random()*.12,4,4),new THREE.MeshBasicMaterial({color:Math.random()>.5?0xff4400:0xffaa00}));
+    em.position.copy(pos);scene.add(em);
+    const vel=new THREE.Vector3((Math.random()-.5)*.5,Math.random()*.4+.1,(Math.random()-.5)*.5);
+    particles.push({mesh:em,velocity:vel,life:45,gravity:.006,type:'fire'});
+  }
+  for(let i=0;i<12;i++){
+    const sm=new THREE.Mesh(new THREE.SphereGeometry(.15,4,4),new THREE.MeshBasicMaterial({color:0x555555,transparent:true,opacity:.8}));
+    sm.position.copy(pos);scene.add(sm);
+    const vel=new THREE.Vector3((Math.random()-.5)*.2,(Math.random())*.15+.05,(Math.random()-.5)*.2);
+    particles.push({mesh:sm,velocity:vel,life:80,gravity:.001,type:'smoke',scaleUp:true});
+  }
+  const l=new THREE.PointLight(0xff4400,20,radius*2);l.position.copy(pos);scene.add(l);
+  setTimeout(()=>scene.remove(l),400);
+  cameraShake(.5);
+  flashScreen();
+}
+
+function spawnBlood(pos){
+  for(let i=0;i<10;i++){
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.04,3,3),new THREE.MeshBasicMaterial({color:0xcc0000}));
+    m.position.copy(pos);scene.add(m);
+    const vel=new THREE.Vector3((Math.random()-.5)*.22,(Math.random()-.5)*.2+.08,(Math.random()-.5)*.22);
+    particles.push({mesh:m,velocity:vel,life:35,gravity:.007,type:'blood'});
+  }
+}
+
+function spawnDust(pos){
+  for(let i=0;i<6;i++){
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.06,3,3),new THREE.MeshBasicMaterial({color:0xaa9977,transparent:true,opacity:.7}));
+    m.position.copy(pos);scene.add(m);
+    const vel=new THREE.Vector3((Math.random()-.5)*.12,(Math.random()*.08+.02),(Math.random()-.5)*.12);
+    particles.push({mesh:m,velocity:vel,life:40,gravity:.001,type:'dust'});
+  }
+}
+
+function flashScreen(){
+  const sf=document.getElementById('screenFlash');
+  sf.style.opacity='.7';setTimeout(()=>sf.style.opacity='0',80);
+}
+
+function shoot(){
+  const w=WEAPONS[currentWeapon];
+  if(!canShoot||isReloading||!gameActive||health<=0)return;
+  if(inVehicle)return;
+  if(wAmmo[currentWeapon]<=0){if(wReserve[currentWeapon]>0)reload();return;}
+  if(!mods.infiniteAmmo)wAmmo[currentWeapon]--;
+  updateAmmoUI();
+  canShoot=false;
+  weaponRecoil=mods.noRecoil?0:1;
+
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+  const spread=isAiming&&w.scope?w.spread*.1:w.spread;
+  const pellets=w.pellets||1;
+  // Shotgun: máx 2 pellets com bala visual, resto só raycast (com traçante)
+  const visualPellets=w.pellets?Math.min(pellets,2):1;
+  for(let p=0;p<pellets;p++){
+    const d=dir.clone();
+    d.x+=(Math.random()-.5)*spread*(1+p*.5);
+    d.y+=(Math.random()-.5)*spread;
+    d.normalize();
+    if(p<visualPellets) spawnBullet(camera.position.clone().add(d.clone().multiplyScalar(.5)),d,w);
+    doRaycast(d,w,p); // traçante agora é spawned dentro do doRaycast
+  }
+  // 1 muzzle flash por disparo
+  doMuzzleFlash();
+  pitch-=(mods.noRecoil?0:(.01+Math.random()*.008));
+  setTimeout(()=>canShoot=true,w.rate);
+  if(wAmmo[currentWeapon]<=0&&wReserve[currentWeapon]>0)setTimeout(reload,400);
+  // ═══ SINCRONIZAR TIRO VIA FIREBASE ═══
+  if(db){
+    const shootDir=new THREE.Vector3();camera.getWorldDirection(shootDir);
+    db.ref('game/shots').push({
+      by:playerId,
+      name:playerName,
+      x:playerPos.x,y:playerPos.y,z:playerPos.z,
+      dx:shootDir.x,dy:shootDir.y,dz:shootDir.z,
+      weapon:w.name,
+      t:Date.now()
+    }).then(ref=>ref.remove()); // remove logo após
+  }
+}
+
+function doRaycast(dir,w,pelletIdx){
+  const ray=new THREE.Raycaster(camera.position,dir,0.1,200);
+  const meshArr=[];
+  Object.values(playerMeshes).forEach(m=>m.visible&&meshArr.push(m));
+  Object.values(vehicleObjects).forEach(v=>meshArr.push(v.group));
+  const hits=ray.intersectObjects([...scene.children,...meshArr],true);
+
+  const fromPos=camera.position.clone().add(dir.clone().multiplyScalar(.5));
+  const hitPos=hits.length?hits[0].point:fromPos.clone().add(dir.clone().multiplyScalar(w.explosive?30:150));
+
+  // Spawn tracer apenas para os pellets visuais (pelletIdx<visualPellets controlado no shoot)
+  spawnTracerLine(fromPos, hitPos, w);
+
+  if(!hits.length)return;
+  const hit=hits[0];
+  const pos=hit.point;
+  // Check if hit a remote player
+  let hitPid=null;
+  for(const[id,mesh]of Object.entries(playerMeshes)){
+    if(isDescendant(hit.object,mesh)){hitPid=id;break;}
+  }
+  if(hitPid&&db){
+    const dmg=w.explosive?w.dmg:Math.floor(w.dmg*(pelletIdx===0?1:.6));
+    db.ref(`game/players/${hitPid}`).once('value',snap=>{
+      const d=snap.val();
+      if(d&&d.health>0){
+        const nh=Math.max(0,d.health-dmg);
+        db.ref(`game/players/${hitPid}`).update({health:nh,lastHitBy:playerId,lastHitDmg:dmg,lastHitTime:Date.now()});
+        if(nh<=0){kills++;document.getElementById('killsNum').textContent=kills;addKillFeed(playerName,d.name||'?',true);}
+        spawnBlood(pos);showHitMarker();
+      }
+    });
+  }else{
+    spawnDust(pos);
+    if(w.explosive)spawnExplosion(pos);
+  }
+}
+
+function isDescendant(obj,parent){
+  let cur=obj;while(cur){if(cur===parent)return true;cur=cur.parent;}return false;
+}
+
+function showHitMarker(){
+  const el=document.createElement('div');
+  el.className='hit-marker';
+  el.style.cssText='position:fixed;top:50%;left:50%;width:16px;height:16px;border:1px solid #ff4444;transform:translate(-50%,-50%);pointer-events:none;z-index:20';
+  el.innerHTML='<div style="position:absolute;top:50%;left:0;right:0;height:1px;background:#ff4444;margin-top:-.5px"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#ff4444;margin-left:-.5px"></div>';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),350);
+}
+
+function spreadCrosshair(){
+  const ch=document.getElementById('crosshair');
+  ch.classList.add('spread');setTimeout(()=>ch.classList.remove('spread'),150);
+}
+
+function reload(){
+  const w=WEAPONS[currentWeapon];
+  if(isReloading||wAmmo[currentWeapon]===w.ammo||wReserve[currentWeapon]<=0)return;
+  isReloading=true;reloadAnim=60;
+  addChat('',`↺ Recarregando ${w.name}…`,true);
+  const t=mods.fastReload?w.reload*.3:w.reload;
+  setTimeout(()=>{
+    const need=w.ammo-wAmmo[currentWeapon];
+    const take=Math.min(need,wReserve[currentWeapon]);
+    wAmmo[currentWeapon]+=take;wReserve[currentWeapon]-=take;
+    isReloading=false;updateAmmoUI();
+  },t);
+}
+
+function throwGrenade(){
+  if(!gameActive||health<=0)return;
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+  dir.y+=.3;dir.normalize();
+  const gpos=camera.position.clone().add(dir.clone().multiplyScalar(1.5));
+  const gm=new THREE.Mesh(new THREE.SphereGeometry(.08,6,6),new THREE.MeshLambertMaterial({color:0x226622}));
+  gm.position.copy(gpos);scene.add(gm);
+  const gvel=dir.clone().multiplyScalar(.28);
+  let bounces=0;
+  const gInterval=setInterval(()=>{
+    gvel.y-=.012;
+    gm.position.add(gvel);
+    if(gm.position.y<.1){gm.position.y=.1;gvel.y*=-.4;gvel.x*=.7;gvel.z*=.7;bounces++;}
+  },16);
+  document.getElementById('grenWarn').style.display='block';
+  setTimeout(()=>{
+    clearInterval(gInterval);scene.remove(gm);
+    document.getElementById('grenWarn').style.display='none';
+    spawnExplosion(gm.position);
+    if(db&&playerId)db.ref(`game/explosions`).push({x:gm.position.x,y:gm.position.y,z:gm.position.z,by:playerId,t:Date.now()});
+  },2500);
+  addChat('',`💣 Granada lançada!`,true);
+}
+
+function throwSmoke(){
+  if(!gameActive)return;
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);dir.y+=.2;dir.normalize();
+  const sp=camera.position.clone().add(dir.clone().multiplyScalar(2));
+  setTimeout(()=>{
+    for(let i=0;i<20;i++){
+      setTimeout(()=>{
+        const sm=new THREE.Mesh(new THREE.SphereGeometry(.4+Math.random()*.3,6,6),new THREE.MeshBasicMaterial({color:0x888888,transparent:true,opacity:.5}));
+        sm.position.copy(sp);sm.position.y=.5+Math.random();scene.add(sm);
+        const sv=new THREE.Vector3((Math.random()-.5)*.04,Math.random()*.03+.01,(Math.random()-.5)*.04);
+        particles.push({mesh:sm,velocity:sv,life:200,gravity:-.0005,type:'smoke',scaleUp:true});
+      },i*80);
+    }
+    addChat('',`💨 Smoke lançada!`,true);
+  },1200);
+}
+
+function throwFlash(){
+  if(!gameActive)return;
+  setTimeout(()=>{
+    const sf=document.getElementById('screenFlash');
+    sf.style.transition='opacity .02s';sf.style.opacity='1';
+    setTimeout(()=>{sf.style.transition='opacity 2s';sf.style.opacity='0';},50);
+    addChat('',`🔆 Flashbang!`,true);
+  },1500);
+}
+
+// ═══════════════════════════════════════════════
+// VEHICLE SYSTEM
+// ═══════════════════════════════════════════════
+function enterVehicle(vid){
+  if(inVehicle)return;
+  const v=vehicleObjects[vid];
+  if(!v||v.occupied)return;
+  v.occupied=true;inVehicle=true;currentVehicle=vid;
+  document.getElementById('vehicleHUD').style.display='block';
+  document.getElementById('vhudName').textContent=v.type==='tank'?'TANQUE T-90':v.type==='truck'?'CAMINHÃO MILITAR':'JEEP MILITAR';
+  camera.position.set(v.x,v.type==='tank'?2.5:2,v.z);
+  addChat('',`🚗 Entrando no veículo!`,true);
+}
+
+function exitVehicle(){
+  if(!inVehicle||!currentVehicle)return;
+  const v=vehicleObjects[currentVehicle];
+  if(v){v.occupied=false;playerPos.x=v.group.position.x+3;playerPos.z=v.group.position.z+3;}
+  inVehicle=false;currentVehicle=null;
+  document.getElementById('vehicleHUD').style.display='none';
+  addChat('',`🚗 Saindo do veículo!`,true);
+}
+
+function updateVehicle(dt){
+  if(!inVehicle||!currentVehicle)return;
+  const v=vehicleObjects[currentVehicle];
+  if(!v)return;
+  const maxSpd=v.type==='tank'?.08:v.type==='truck'?.12:.18;
+  const accel=.003,decel=.96;
+  if(keys['KeyW']||keys['ArrowUp'])v.speed=Math.min(v.speed+accel,maxSpd*((mods.speedHack?3:1)));
+  else if(keys['KeyS']||keys['ArrowDown'])v.speed=Math.max(v.speed-accel,-maxSpd*.5);
+  else v.speed*=decel;
+  if(keys['KeyA']||keys['ArrowLeft'])v.yaw+=.04*(v.speed>0?1:-1);
+  if(keys['KeyD']||keys['ArrowRight'])v.yaw-=.04*(v.speed>0?1:-1);
+  v.x-=Math.sin(v.yaw)*v.speed;v.z-=Math.cos(v.yaw)*v.speed;
+  v.x=Math.max(-398,Math.min(398,v.x));v.z=Math.max(-398,Math.min(398,v.z));
+  v.group.position.set(v.x,0,v.z);v.group.rotation.y=v.yaw;
+  yaw=v.yaw;
+  // Sincronizar playerPos com o veículo para que o player "ande junto"
+  playerPos.x=v.x;playerPos.z=v.z;playerPos.y=v.type==='tank'?2.8:2.2;
+  camera.position.set(v.x,v.type==='tank'?2.8:2.2,v.z);
+  camera.rotation.y=v.yaw;camera.rotation.x=pitch;
+  // Inclinação lateral na curva (câmera roll)
+  const turnInput=(keys['KeyA']||keys['ArrowLeft']?1:0)-(keys['KeyD']||keys['ArrowRight']?1:0);
+  camera.rotation.z+=(turnInput*0.04*(Math.abs(v.speed)*10)-camera.rotation.z)*.1;
+  const spd=Math.abs(v.speed)*500;
+  document.getElementById('vhudSpeed').textContent=Math.round(spd);
+  // Speed lines
+  const speedEl=document.getElementById('speedLines');
+  if(speedEl){speedEl.style.display=spd>80?'block':'none';speedEl.style.opacity=Math.min(1,(spd-80)/120);}
+  // Vibração em alta velocidade
+  if(spd>180&&Math.random()>.7)cameraShake(.03+spd*.0001);
+  // update interactable position
+  interactables.forEach(ia=>{if(ia.id===currentVehicle){ia.x=v.x;ia.z=v.z;}});
+}
+
+// ═══════════════════════════════════════════════
+// TURRET SYSTEM
+// ═══════════════════════════════════════════════
+function addTurret(x,z,team,id){
+  const g=new THREE.Group();
+  g.position.set(x,0,z);
+  const baseColor=team==='ally'?0x2255aa:team==='enemy'?0xaa2222:0x556633;
+  const gunColor=team==='ally'?0x3366cc:team==='enemy'?0xcc3333:0x778844;
+
+  // Base
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.5,.6,.4,8),new THREE.MeshLambertMaterial({color:baseColor}));
+  base.position.y=.2;base.castShadow=true;g.add(base);
+  // Pivô
+  const pivot=new THREE.Group();pivot.position.y=.55;g.add(pivot);
+  // Corpo da torreta
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.7,.35,.5),new THREE.MeshLambertMaterial({color:gunColor}));
+  body.castShadow=true;pivot.add(body);
+  // Dois canos
+  const barrel1=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.7,6),new THREE.MeshLambertMaterial({color:0x111111}));
+  barrel1.rotation.x=Math.PI/2;barrel1.position.set(.12,.05,-.6);pivot.add(barrel1);
+  const barrel2=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.7,6),new THREE.MeshLambertMaterial({color:0x111111}));
+  barrel2.rotation.x=Math.PI/2;barrel2.position.set(-.12,.05,-.6);pivot.add(barrel2);
+  // Escudo protetor
+  const shield=new THREE.Mesh(new THREE.BoxGeometry(.75,.5,.04),new THREE.MeshLambertMaterial({color:baseColor}));
+  shield.position.set(0,.05,-.32);pivot.add(shield);
+  // Luz indicadora
+  const indicator=new THREE.PointLight(team==='ally'?0x0088ff:team==='enemy'?0xff2200:0xffaa00,1.5,3);
+  indicator.position.y=.35;pivot.add(indicator);
+  // Piscar da luz
+  setInterval(()=>{indicator.intensity=indicator.intensity>.5?.2:1.5;},team==='enemy'?600:900);
+
+  scene.add(g);
+  const tid='turret_'+id;
+  turretObjects[tid]={group:g,pivot,x,z,team,yaw:0,pitch:0,health:200,alive:true,
+    ammo:999,lastShot:0,indicator};
+  interactables.push({type:'turret',id:tid,x,z,range:2.5,label:'[E] OPERAR TORRETA'});
+  collidables.push({min:{x:x-.5,z:z-.5},max:{x:x+.5,z:z+.5}});
+  return g;
+}
+
+function enterTurret(tid){
+  if(inTurret||inVehicle)return;
+  const t=turretObjects[tid];
+  if(!t||!t.alive)return;
+  inTurret=true;currentTurret=tid;
+  turretYaw=t.yaw;turretPitch=0;
+  document.getElementById('turretHUD').style.display='block';
+  document.getElementById('crosshair').style.display='none';
+  addChat('','⚙ TORRETA OPERADA — Click: Atirar | E: Sair',true);
+}
+
+function exitTurret(){
+  if(!inTurret)return;
+  inTurret=false;currentTurret=null;
+  document.getElementById('turretHUD').style.display='none';
+  document.getElementById('crosshair').style.display='block';
+  addChat('','⚙ Saiu da torreta',true);
+}
+
+function shootTurret(){
+  if(!inTurret||turretCooldown)return;
+  const t=turretObjects[currentTurret];
+  if(!t||!t.alive)return;
+  turretCooldown=true;
+  setTimeout(()=>turretCooldown=false,120);
+
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);
+  const from=new THREE.Vector3(t.x,1.8,t.z);
+  // Tracer e raycast
+  spawnTracerLine(from,from.clone().add(dir.clone().multiplyScalar(160)),{spread:0,scope:false});
+  doRaycast(dir,{dmg:40,spread:0,explosive:false},0);
+
+  // Flash visual
+  const fl=new THREE.PointLight(0xffff44,15,8);fl.position.set(t.x,1.8,t.z);scene.add(fl);
+  setTimeout(()=>scene.remove(fl),80);
+  // Partícula de cano
+  spawnDust(from.clone().add(dir.clone().multiplyScalar(1)));
+}
+
+function updateTurrets(){
+  for(const tid in turretObjects){
+    const t=turretObjects[tid];
+    if(!t.alive)continue;
+    if(inTurret&&currentTurret===tid){
+      // Player controla — pivô segue câmera
+      t.pivot.rotation.y=yaw-t.group.rotation.y;
+      t.pivot.rotation.x=Math.max(-.4,Math.min(.4,pitch));
+      // Camera fixa na torreta
+      camera.position.set(t.x,2.2,t.z);
+      playerPos.x=t.x;playerPos.z=t.z;playerPos.y=2.2;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// SECRET WEAPON PICKUP (MINIGUN-X)
+// ═══════════════════════════════════════════════
+function spawnSecretWeaponPickup(x,z,areaName){
+  const g=new THREE.Group();
+  g.position.set(x,0.5,z);
+  // Caixa brilhante
+  const box=new THREE.Mesh(new THREE.BoxGeometry(.6,.6,.6),new THREE.MeshLambertMaterial({color:0x440044,emissive:0x220022,emissiveIntensity:.8}));
+  box.castShadow=true;g.add(box);
+  // ícone "M" em cima
+  const top=new THREE.Mesh(new THREE.BoxGeometry(.5,.05,.5),new THREE.MeshLambertMaterial({color:0xff00ff,emissive:0xff00ff,emissiveIntensity:1}));
+  top.position.y=.33;g.add(top);
+  // Luz roxo
+  const light=new THREE.PointLight(0xff00ff,3,5);light.position.y=1;g.add(light);
+  scene.add(g);
+  // Pulso
+  let t2=0;
+  const anim=()=>{t2+=.04;g.rotation.y+=.02;g.position.y=0.5+Math.sin(t2)*0.15;light.intensity=2+Math.sin(t2*2)*1;requestAnimationFrame(anim);};
+  anim();
+  secretWeaponPickups.push({group:g,x,z,area:areaName,collected:false});
+  interactables.push({type:'secretWeapon',id:'sw_'+secretWeaponPickups.length,x,z,range:2.2,label:'⬛ [E] PEGAR MINIGUN-X — ARMA SECRETA'});
+}
+
+function collectSecretWeapon(swId){
+  const idx=parseInt(swId.replace('sw_',''))-1;
+  const sw=secretWeaponPickups[idx];
+  if(!sw||sw.collected)return;
+  sw.collected=true;
+  scene.remove(sw.group);
+  interactables.splice(interactables.findIndex(i=>i.id===swId),1);
+  // Dar munição extra
+  wAmmo[5]=500;wReserve[5]=2000;
+  secretWeaponFound=true;
+  document.getElementById('secretWeaponPulse').style.display='block';
+  setTimeout(()=>document.getElementById('secretWeaponPulse').style.display='none',5000);
+  addChat('','⬛ MINIGUN-X OBTIDA! Pressione 6 para equipar!',true);
+  addKillFeed('SISTEMA','MINIGUN-X COLETADA',true);
+  flashScreen();
+  cameraShake(.3);
+  switchWeapon(5);
+}
+
+// ═══════════════════════════════════════════════
+// SPEED LINES (efeito visual no carro)
+// ═══════════════════════════════════════════════
+(function buildSpeedLines(){
+  const container=document.getElementById('speedLines');
+  if(!container)return;
+  for(let i=0;i<30;i++){
+    const line=document.createElement('div');
+    line.className='spd-line';
+    line.style.left=Math.random()*100+'vw';
+    line.style.height=(60+Math.random()*120)+'px';
+    const dur=0.3+Math.random()*0.4;
+    line.style.animationDuration=dur+'s';
+    line.style.animationDelay=-Math.random()*dur+'s';
+    container.appendChild(line);
+  }
+})();
+// ═══════════════════════════════════════════════
+function toggleDoor(id){
+  const d=doorAnims[id];if(!d)return;
+  d.open=!d.open;
+  d.targetAngle=d.open?-Math.PI/1.8:0;
+  addChat('',d.open?`🚪 ${d.label} aberta`:`🚪 ${d.label} fechada`,true);
+}
+
+function updateDoors(){
+  for(const id in doorAnims){
+    const d=doorAnims[id];
+    const diff=d.targetAngle-d.angle;
+    if(Math.abs(diff)>.001){d.angle+=diff*.12;d.group.rotation.y=d.angle;}
+  }
+}
+
+// ═══════════════════════════════════════════════
+// INTERACT SYSTEM
+// ═══════════════════════════════════════════════
+function checkInteractables(){
+  let closest=null,closestDist=999;
+  interactables.forEach(ia=>{
+    const dx=playerPos.x-ia.x,dz=playerPos.z-ia.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<ia.range&&dist<closestDist){closest=ia;closestDist=dist;}
+  });
+  const prompt=document.getElementById('interactPrompt');
+  const lbl=document.getElementById('interactLabel');
+  if(closest){
+    prompt.style.display='block';
+    if(closest.type==='door'){
+      const d=doorAnims[closest.id];
+      lbl.textContent=d&&d.open?closest.labelClose:closest.label;
+      nearDoor=closest.id;nearVehicle=null;nearTurret=null;
+    }else if(closest.type==='vehicle'){
+      lbl.textContent=inVehicle&&currentVehicle===closest.id?closest.labelClose:closest.label;
+      nearVehicle=closest.id;nearDoor=null;nearTurret=null;
+    }else if(closest.type==='turret'){
+      lbl.textContent=inTurret&&currentTurret===closest.id?'[E] SAIR DA TORRETA':closest.label;
+      nearTurret=closest.id;nearDoor=null;nearVehicle=null;
+    }else if(closest.type==='secretWeapon'){
+      lbl.textContent=closest.label;
+      nearDoor=null;nearVehicle=null;nearTurret=null;
+      // auto-highlight: pulse the secret prompt
+    }
+  }else{
+    prompt.style.display='none';
+    nearDoor=null;nearVehicle=null;nearTurret=null;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MOVEMENT
+// ═══════════════════════════════════════════════
+function checkCollision(x,z,r){
+  if(Math.abs(x)>398||Math.abs(z)>398)return true;
+  for(const obj of collidables){
+    if(x-r<obj.max.x&&x+r>obj.min.x&&z-r<obj.max.z&&z+r>obj.min.z)return true;
+  }
+  return false;
+}
+
+function updateMovement(){
+  if(!gameActive||!isPointerLocked||inVehicle)return;
+  const baseSp=mods.speedHack?.24:isSprinting?.13:isCrouching?.05:.08;
+  const fwd=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+  const rgt=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  const mv=new THREE.Vector3();
+  let moved=false;
+  if(keys['KeyW']||keys['ArrowUp']){mv.add(fwd);moved=true;}
+  if(keys['KeyS']||keys['ArrowDown']){mv.sub(fwd);moved=true;}
+  if(keys['KeyA']||keys['ArrowLeft']){mv.sub(rgt);moved=true;}
+  if(keys['KeyD']||keys['ArrowRight']){mv.add(rgt);moved=true;}
+  if(mv.length()>0){
+    mv.normalize().multiplyScalar(baseSp);
+    if(!checkCollision(playerPos.x+mv.x,playerPos.z,0.35))playerPos.x+=mv.x;
+    if(!checkCollision(playerPos.x,playerPos.z+mv.z,0.35))playerPos.z+=mv.z;
+  }
+  const ty=isCrouching?1.1:sbFlying?playerPos.y:1.7;
+  if(!sbFlying)playerPos.y+=(ty-playerPos.y)*.18;
+  // Voar com Space/Ctrl
+  if(sbFlying){
+    if(keys['Space'])playerPos.y+=0.15;
+    if(keys['ControlLeft'])playerPos.y=Math.max(1.7,playerPos.y-0.15);
+  }
+  if(moved&&isSprinting)weaponBob+=.28;else if(moved)weaponBob+=.13;
+  // Weapon bob — mais realismo ao andar
+  const bobX=Math.sin(weaponBob*.5)*.007*(isSprinting?2.5:1);
+  const bobY=Math.sin(weaponBob)*.014*(isSprinting?2.2:1);
+  const bobZ=Math.cos(weaponBob*.25)*.004;
+  weapGroup.position.y=isAiming?-.01:bobY;
+  weapGroup.position.x=isAiming?.02:.14+bobX;
+  weapGroup.position.z=isAiming?-.35:-.3+bobZ;
+  // Sway lateral da arma ao girar câmera
+  weapGroup.rotation.z+=(0-weapGroup.rotation.z)*.08;
+  if(weaponRecoil>0){weaponRecoil*=.8;weapGroup.position.z-=weaponRecoil*.04;}
+  if(reloadAnim>0){reloadAnim--;weapGroup.rotation.x=Math.sin(reloadAnim*.1)*.3;}
+  else weapGroup.rotation.x+=(0-weapGroup.rotation.x)*.15;
+  // Minigun-X barrel spin
+  if(currentWeapon===5){
+    weapGroup.children.forEach(c=>{if(c.userData&&c.userData.mgBarrel){c.userData.mgAngleOffset=(c.userData.mgAngleOffset||0)+.15;c.position.x=.14+Math.cos(c.userData.mgAngleOffset)*.038;c.position.y=-.09+Math.sin(c.userData.mgAngleOffset)*.038;}});
+  }
+  camera.position.set(playerPos.x,playerPos.y,playerPos.z);
+  if(shakeAmt>0){
+    camera.position.x+=(Math.random()-.5)*shakeAmt;
+    camera.position.y+=(Math.random()-.5)*shakeAmt;
+    shakeAmt*=.82;if(shakeAmt<.002)shakeAmt=0;
+  }
+  camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+  checkInteractables();
+}
+
+function cameraShake(a){shakeAmt=Math.max(shakeAmt,a);}
+
+// ═══════════════════════════════════════════════
+// DAMAGE / DEATH
+// ═══════════════════════════════════════════════
+function takeDamage(amount){
+  if(mods.godMode)return;
+  if(armor>0){const ab=Math.min(armor,amount*.5);armor=Math.max(0,armor-ab);amount-=ab;}
+  health=Math.max(0,health-amount);
+  document.getElementById('hpFill').style.width=health+'%';
+  document.getElementById('hpNum').textContent=Math.ceil(health);
+  document.getElementById('armorFill').style.width=armor+'%';
+  document.getElementById('dmgVignette').classList.add('show');
+  cameraShake(.18);
+  setTimeout(()=>document.getElementById('dmgVignette').classList.remove('show'),200);
+  document.getElementById('lowHpVignette').style.display=health<30?'block':'none';
+  if(health<=0)die();
+}
+
+function die(){
+  health=0;deaths++;
+  document.getElementById('deathsNum').textContent=deaths;
+  document.getElementById('respawnScreen').style.display='flex';
+  gameActive=false;
+  if(inVehicle)exitVehicle();
+  if(db&&playerRef)playerRef.update({health:0,alive:false,deaths});
+  let t=5;document.getElementById('respawnNum').textContent=t;
+  const iv=setInterval(()=>{t--;document.getElementById('respawnNum').textContent=t;if(t<=0){clearInterval(iv);respawn();}},1000);
+}
+
+function respawn(){
+  health=100;armor=75;
+  spawnIdx=(spawnIdx+1)%SPAWNS.length;
+  // Usa spawn seguro — verifica colisão antes de posicionar
+  const safe=getSafeSpawn();
+  playerPos.x=safe.x;
+  playerPos.z=safe.z;
+  playerPos.y=1.7;
+  camera.position.set(playerPos.x,playerPos.y,playerPos.z);
+  wAmmo=WEAPONS.map(w=>w.ammo);wReserve=WEAPONS.map(w=>w.reserve);
+  if(secretWeaponFound){wAmmo[5]=500;wReserve[5]=2000;}
+  gameActive=true;
+  document.getElementById('respawnScreen').style.display='none';
+  document.getElementById('hpFill').style.width='100%';
+  document.getElementById('hpNum').textContent='100';
+  document.getElementById('armorFill').style.width='75%';
+  document.getElementById('lowHpVignette').style.display='none';
+  updateAmmoUI();
+  if(db&&playerRef)playerRef.update({health:100,alive:true,x:playerPos.x,y:playerPos.y,z:playerPos.z});
+}
+
+// ═══════════════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════════════
+function updateMinimap(){
+  const cv=document.getElementById('minimapCanvas');
+  const ctx=cv.getContext('2d');
+  const S=160,scale=160/800,off=400;
+  ctx.fillStyle='rgba(0,10,0,.85)';ctx.fillRect(0,0,S,S);
+  // roads
+  ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.fillRect(0,S*.5-2,S,4);ctx.fillRect(S*.5-2,0,4,S);
+  // player
+  const px=(playerPos.x+400)*scale,pz=(playerPos.z+400)*scale;
+  ctx.save();ctx.translate(px,pz);ctx.rotate(yaw);
+  ctx.fillStyle='#00ff88';
+  ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(4,5);ctx.lineTo(-4,5);ctx.closePath();ctx.fill();
+  ctx.restore();
+  // enemies
+  for(const[id,p]of Object.entries(remotePlayers)){
+    if(!p.alive)continue;
+    const ex=(p.x+400)*scale,ez=(p.z+400)*scale;
+    ctx.fillStyle='#ff4444';ctx.beginPath();ctx.arc(ex,ez,3,0,Math.PI*2);ctx.fill();
+  }
+  // vehicles
+  for(const vid in vehicleObjects){
+    const v=vehicleObjects[vid];
+    const vx=(v.x+400)*scale,vz=(v.z+400)*scale;
+    ctx.fillStyle=v.occupied?'#ffaa00':'#556633';
+    ctx.fillRect(vx-4,vz-3,8,6);
+  }
+  ctx.strokeStyle='#00ff8433';ctx.strokeRect(0,0,S,S);
+}
+
+// ═══════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════
+function updateAmmoUI(){
+  const w=WEAPONS[currentWeapon];
+  document.getElementById('ammoMain').textContent=wAmmo[currentWeapon];
+  document.getElementById('ammoRes').textContent=wReserve[currentWeapon];
+  document.getElementById('ammoLabel').textContent=w.label;
+  document.getElementById('weaponNameHUD').textContent=w.name;
+}
+
+function addKillFeed(killer,victim,isMe){
+  const f=document.getElementById('killFeed');
+  const el=document.createElement('div');
+  el.className='kill-item'+(isMe?' mine':'');
+  el.textContent=killer+' ⚔ '+victim;
+  f.appendChild(el);
+  if(f.children.length>6)f.removeChild(f.firstChild);
+  setTimeout(()=>el.remove&&el.remove(),4000);
+}
+
+function addChat(sender,msg,system=false){
+  const box=document.getElementById('chatBox');
+  const el=document.createElement('div');
+  el.className='chat-msg';
+  el.innerHTML=system?`<span>${msg}</span>`:`<span class="sender">${sender}</span> ${msg}`;
+  box.appendChild(el);
+  if(box.children.length>7)box.removeChild(box.firstChild);
+  setTimeout(()=>el.remove&&el.remove(),5000);
+}
+
+function switchWeapon(idx){
+  if(idx===currentWeapon||isReloading)return;
+  if(idx===5&&!secretWeaponFound){addChat('','🔒 MINIGUN-X não encontrada ainda! Procure nos locais secretos.',true);return;}
+  currentWeapon=idx;
+  buildWeaponModel(idx);
+  updateAmmoUI();
+  document.querySelectorAll('.w-slot').forEach((el,i)=>el.classList.toggle('active',i===idx));
+  if(isAiming){isAiming=false;document.getElementById('scopeOverlay').style.display='none';camera.fov=mods.fov;camera.updateProjectionMatrix();}
+  // Crosshair class
+  const w=WEAPONS[idx];
+  const ch=document.getElementById('crosshair');
+  ch.className=w.explosive?'rpg':w.pellets?'shotgun':w.scope?'sniper':w.secret?'minigun':'';
+  if(idx===5){document.getElementById('secretWeaponPulse').style.display='block';setTimeout(()=>document.getElementById('secretWeaponPulse').style.display='none',3000);}
+}
+
+function updateRoundTimer(){
+  if(!gameActive)return;
+  if(roundTime>0)roundTime--;
+  const m=Math.floor(roundTime/60),s=roundTime%60;
+  document.getElementById('roundTimer').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════════════
+// MOD MENU
+// ═══════════════════════════════════════════════
+const modMenuTabs={
+  combat:[
+    {key:'aimbot',label:'Aimbot',sub:'Mira automática nos inimigos'},
+    {key:'noRecoil',label:'Sem Recuo',sub:'Remove recuo das armas'},
+    {key:'infiniteAmmo',label:'Munição Infinita',sub:'Nunca acabar balas'},
+    {key:'explosiveAmmo',label:'Balas Explosivas',sub:'Cada tiro explode'},
+    {key:'fastReload',label:'Recarga Rápida',sub:'Reload instantâneo'},
+    {key:'instantBullet',label:'Bala Instantânea',sub:'Sem delay entre tiros'},
+    {key:'superDamage',label:'Super Dano',sub:'Dano x10 em todos os tiros'},
+    {key:'rapidFire',label:'Disparo Rápido',sub:'Taxa de fogo x5'},
+    {key:'magnetBullets',label:'Balas Magnéticas',sub:'Balas seguem inimigos'},
+  ],
+  visual:[
+    {key:'nightVision',label:'Visão Noturna',sub:'Iluminação verde noturna'},
+    {key:'wallhack',label:'Wallhack',sub:'Vê inimigos através de paredes'},
+    {key:'wireframe',label:'Wireframe',sub:'Renderização em arame'},
+    {key:'showFPS',label:'Mostrar FPS',sub:'Contador de frames'},
+    {key:'rainToggle',label:'Chuva',sub:'Ativar/desativar chuva'},
+    {key:'bigHead',label:'Cabeça Grande',sub:'Inimigos com cabeça enorme'},
+    {key:'fov',label:'Campo de Visão',sub:'FOV da câmera',type:'slider',min:60,max:120,step:1},
+  ],
+  player:[
+    {key:'godMode',label:'Modo Deus',sub:'Vida infinita'},
+    {key:'speedHack',label:'Speed Hack',sub:'Velocidade triplicada'},
+    {key:'autoHeal',label:'Auto Cura',sub:'Regenera vida automaticamente'},
+    {key:'slowEnemies',label:'Slow Motion Inimigos',sub:'Inimigos se movem devagar'},
+    {key:'moveSpeed',label:'Velocidade',sub:'Velocidade de movimento',type:'slider',min:4,max:30,step:1},
+    {key:'gravity',label:'Gravidade',sub:'Força gravitacional',type:'slider',min:.1,max:3,step:.1},
+  ],
+  misc:[
+    {key:'fogDensity',label:'Densidade da Névoa',sub:'Espessura do fog',type:'slider',min:0,max:50,step:1},
+  ],
+};
+let currentMMTab='combat';
+
+function buildMMContent(tab){
+  const c=document.getElementById('mmContent');
+  c.innerHTML='';
+  modMenuTabs[tab].forEach(item=>{
+    const row=document.createElement('div');row.className='mm-row';
+    if(item.type==='slider'){
+      row.innerHTML=`<div><div class="mm-row-label">${item.label}</div><div class="mm-row-sub">${item.sub}</div></div>
+      <div class="mm-slider-wrap">
+        <input type="range" class="mm-slider" min="${item.min}" max="${item.max}" step="${item.step}" value="${mods[item.key]}" oninput="mods['${item.key}']=+this.value;document.getElementById('mv_${item.key}').textContent=this.value;applyModSetting('${item.key}',+this.value)">
+        <span class="mm-val" id="mv_${item.key}">${mods[item.key]}</span>
+      </div>`;
+    }else{
+      row.innerHTML=`<div><div class="mm-row-label">${item.label}</div><div class="mm-row-sub">${item.sub}</div></div>
+      <button class="mm-toggle${mods[item.key]?' on':''}" id="mt_${item.key}" onclick="mods['${item.key}']=!mods['${item.key}'];this.classList.toggle('on',mods['${item.key}']);applyModSetting('${item.key}',mods['${item.key}'])"></button>`;
+    }
+    c.appendChild(row);
+  });
+  // Extra buttons
+  if(tab==='misc'){
+    const s1=document.createElement('div');s1.className='mm-section';s1.textContent='AÇÕES';c.appendChild(s1);
+    [{l:'REFILL VIDA',fn:'health=100;armor=75;document.getElementById("hpFill").style.width="100%";document.getElementById("hpNum").textContent="100";document.getElementById("armorFill").style.width="75%"'},
+     {l:'REFILL MUNIÇÃO',fn:'wAmmo=WEAPONS.map(w=>w.ammo);wReserve=WEAPONS.map(w=>w.reserve*3);updateAmmoUI()'},
+     {l:'TELEPORT SPAWN',fn:'playerPos.x=SPAWNS[0][0];playerPos.z=SPAWNS[0][1]'},
+    ].forEach(b=>{
+      const btn=document.createElement('button');btn.className='mm-btn';btn.style.marginRight='6px';btn.style.marginBottom='6px';
+      btn.textContent=b.l;btn.onclick=()=>new Function(b.fn)();c.appendChild(btn);
+    });
+  }
+}
+
+function applyModSetting(key,val){
+  if(key==='fov'){camera.fov=val;camera.updateProjectionMatrix();}
+  if(key==='wireframe')scene.traverse(o=>{if(o.material)o.material.wireframe=val;});
+  if(key==='nightVision'){scene.fog.color.set(val?0x002200:0x080e1a);renderer.toneMappingExposure=val?2.5:1.1;}
+  if(key==='fogDensity')scene.fog.density=val/1000;
+  if(key==='rainToggle')rainLines.forEach(r=>r.mesh.visible=val);
+}
+
+function setMMTab(el,tab){
+  document.querySelectorAll('.mm-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');currentMMTab=tab;buildMMContent(tab);
+}
+
+function toggleModMenu(){
+  const mm=document.getElementById('modMenu');
+  const isOpen=mm.classList.toggle('open');
+  if(isOpen){buildMMContent(currentMMTab);if(isPointerLocked)document.exitPointerLock();}
+  else if(gameActive)canvas.requestPointerLock();
+}
+
+// ═══════════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════════
+function initFirebase(){
+  const s1=document.createElement('script');
+  s1.src='https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+  document.head.appendChild(s1);
+  s1.onload=()=>{
+    const s2=document.createElement('script');
+    s2.src='https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js';
+    document.head.appendChild(s2);
+    s2.onload=()=>{
+      try{
+        if(!firebase.apps.length)firebase.initializeApp(FB);
+        db=firebase.database();
+        playerId='p_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+        playerRef=db.ref(`game/players/${playerId}`);
+        playerRef.set({name:playerName,x:playerPos.x,y:playerPos.y,z:playerPos.z,yaw:0,health:100,alive:true,kills:0,deaths:0,color:PCOLORS[Math.floor(Math.random()*PCOLORS.length)],ts:Date.now()});
+        playerRef.onDisconnect().remove();
+        db.ref('game/players').on('value',snap=>{
+          const data=snap.val()||{};
+          const list=document.getElementById('msPlayerList');
+          if(list)list.innerHTML='';
+          let online=0;
+          for(const[id,p]of Object.entries(data)){
+            online++;
+            if(id===playerId)continue;
+            remotePlayers[id]=p;
+            if(!playerMeshes[id]){
+              const mesh=createPlayerMesh(p.color||0xff4444);
+              scene.add(mesh);playerMeshes[id]=mesh;
+              addChat('',`${p.name||'?'} entrou na partida`,true);
+            }
+            const mesh=playerMeshes[id];
+            if(p.x!==undefined)mesh.position.set(p.x,0,p.z);
+            mesh.rotation.y=(p.yaw||0)+Math.PI;
+            mesh.visible=p.alive!==false;
+            if(mods.wallhack)mesh.visible=true;
+            if(p.lastHitBy===playerId&&p.lastHitTime&&(Date.now()-p.lastHitTime)<300&&p.health<=0&&p.health!==undefined){
+              // already counted
+            }
+            if(list){
+              const item=document.createElement('div');item.className='ms-pl-item';
+              item.innerHTML=`<div class="ms-pl-dot e"></div><span>${p.name||id.substr(0,10)}</span><span style="margin-left:auto;color:#ff4444aa;font-size:10px">❤ ${Math.ceil(p.health||0)}</span>`;
+              list.appendChild(item);
+            }
+          }
+          document.getElementById('playersOnline').textContent=online;
+          for(const id of Object.keys(playerMeshes)){if(!data[id]){scene.remove(playerMeshes[id]);delete playerMeshes[id];delete remotePlayers[id];}}
+        });
+        db.ref('game/chat').limitToLast(1).on('child_added',snap=>{
+          const m=snap.val();if(m&&m.pid!==playerId)addChat(m.name,m.msg);
+        });
+        db.ref('game/explosions').limitToLast(1).on('child_added',snap=>{
+          const e=snap.val();if(e&&e.by!==playerId&&(Date.now()-e.t)<3000)spawnExplosion(new THREE.Vector3(e.x,e.y,e.z));
+        });
+        // ═══ SINCRONIZAÇÃO DE TIROS ═══
+        db.ref('game/shots').limitToLast(1).on('child_added',snap=>{
+          const s=snap.val();
+          if(!s||s.by===playerId)return;
+          if(Date.now()-s.t>800)return; // ignora tiros antigos
+          const from=new THREE.Vector3(s.x,s.y,s.z);
+          const dir=new THREE.Vector3(s.dx,s.dy,s.dz).normalize();
+          const to=from.clone().add(dir.clone().multiplyScalar(120));
+          // Tracer do tiro remoto
+          spawnTracerLine(from,to,{spread:.02,scope:false});
+          // Flash de cano remoto
+          const fl=new THREE.PointLight(0xffff44,6,5);fl.position.copy(from);scene.add(fl);
+          setTimeout(()=>scene.remove(fl),100);
+          // Som visual: partícula de impacto onde o tiro chega
+          spawnDust(to);
+        });
+        addChat('','🌐 Firebase conectado! Sala ativa.',true);
+      }catch(e){addChat('','⚠ Modo offline',true);console.error(e);}
+    };
+  };
+}
+
+// ═══════════════════════════════════════════════
+// SANDBOX FUNCTIONS
+// ═══════════════════════════════════════════════
+let sbVehicleCount=0;
+let sbEnemyMeshes=[];
+let sbFlying=false;
+let sbSlowFactor=1;
+let sbZeroGravity=false;
+
+function toggleSandbox(){
+  const p=document.getElementById('sandboxPanel');
+  const isOpen=p.classList.toggle('open');
+  if(isOpen&&isPointerLocked)document.exitPointerLock();
+  else if(gameActive&&!isOpen)canvas.requestPointerLock();
+}
+
+function startSandbox(){
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('minimapWrap').style.display='block';
+  document.getElementById('weaponBar').style.display='flex';
+  const safe=getSafeSpawn();
+  playerPos.x=safe.x;playerPos.z=safe.z;playerPos.y=1.7;
+  camera.position.set(playerPos.x,playerPos.y,playerPos.z);
+  gameActive=true;
+  canvas.requestPointerLock();
+  addChat('','🔧 MODO SANDBOX ATIVO — Pressione O para abrir o painel',true);
+  setInterval(updateRoundTimer,1000);
+  setInterval(()=>{
+    if(!gameActive||!db||!playerRef)return;
+    playerRef.update({x:playerPos.x,y:playerPos.y,z:playerPos.z,yaw,health,alive:health>0,ts:Date.now()});
+    document.getElementById('pingVal').textContent='SANDBOX';
+  },100);
+}
+
+function sbSpawnVehicle(type){
+  const x=playerPos.x+(Math.random()*10-5)+8;
+  const z=playerPos.z+(Math.random()*10-5)+8;
+  sbVehicleCount++;
+  addVehicle(x,z,type);
+  addChat('',`🚗 ${type.toUpperCase()} spawnado próximo a você!`,true);
+}
+
+function sbRemoveAllVehicles(){
+  for(const id in vehicleObjects){
+    const v=vehicleObjects[id];
+    if(v&&v.group){scene.remove(v.group);}
+  }
+  for(const k of Object.keys(vehicleObjects))delete vehicleObjects[k];
+  interactables.splice(0,interactables.length,...interactables.filter(i=>i.type!=='vehicle'));
+  if(inVehicle){inVehicle=false;currentVehicle=null;document.getElementById('vehicleHUD').style.display='none';}
+  addChat('','🗑️ Todos os veículos removidos!',true);
+}
+
+function sbSpawnEnemy(count){
+  for(let i=0;i<count;i++){
+    const ex=playerPos.x+(Math.random()*40-20);
+    const ez=playerPos.z+(Math.random()*40-20);
+    const colors=[0xff4444,0xff8800,0xaa00ff,0xff0088];
+    const mesh=createPlayerMesh(colors[Math.floor(Math.random()*colors.length)]);
+    mesh.position.set(ex,0,ez);
+    mesh.userData.isSbEnemy=true;
+    scene.add(mesh);
+    sbEnemyMeshes.push(mesh);
+  }
+  addChat('',`⚠️ ${count} inimigo(s) spawnado(s)!`,true);
+}
+
+function sbClearEnemies(){
+  sbEnemyMeshes.forEach(m=>scene.remove(m));
+  sbEnemyMeshes=[];
+  addChat('','🧹 Inimigos removidos!',true);
+}
+
+function sbExplosion(){
+  const p=new THREE.Vector3(playerPos.x,1,playerPos.z);
+  spawnExplosion(p);
+  addChat('','💥 BOOM!',true);
+}
+
+function sbNuke(){
+  for(let i=0;i<8;i++){
+    setTimeout(()=>{
+      const x=playerPos.x+(Math.random()*80-40);
+      const z=playerPos.z+(Math.random()*80-40);
+      spawnExplosion(new THREE.Vector3(x,1,z));
+    },i*180);
+  }
+  addChat('','☢️ NUKE LANÇADA!',true);
+}
+
+function sbRefillAll(){
+  health=100;armor=75;
+  wAmmo=WEAPONS.map(w=>w.ammo);wReserve=WEAPONS.map(w=>w.reserve*5);
+  document.getElementById('hpFill').style.width='100%';
+  document.getElementById('hpNum').textContent='100';
+  document.getElementById('armorFill').style.width='75%';
+  updateAmmoUI();
+  addChat('','❤️ Vida e munição reabastecidos!',true);
+}
+
+function sbToggleFlying(){
+  sbFlying=!sbFlying;
+  addChat('',`✈️ Voar: ${sbFlying?'LIGADO':'DESLIGADO'}`,true);
+}
+
+function sbDayNight(isDay){
+  if(isDay){
+    scene.fog.color.set(0x88aacc);
+    renderer.toneMappingExposure=2.2;
+    scene.background=new THREE.Color(0x88aacc);
+  }else{
+    scene.fog.color.set(0x080e1a);
+    renderer.toneMappingExposure=1.1;
+    scene.background=new THREE.Color(0x080e1a);
+  }
+  addChat('',isDay?'☀️ Dia ativado!':'🌙 Noite ativada!',true);
+}
+
+function sbToggleGravity(){
+  sbZeroGravity=!sbZeroGravity;
+  addChat('',`🌀 Gravidade: ${sbZeroGravity?'ZERO':'NORMAL'}`,true);
+}
+
+function sbSlowMo(){
+  sbSlowFactor=sbSlowFactor===1?0.25:1;
+  addChat('',`⏱️ Slow Motion: ${sbSlowFactor<1?'LIGADO':'DESLIGADO'}`,true);
+}
+
+function sbTeleport(x,z){
+  if(inVehicle){
+    const v=vehicleObjects[currentVehicle];
+    if(v){v.x=x;v.z=z;v.group.position.set(x,0,z);}
+  }
+  playerPos.x=x;playerPos.z=z;
+  camera.position.set(x,playerPos.y,z);
+  addChat('',`📍 Teleportado para (${x}, ${z})`,true);
+  document.getElementById('sbX').value=x;
+  document.getElementById('sbZ').value=z;
+}
+
+// ═══════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════
+function startGame(){
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('minimapWrap').style.display='block';
+  document.getElementById('weaponBar').style.display='flex';
+  // Posiciona jogador em local seguro ao iniciar
+  const safe=getSafeSpawn();
+  playerPos.x=safe.x;playerPos.z=safe.z;playerPos.y=1.7;
+  camera.position.set(playerPos.x,playerPos.y,playerPos.z);
+  gameActive=true;
+  canvas.requestPointerLock();
+  addChat('','⚔ PARTIDA INICIADA — BOA SORTE SOLDADO!',true);
+  setInterval(updateRoundTimer,1000);
+  setInterval(()=>{
+    if(!gameActive||!db||!playerRef)return;
+    playerRef.update({x:playerPos.x,y:playerPos.y,z:playerPos.z,yaw,health,alive:health>0,ts:Date.now()});
+    document.getElementById('pingVal').textContent=Math.floor(Math.random()*20+10);
+  },100);
+}
+
+function showHelp(){const cp=document.querySelector('.controls-panel');cp.style.display=cp.style.display==='block'?'none':'block';}
+
+let frame=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta()*sbSlowFactor;
+  frame++;
+  updateMovement();
+  updateVehicle(dt);
+  updateDoors();
+  updateRain();
+  updateTracers();
+  updateTurrets();
+  // bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];
+    b.mesh.position.add(b.velocity);
+    b.life--;
+    if(b.life<=0){scene.remove(b.mesh);bullets.splice(i,1);}
+  }
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.velocity.y-=(p.gravity||.005);
+    p.mesh.position.add(p.velocity);
+    if(p.scaleUp){const s=1+(.3*(1-p.life/80));p.mesh.scale.set(s,s,s);}
+    if(p.mesh.material&&p.mesh.material.transparent){p.mesh.material.opacity=p.life/(p.type==='smoke'?200:40);}
+    p.life--;
+    if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1);}
+  }
+  if(frame%4===0)updateMinimap();
+  // Muzzle light decay
+  if(muzzleLightTimer>0){muzzleLightTimer--;if(muzzleLightTimer<=0)muzzleLight.intensity=0;}
+  // FPS counter
+  if(mods.showFPS){
+    const now=performance.now();
+    if(now-lastFPSTime>=500){fps=Math.round(1/dt);lastFPSTime=now;}
+    document.getElementById('pingVal').textContent=fps+' FPS';
+  }
+  renderer.render(scene,camera);
+}
+
+// ═══════════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyR'&&gameActive)reload();
+  if(e.code==='KeyG'&&gameActive)throwGrenade();
+  if(e.code==='KeyZ'&&gameActive)throwSmoke();
+  if(e.code==='KeyX'&&gameActive)throwFlash();
+  if(e.code==='KeyE'&&gameActive){
+    if(nearDoor)toggleDoor(nearDoor);
+    else if(nearTurret){if(inTurret&&currentTurret===nearTurret)exitTurret();else enterTurret(nearTurret);}
+    else if(nearVehicle){if(inVehicle&&currentVehicle===nearVehicle)exitVehicle();else enterVehicle(nearVehicle);}
+    else if(inVehicle)exitVehicle();
+    else if(inTurret)exitTurret();
+    else{
+      // check for secret weapon pickup
+      const sw=interactables.find(i=>i.type==='secretWeapon'&&Math.sqrt((playerPos.x-i.x)**2+(playerPos.z-i.z)**2)<i.range);
+      if(sw)collectSecretWeapon(sw.id);
+    }
+  }
+  if(e.code==='KeyF'&&gameActive){if(inVehicle)exitVehicle();else if(nearVehicle)enterVehicle(nearVehicle);}
+  if(e.code==='Digit1')switchWeapon(0);
+  if(e.code==='Digit2')switchWeapon(1);
+  if(e.code==='Digit3')switchWeapon(2);
+  if(e.code==='Digit4')switchWeapon(3);
+  if(e.code==='Digit5')switchWeapon(4);
+  if(e.code==='Digit6')switchWeapon(5);
+  if(e.code==='KeyP')toggleModMenu();
+  if(e.code==='KeyO')toggleSandbox();
+  if(e.code==='ShiftLeft')isSprinting=true;
+  if(e.code==='ControlLeft')isCrouching=true;
+  if(e.code==='Escape'){document.exitPointerLock();if(document.getElementById('modMenu').classList.contains('open'))document.getElementById('modMenu').classList.remove('open');}
+  e.preventDefault();
+});
+document.addEventListener('keyup',e=>{
+  keys[e.code]=false;
+  if(e.code==='ShiftLeft')isSprinting=false;
+  if(e.code==='ControlLeft')isCrouching=false;
+});
+canvas.addEventListener('mousedown',e=>{
+  if(!isPointerLocked){canvas.requestPointerLock();return;}
+  if(e.button===0&&gameActive){
+    if(inTurret)shootTurret();
+    else shoot();
+  }
+  if(e.button===2&&gameActive&&!inTurret){
+    isAiming=!isAiming;
+    const w=WEAPONS[currentWeapon];
+    document.getElementById('scopeOverlay').style.display=(isAiming&&w.scope)?'block':'none';
+    document.getElementById('crosshair').classList.toggle('aiming',isAiming&&w.scope);
+    camera.fov=isAiming?(w.scope?30:55):mods.fov;
+    camera.updateProjectionMatrix();
+    weapGroup.position.x=isAiming?.02:.14;
+  }
+});
+canvas.addEventListener('wheel',e=>{
+  if(!gameActive)return;
+  const next=(currentWeapon+(e.deltaY>0?1:-1)+WEAPONS.length)%WEAPONS.length;
+  switchWeapon(next);
+});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('mousemove',e=>{
+  if(!isPointerLocked||inVehicle)return;
+  const sens=(mods.sensitivity||3)*.001;
+  yaw-=e.movementX*sens*(isAiming?.4:1);
+  pitch-=e.movementY*sens*(isAiming?.4:1);
+  pitch=Math.max(-Math.PI/2.1,Math.min(Math.PI/2.1,pitch));
+  // Weapon sway ao girar câmera
+  if(!inTurret)weapGroup.rotation.z+=e.movementX*0.0008*(isAiming?.3:1);
+});
+document.addEventListener('pointerlockchange',()=>{
+  isPointerLocked=document.pointerLockElement===canvas;
+  // Sem pausa — pointer lock perdido não abre menu
+});
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init(){
+  setLoad(2,'CARREGANDO THREE.JS...');
+  await buildMap();
+  await loadStep(()=>buildRain(), 98, 'CRIANDO CHUVA...');
+  setLoad(100,'PRONTO!');
+  initFirebase();
+  updateAmmoUI();
+  buildMMContent('combat');
+  animate();
+  setTimeout(()=>{
+    const ls=document.getElementById('loadScreen');
+    ls.style.transition='opacity .5s';
+    ls.style.opacity='0';
+    setTimeout(()=>ls.style.display='none',500);
+  },300);
+}
+init();
+</script>
+</body>
+</html>
