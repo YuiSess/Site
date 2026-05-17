@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Plataforma Social</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060810;
+  --bg2: #0a0d1a;
+  --bg3: #0e1228;
+  --panel: rgba(10,15,35,0.85);
+  --border: rgba(0,200,255,0.15);
+  --neon: #00c8ff;
+  --neon2: #7c3aed;
+  --neon3: #ff006e;
+  --neon-g: #00ff88;
+  --text: #e0eeff;
+  --text2: #7a9bbf;
+  --glow: 0 0 20px rgba(0,200,255,0.4);
+  --glow2: 0 0 20px rgba(124,58,237,0.4);
+  --radius: 12px;
+  --trans: 0.2s ease;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--neon2);border-radius:2px}
+
+/* ═══ CANVAS BG ═══ */
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ═══ LAYOUT ═══ */
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
+
+/* ═══ LOGIN SCREEN ═══ */
+#loginScreen{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(6,8,16,0.95);
+  backdrop-filter:blur(20px);
+}
+.login-box{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:48px 40px;
+  width:min(420px,90vw);
+  text-align:center;
+  box-shadow:0 0 60px rgba(0,200,255,0.1),0 0 120px rgba(124,58,237,0.05);
+  animation:fadeUp 0.6s ease;
+}
+.login-logo{
+  font-family:'Orbitron',sans-serif;
+  font-size:2.8rem;font-weight:900;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:4px;margin-bottom:8px;
+}
+.login-sub{color:var(--text2);font-size:0.9rem;margin-bottom:32px;letter-spacing:2px}
+.login-avatar-wrap{
+  width:80px;height:80px;border-radius:50%;
+  border:2px dashed var(--border);
+  margin:0 auto 24px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:2rem;transition:var(--trans);position:relative;overflow:hidden;
+  background:var(--bg3);
+}
+.login-avatar-wrap:hover{border-color:var(--neon);box-shadow:var(--glow)}
+.login-avatar-wrap img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:50%}
+.inp{
+  width:100%;padding:14px 18px;margin-bottom:16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--border);border-radius:var(--radius);
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:1rem;
+  outline:none;transition:var(--trans);
+}
+.inp:focus{border-color:var(--neon);box-shadow:var(--glow)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 28px;border:none;border-radius:var(--radius);
+  font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;
+  letter-spacing:2px;cursor:pointer;transition:var(--trans);text-transform:uppercase;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  color:#fff;width:100%;
+  box-shadow:0 4px 20px rgba(0,200,255,0.3);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,200,255,0.5)}
+.btn-sm{padding:8px 16px;font-size:0.75rem}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--neon);color:var(--neon)}
+.btn-danger{background:rgba(255,0,110,0.15);border:1px solid rgba(255,0,110,0.3);color:var(--neon3)}
+.btn-danger:hover{background:rgba(255,0,110,0.25)}
+.btn-green{background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.3);color:var(--neon-g)}
+
+/* ═══ TOPBAR ═══ */
+#topbar{
+  height:56px;
+  background:rgba(6,8,16,0.95);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  backdrop-filter:blur(20px);flex-shrink:0;
+  position:relative;z-index:50;
+}
+.topbar-logo{
+  font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.1rem;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:3px;margin-right:8px;
+}
+.topbar-nav{display:flex;gap:4px;flex:1}
+.nav-btn{
+  padding:6px 14px;border-radius:8px;border:none;
+  background:transparent;color:var(--text2);
+  font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;
+  cursor:pointer;transition:var(--trans);letter-spacing:1px;
+}
+.nav-btn:hover,.nav-btn.active{color:var(--neon);background:rgba(0,200,255,0.08)}
+.topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.user-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 12px;border-radius:20px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  cursor:pointer;transition:var(--trans);
+}
+.user-pill:hover{border-color:var(--neon)}
+.user-pill img,.user-pill .av{
+  width:28px;height:28px;border-radius:50%;object-fit:cover;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0;
+}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--neon-g);box-shadow:0 0 6px var(--neon-g)}
+
+/* ═══ MAIN LAYOUT ═══ */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ═══ SIDEBAR ═══ */
+#sidebar{
+  width:220px;flex-shrink:0;
+  background:rgba(6,8,16,0.95);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto;padding:12px 8px;gap:4px;
+}
+.sidebar-section{font-size:0.7rem;color:var(--text2);letter-spacing:2px;padding:8px 8px 4px;margin-top:8px;text-transform:uppercase}
+.sidebar-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:var(--radius);
+  cursor:pointer;transition:var(--trans);color:var(--text2);
+  font-size:0.95rem;font-weight:600;
+}
+.sidebar-item:hover,.sidebar-item.active{background:rgba(0,200,255,0.08);color:var(--neon)}
+.sidebar-item .icon{font-size:1.1rem;width:20px;text-align:center}
+.server-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--neon2),var(--neon));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;cursor:pointer;border:2px solid transparent;
+  transition:var(--trans);flex-shrink:0;overflow:hidden;
+}
+.server-icon:hover,.server-icon.active{border-color:var(--neon);box-shadow:var(--glow)}
+.server-icon img{width:100%;height:100%;object-fit:cover}
+
+/* ═══ CONTENT AREA ═══ */
+#content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex:1;overflow:auto;padding:20px}
+.page.active{display:flex;flex-direction:column}
+
+/* ═══ HOME ═══ */
+.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+  transition:var(--trans);
+}
+.card:hover{border-color:rgba(0,200,255,0.3);transform:translateY(-2px)}
+.card-title{
+  font-family:'Orbitron',sans-serif;font-size:0.8rem;
+  color:var(--neon);letter-spacing:2px;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.online-user{
+  display:flex;align-items:center;gap:10px;padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;
+}
+.online-user:last-child{border-bottom:none}
+.online-user .av{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;font-weight:700;flex-shrink:0;overflow:hidden;
+}
+.online-user .av img{width:100%;height:100%;object-fit:cover}
+.online-user .name{font-weight:600;font-size:0.9rem}
+.online-user .status{font-size:0.75rem;color:var(--neon-g)}
+
+/* ═══ CHAT ═══ */
+#chatArea{display:flex;flex:1;overflow:hidden;height:100%}
+#chatMain{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px}
+.msg{
+  display:flex;gap:10px;padding:6px 8px;border-radius:8px;
+  transition:var(--trans);align-items:flex-start;
+}
+.msg:hover{background:rgba(255,255,255,0.03)}
+.msg .av{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;font-weight:700;flex-shrink:0;overflow:hidden;
+}
+.msg .av img{width:100%;height:100%;object-fit:cover}
+.msg-content{flex:1;min-width:0}
+.msg-header{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.msg-name{font-weight:700;font-size:0.9rem;color:var(--neon)}
+.msg-time{font-size:0.72rem;color:var(--text2)}
+.msg-text{font-size:0.95rem;line-height:1.5;word-break:break-word;color:var(--text)}
+.msg-text img{max-width:300px;max-height:200px;border-radius:8px;margin-top:6px;display:block}
+.msg-reply-btn{
+  opacity:0;padding:3px 8px;border-radius:6px;border:none;
+  background:rgba(0,200,255,0.1);color:var(--neon);cursor:pointer;font-size:0.75rem;
+  transition:var(--trans);margin-left:auto;
+}
+.msg:hover .msg-reply-btn{opacity:1}
+.reply-bar{background:rgba(0,200,255,0.06);border-left:3px solid var(--neon);padding:6px 12px;margin:0 16px 8px;border-radius:0 8px 8px 0;font-size:0.85rem;color:var(--text2);display:none}
+.reply-bar.show{display:flex;align-items:center;justify-content:space-between}
+.typing-indicator{padding:4px 16px;font-size:0.8rem;color:var(--text2);min-height:24px;font-style:italic}
+.chat-input-bar{
+  padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;gap:10px;align-items:center;
+  background:rgba(6,8,16,0.8);
+}
+.chat-inp{
+  flex:1;padding:10px 16px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);border-radius:var(--radius);
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:0.95rem;
+  outline:none;transition:var(--trans);
+}
+.chat-inp:focus{border-color:var(--neon)}
+.emoji-picker-wrap{position:relative}
+.emoji-grid{
+  position:absolute;bottom:110%;right:0;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px;
+  display:none;flex-wrap:wrap;gap:6px;width:240px;z-index:100;
+}
+.emoji-grid.show{display:flex}
+.emoji-grid span{cursor:pointer;font-size:1.2rem;padding:4px;border-radius:6px;transition:var(--trans)}
+.emoji-grid span:hover{background:rgba(0,200,255,0.15)}
+
+/* ═══ REACTIONS ═══ */
+.reactions{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.reaction{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:20px;font-size:0.8rem;
+  background:rgba(255,255,255,0.06);border:1px solid var(--border);
+  cursor:pointer;transition:var(--trans);
+}
+.reaction:hover{border-color:var(--neon)}
+.reaction.mine{background:rgba(0,200,255,0.1);border-color:rgba(0,200,255,0.3)}
+
+/* ═══ SERVERS ═══ */
+#serverSidebar{
+  width:200px;flex-shrink:0;
+  border-right:1px solid var(--border);
+  background:rgba(6,8,16,0.9);
+  overflow-y:auto;padding:12px 8px;
+}
+.channel-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:8px;
+  cursor:pointer;color:var(--text2);font-size:0.9rem;
+  transition:var(--trans);
+}
+.channel-item:hover,.channel-item.active{background:rgba(0,200,255,0.08);color:var(--neon)}
+
+/* ═══ GAMES ═══ */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.game-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;text-align:center;
+  cursor:pointer;transition:var(--trans);
+}
+.game-card:hover{border-color:var(--neon);transform:translateY(-4px);box-shadow:var(--glow)}
+.game-icon{font-size:3rem;margin-bottom:12px;display:block}
+.game-name{font-family:'Orbitron',sans-serif;font-size:0.85rem;letter-spacing:2px;color:var(--neon)}
+.game-desc{font-size:0.8rem;color:var(--text2);margin-top:6px}
+
+/* ═══ SNAKE GAME ═══ */
+#snakeCanvas{border:1px solid var(--border);border-radius:var(--radius);display:block;margin:0 auto;box-shadow:var(--glow)}
+.game-ui{display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px}
+.score-board{
+  display:flex;gap:24px;font-family:'Orbitron',sans-serif;
+  font-size:0.9rem;letter-spacing:2px;
+}
+.score-item{text-align:center}
+.score-val{font-size:1.4rem;color:var(--neon);font-weight:700}
+.game-controls{display:flex;gap:8px}
+
+/* ═══ PONG GAME ═══ */
+#pongCanvas{border:1px solid var(--border);border-radius:var(--radius);display:block;margin:0 auto;box-shadow:0 0 30px rgba(124,58,237,0.3)}
+
+/* ═══ MODAL ═══ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:20px;padding:32px;width:min(480px,90vw);
+  animation:fadeUp 0.3s ease;
+  max-height:90vh;overflow-y:auto;
+}
+.modal h2{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--neon);letter-spacing:2px;margin-bottom:20px}
+.modal-close{float:right;background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.2rem}
+
+/* ═══ PROFILE MINI ═══ */
+.mini-profile{
+  position:absolute;z-index:300;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:16px;padding:20px;width:220px;
+  animation:fadeUp 0.2s ease;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+.mini-profile-av{
+  width:60px;height:60px;border-radius:50%;
+  background:linear-gradient(135deg,var(--neon),var(--neon2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;font-weight:700;margin:0 auto 12px;
+  border:2px solid var(--neon);overflow:hidden;
+}
+.mini-profile-av img{width:100%;height:100%;object-fit:cover}
+.mini-profile-name{text-align:center;font-weight:700;font-size:1rem;margin-bottom:4px}
+.mini-profile-status{text-align:center;font-size:0.8rem;color:var(--neon-g);margin-bottom:12px}
+.mini-profile-stat{display:flex;justify-content:space-between;font-size:0.8rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+
+/* ═══ RANKING ═══ */
+.rank-list{display:flex;flex-direction:column;gap:8px}
+.rank-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:var(--panel);
+  border:1px solid var(--border);border-radius:var(--radius);
+  transition:var(--trans);
+}
+.rank-item:hover{border-color:rgba(0,200,255,0.3)}
+.rank-num{
+  font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;
+  width:32px;text-align:center;
+}
+.rank-1{color:gold}
+.rank-2{color:silver}
+.rank-3{color:#cd7f32}
+.rank-name{flex:1;font-weight:600}
+.rank-score{font-family:'Share Tech Mono',monospace;color:var(--neon);font-size:0.9rem}
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:0.72rem;
+  background:rgba(0,200,255,0.1);border:1px solid rgba(0,200,255,0.2);color:var(--neon);
+}
+
+/* ═══ TROLL MODE ═══ */
+#trollOverlay{
+  position:fixed;inset:0;z-index:500;pointer-events:none;display:none;
+}
+#trollOverlay.active{display:block}
+.fake-popup{
+  position:absolute;
+  background:#0a0f1e;border:1px solid var(--neon3);
+  border-radius:8px;padding:0;width:280px;
+  box-shadow:0 0 20px rgba(255,0,110,0.3);
+  pointer-events:all;cursor:default;
+  animation:popIn 0.3s ease;
+}
+.fake-popup-title{
+  background:rgba(255,0,110,0.15);padding:8px 12px;
+  font-size:0.8rem;letter-spacing:1px;display:flex;
+  align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,0,110,0.2);
+}
+.fake-popup-body{padding:12px;font-size:0.8rem;color:var(--text2);line-height:1.5}
+.fake-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:1rem;pointer-events:all}
+.fake-progress{height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-top:10px;overflow:hidden}
+.fake-progress-bar{height:100%;background:linear-gradient(90deg,var(--neon3),var(--neon2));border-radius:3px;transition:width 0.3s ease}
+.glitch-overlay{
+  position:fixed;inset:0;pointer-events:none;z-index:499;
+  background:transparent;display:none;
+}
+.glitch-overlay.active{display:block;animation:glitch 0.1s infinite}
+#matrixCanvas{position:fixed;inset:0;z-index:498;pointer-events:none;display:none}
+#matrixCanvas.active{display:block}
+.terminal-box{
+  position:fixed;bottom:20px;right:20px;z-index:502;
+  background:#020005;border:1px solid var(--neon-g);
+  border-radius:var(--radius);padding:16px;width:320px;
+  font-family:'Share Tech Mono',monospace;font-size:0.75rem;
+  color:var(--neon-g);max-height:200px;overflow:hidden;
+  display:none;
+}
+.terminal-box.active{display:block}
+.terminal-line{margin:2px 0;animation:termLine 0.1s ease}
+
+/* ═══ ADMIN PANEL ═══ */
+.admin-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.admin-title{font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--neon3);letter-spacing:2px;margin-bottom:12px}
+
+/* ═══ SCREEN SHARE ═══ */
+#screenShareArea{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;padding:20px;
+}
+#screenVideo{max-width:100%;max-height:60vh;border-radius:var(--radius);border:1px solid var(--border);display:none}
+
+/* ═══ NOTIFICATIONS ═══ */
+#notifs{position:fixed;top:70px;right:16px;z-index:400;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.notif{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:12px 16px;
+  min-width:200px;max-width:300px;pointer-events:all;
+  animation:slideIn 0.3s ease;font-size:0.85rem;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+.notif.success{border-color:rgba(0,255,136,0.4)}
+.notif.error{border-color:rgba(255,0,110,0.4)}
+
+/* ═══ STORE ═══ */
+.skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.skin-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;text-align:center;
+  cursor:pointer;transition:var(--trans);
+}
+.skin-card:hover{border-color:var(--neon2)}
+.skin-preview{font-size:2.5rem;margin-bottom:8px}
+.skin-name{font-size:0.8rem;color:var(--text2)}
+.skin-cost{font-family:'Share Tech Mono',monospace;color:var(--neon);font-size:0.9rem;margin-top:4px}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+@keyframes glitch{0%{box-shadow:inset 0 0 0 transparent}25%{box-shadow:inset 2px 0 0 rgba(255,0,110,0.1)}50%{box-shadow:inset -2px 0 0 rgba(0,200,255,0.1)}75%{box-shadow:inset 0 2px 0 rgba(124,58,237,0.1)}100%{box-shadow:inset 0 0 0 transparent}}
+@keyframes termLine{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.spin{animation:spin 2s linear infinite}
+.pulse{animation:pulse 1.5s ease infinite}
+
+/* ═══ MOBILE ═══ */
+@media(max-width:768px){
+  #sidebar{display:none}
+  #serverSidebar{width:160px}
+  .home-grid{grid-template-columns:1fr}
+  #topbar .topbar-nav{display:none}
+  .login-box{padding:32px 20px}
+}
+@media(max-width:480px){
+  #topbar{padding:0 8px}
+  #serverSidebar{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<canvas id="matrixCanvas"></canvas>
+<div class="glitch-overlay" id="glitchOverlay"></div>
+<div id="trollOverlay"></div>
+<div class="terminal-box" id="terminalBox"></div>
+<div id="notifs"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">NEXUS</div>
+    <div class="login-sub">PLATAFORMA SOCIAL · v2.0</div>
+    <div class="login-avatar-wrap" id="avatarWrap" onclick="document.getElementById('photoInput').click()">
+      <span id="avatarEmoji">👤</span>
+      <img id="avatarPreview" src="" style="display:none">
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <input class="inp" id="nameInput" placeholder="Escolha seu nome..." maxlength="20">
+    <button class="btn btn-primary" onclick="doLogin()">⚡ ENTRAR</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="topbar-logo">NEXUS</div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="showPage('home')">🏠 Home</button>
+      <button class="nav-btn" onclick="showPage('chat')">💬 Chat</button>
+      <button class="nav-btn" onclick="showPage('servers')">🖧 Servidores</button>
+      <button class="nav-btn" onclick="showPage('groups')">👥 Grupos</button>
+      <button class="nav-btn" onclick="showPage('games')">🎮 Jogos</button>
+      <button class="nav-btn" onclick="showPage('ranking')">🏆 Ranking</button>
+      <button class="nav-btn" onclick="showPage('store')">🛍 Loja</button>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-sm btn-ghost" onclick="showPage('screen')">📺 Tela</button>
+      <button class="btn btn-sm btn-ghost" onclick="showTrollPanel()" style="border-color:rgba(255,0,110,0.3);color:var(--neon3)">👾 Troll</button>
+      <button class="btn btn-sm btn-ghost" onclick="showPage('admin')" style="border-color:rgba(255,165,0,0.3);color:orange">⚙ Admin</button>
+      <div class="user-pill" id="myPill" onclick="showMyProfile()">
+        <div class="av" id="myAv"></div>
+        <span id="myName2">...</span>
+        <div class="online-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-section">Menu</div>
+      <div class="sidebar-item active" onclick="showPage('home')"><span class="icon">🏠</span>Home</div>
+      <div class="sidebar-item" onclick="showPage('chat')"><span class="icon">💬</span>Chat Global</div>
+      <div class="sidebar-item" onclick="showPage('ranking')"><span class="icon">🏆</span>Ranking</div>
+      <div class="sidebar-item" onclick="showPage('games')"><span class="icon">🎮</span>Jogos</div>
+      <div class="sidebar-section" style="margin-top:16px">Servidores</div>
+      <div id="serverIconList"></div>
+      <div class="sidebar-item" onclick="openCreateServer()"><span class="icon">➕</span>Criar servidor</div>
+      <div class="sidebar-section">Grupos</div>
+      <div id="groupIconList"></div>
+      <div class="sidebar-item" onclick="openCreateGroup()"><span class="icon">➕</span>Criar grupo</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- HOME PAGE -->
+      <div class="page active" id="page-home">
+        <div class="home-grid">
+          <div class="card">
+            <div class="card-title">🟢 Usuários Online</div>
+            <div id="onlineList"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🖧 Servidores Públicos</div>
+            <div id="publicServers"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🏆 Top Jogadores</div>
+            <div id="homeRanking"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📰 Feed de Atividades</div>
+            <div id="activityFeed" style="font-size:0.85rem;color:var(--text2);display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-title">💬 Chat Global (Preview)</div>
+          <div id="homeMessages" style="height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+          <div style="display:flex;gap:8px">
+            <input class="inp" id="homeInput" placeholder="Mensagem rápida..." style="margin:0" onkeypress="if(event.key==='Enter')sendHomeMsg()">
+            <button class="btn btn-sm btn-primary" onclick="sendHomeMsg()">Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT PAGE -->
+      <div class="page" id="page-chat">
+        <div id="chatArea">
+          <div id="chatMain">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--neon);letter-spacing:2px">
+              💬 CHAT GLOBAL
+            </div>
+            <div id="messages"></div>
+            <div class="typing-indicator" id="typingIndicator"></div>
+            <div class="reply-bar" id="replyBar">
+              <span id="replyText"></span>
+              <button onclick="cancelReply()" style="background:none;border:none;color:var(--text2);cursor:pointer">✕</button>
+            </div>
+            <div class="chat-input-bar">
+              <label class="btn btn-sm btn-ghost" style="cursor:pointer">
+                📎 <input type="file" accept="image/*" style="display:none" onchange="uploadImage(this)">
+              </label>
+              <div class="emoji-picker-wrap">
+                <button class="btn btn-sm btn-ghost" onclick="toggleEmoji()">😀</button>
+                <div class="emoji-grid" id="emojiGrid"></div>
+              </div>
+              <input class="chat-inp" id="chatInput" placeholder="Digite uma mensagem..." onkeypress="handleChatKey(event)" oninput="sendTyping()">
+              <button class="btn btn-sm btn-primary" onclick="sendMessage()">➤</button>
+            </div>
+          </div>
+          <div style="width:180px;border-left:1px solid var(--border);padding:12px 8px;overflow-y:auto;background:rgba(6,8,16,0.7)">
+            <div style="font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--neon);letter-spacing:2px;margin-bottom:10px">ONLINE</div>
+            <div id="chatOnlineList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERVERS PAGE -->
+      <div class="page" id="page-servers">
+        <div id="serverArea" style="display:flex;height:100%;overflow:hidden">
+          <div id="serverSidebar">
+            <div style="font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--neon);letter-spacing:2px;margin-bottom:10px">CANAIS</div>
+            <div id="channelList"></div>
+            <button class="btn btn-sm btn-ghost" onclick="addChannel()" style="width:100%;margin-top:8px">+ Canal</button>
+            <hr style="border-color:var(--border);margin:12px 0">
+            <div style="font-size:0.65rem;color:var(--text2);letter-spacing:1px;margin-bottom:8px">MEMBROS</div>
+            <div id="serverMemberList"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+            <div id="noServerMsg" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:var(--text2)">
+              <div style="font-size:3rem">🖧</div>
+              <div style="font-family:'Orbitron',sans-serif;font-size:0.8rem;letter-spacing:2px">SELECIONE UM SERVIDOR</div>
+              <button class="btn btn-primary btn-sm" onclick="openCreateServer()">+ CRIAR SERVIDOR</button>
+            </div>
+            <div id="serverChatWrap" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+              <div style="padding:10px 16px;border-bottom:1px solid var(--border);font-family:'Orbitron',sans-serif;font-size:0.75rem;color:var(--neon);letter-spacing:2px" id="serverChatTitle"># geral</div>
+              <div id="serverMessages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px"></div>
+              <div class="chat-input-bar">
+                <input class="chat-inp" id="serverInput" placeholder="Mensagem no servidor..." onkeypress="if(event.key==='Enter')sendServerMessage()">
+                <button class="btn btn-sm btn-primary" onclick="sendServerMessage()">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUPS PAGE -->
+      <div class="page" id="page-groups">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" onclick="openCreateGroup()">➕ Criar Grupo</button>
+        </div>
+        <div id="groupList" class="home-grid"></div>
+      </div>
+
+      <!-- GAMES PAGE -->
+      <div class="page" id="page-games">
+        <div class="game-grid" id="gameGrid">
+          <div class="game-card" onclick="startGame('snake')">
+            <span class="game-icon">🐍</span>
+            <div class="game-name">COBRINHA</div>
+            <div class="game-desc">Multiplayer · Ranking</div>
+          </div>
+          <div class="game-card" onclick="startGame('pong')">
+            <span class="game-icon">🏓</span>
+            <div class="game-name">PONG</div>
+            <div class="game-desc">2 Jogadores local</div>
+          </div>
+          <div class="game-card" onclick="startGame('clicker')">
+            <span class="game-icon">👆</span>
+            <div class="game-name">CLICK CHALLENGE</div>
+            <div class="game-desc">Mais rápido ganha</div>
+          </div>
+          <div class="game-card" onclick="startGame('racer')">
+            <span class="game-icon">🏎️</span>
+            <div class="game-name">CORRIDA</div>
+            <div class="game-desc">Desvie dos obstáculos</div>
+          </div>
+        </div>
+        <div id="gameContainer" style="display:none">
+          <button class="btn btn-ghost btn-sm" onclick="exitGame()" style="margin-bottom:12px">← Voltar</button>
+          <div id="gameContent"></div>
+        </div>
+      </div>
+
+      <!-- RANKING PAGE -->
+      <div class="page" id="page-ranking">
+        <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--neon);letter-spacing:3px;margin-bottom:20px">🏆 RANKING GLOBAL</div>
+        <div class="rank-list" id="rankingList"></div>
+      </div>
+
+      <!-- STORE PAGE -->
+      <div class="page" id="page-store">
+        <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--neon);letter-spacing:3px;margin-bottom:20px">🛍 LOJA DE SKINS</div>
+        <div style="color:var(--text2);margin-bottom:16px;font-size:0.9rem">Seus pontos: <span id="myPoints" style="color:var(--neon);font-family:'Share Tech Mono',monospace">0</span></div>
+        <div class="skin-grid" id="skinGrid"></div>
+      </div>
+
+      <!-- SCREEN SHARE PAGE -->
+      <div class="page" id="page-screen">
+        <div id="screenShareArea">
+          <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--neon);letter-spacing:3px">📺 COMPARTILHAMENTO DE TELA</div>
+          <div style="color:var(--text2);font-size:0.85rem;text-align:center;max-width:400px">
+            O compartilhamento de tela só ocorre com sua permissão explícita. Nenhum dado é transmitido sem consentimento.
+          </div>
+          <video id="screenVideo" autoplay playsinline muted></video>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+            <button class="btn btn-primary" onclick="startScreenShare()">📺 Compartilhar Minha Tela</button>
+            <button class="btn btn-danger" onclick="stopScreenShare()" id="stopShareBtn" style="display:none">⏹ Parar</button>
+          </div>
+          <div id="shareStatus" style="color:var(--text2);font-size:0.85rem"></div>
+        </div>
+      </div>
+
+      <!-- ADMIN PAGE -->
+      <div class="page" id="page-admin">
+        <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:orange;letter-spacing:3px;margin-bottom:20px">⚙ PAINEL ADMIN</div>
+        <div class="admin-section">
+          <div class="admin-title">👥 USUÁRIOS ONLINE</div>
+          <div id="adminUsers"></div>
+        </div>
+        <div class="admin-section">
+          <div class="admin-title">💬 MENSAGENS RECENTES</div>
+          <div id="adminMsgs"></div>
+        </div>
+        <div class="admin-section">
+          <div class="admin-title">🖧 SERVIDORES</div>
+          <div id="adminServers"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="createServerModal">
+  <div class="modal">
+    <h2>🖧 CRIAR SERVIDOR <button class="modal-close" onclick="closeModal('createServerModal')">✕</button></h2>
+    <input class="inp" id="serverName" placeholder="Nome do servidor...">
+    <input class="inp" id="serverIcon" placeholder="Emoji ícone (ex: 🎮)">
+    <select class="inp" id="serverPublic" style="appearance:none">
+      <option value="true">Público</option>
+      <option value="false">Privado</option>
+    </select>
+    <button class="btn btn-primary" onclick="createServer()">CRIAR</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="createGroupModal">
+  <div class="modal">
+    <h2>👥 CRIAR GRUPO <button class="modal-close" onclick="closeModal('createGroupModal')">✕</button></h2>
+    <input class="inp" id="groupName" placeholder="Nome do grupo...">
+    <select class="inp" id="groupPublic">
+      <option value="true">Público</option>
+      <option value="false">Privado</option>
+    </select>
+    <button class="btn btn-primary" onclick="createGroup()">CRIAR</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="trollModal">
+  <div class="modal">
+    <h2 style="color:var(--neon3)">👾 MODO TROLL <button class="modal-close" onclick="closeModal('trollModal')">✕</button></h2>
+    <div style="color:var(--text2);font-size:0.8rem;margin-bottom:16px;padding:10px;background:rgba(255,0,110,0.05);border:1px solid rgba(255,0,110,0.2);border-radius:8px">
+      ⚠️ Modo seguro e visual apenas. Nenhum arquivo real é baixado. Nenhuma ação prejudicial ocorre.
+    </div>
+    <label style="font-size:0.8rem;color:var(--text2)">Velocidade dos popups</label>
+    <input type="range" id="trollSpeed" min="500" max="5000" value="2000" style="width:100%;margin:8px 0 16px">
+    <label style="font-size:0.8rem;color:var(--text2)">Intensidade dos efeitos (1-10)</label>
+    <input type="range" id="trollIntensity" min="1" max="10" value="5" style="width:100%;margin:8px 0 16px">
+    <input class="inp" id="trollFileName" placeholder="Nome do arquivo falso (ex: virus.exe)">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <button class="btn btn-sm btn-danger" onclick="startTroll('popups')">💥 Popups</button>
+      <button class="btn btn-sm btn-danger" onclick="startTroll('matrix')">🟩 Matrix</button>
+      <button class="btn btn-sm btn-danger" onclick="startTroll('terminal')">💻 Terminal Falso</button>
+      <button class="btn btn-sm btn-danger" onclick="startTroll('glitch')">⚡ Glitch</button>
+      <button class="btn btn-sm btn-danger" onclick="startTroll('all')">🔥 TUDO</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="stopTroll()" style="width:100%">🛑 PARAR TUDO</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profileModal">
+  <div class="modal" style="text-align:center">
+    <h2 id="profileModalName">PERFIL <button class="modal-close" onclick="closeModal('profileModal')">✕</button></h2>
+    <div id="profileModalAv" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;margin:0 auto 16px;border:2px solid var(--neon);overflow:hidden"></div>
+    <div id="profileModalStats"></div>
+    <div id="profileModalBadges" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- Firebase & App Script -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getDatabase, ref, push, set, get, onValue, onChildAdded, remove, serverTimestamp, update, off } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMz-GuqiF4VyUKnCayURIvPGz0tR3W_7s",
+  authDomain: "handtracking-78c3b.firebaseapp.com",
+  databaseURL: "https://handtracking-78c3b-default-rtdb.firebaseio.com",
+  projectId: "handtracking-78c3b",
+  storageBucket: "handtracking-78c3b.appspot.com",
+  messagingSenderId: "179317156904",
+  appId: "1:179317156904:web:b9dede7364168804f9991d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let myUser = null;
+let myPhotoData = null;
+let currentPage = 'home';
+let replyTo = null;
+let typingTimeout = null;
+let currentServer = null;
+let currentChannel = 'geral';
+let currentGroup = null;
+let msgListeners = [];
+let gameLoop = null;
+
+const EMOJIS = ['😀','😂','🥰','😎','🤔','😅','🔥','💯','👍','❤️','🎉','✨','💀','👀','🙌','🤣','😤','🥳','🎮','💬','🚀','⚡','🌟','💎','🏆'];
+const SKINS = [
+  {id:'skin1',name:'Aurora',emoji:'🌌',cost:100},
+  {id:'skin2',name:'Neon King',emoji:'👑',cost:200},
+  {id:'skin3',name:'Cyber Wolf',emoji:'🐺',cost:150},
+  {id:'skin4',name:'Dragon',emoji:'🐉',cost:300},
+  {id:'skin5',name:'Ghost',emoji:'👻',cost:50},
+  {id:'skin6',name:'Robot',emoji:'🤖',cost:75},
+  {id:'skin7',name:'Ninja',emoji:'🥷',cost:120},
+  {id:'skin8',name:'Alien',emoji:'👽',cost:180},
+];
+const BADGES = ['🌟 Newcomer','💬 Chatterbox','🎮 Gamer','🏆 Champion','🔥 Hot Streak','💎 VIP'];
+
+// expose globals
+window.showPage = showPage;
+window.doLogin = doLogin;
+window.sendMessage = sendMessage;
+window.sendHomeMsg = sendHomeMsg;
+window.handleChatKey = handleChatKey;
+window.sendTyping = sendTyping;
+window.toggleEmoji = toggleEmoji;
+window.uploadImage = uploadImage;
+window.cancelReply = cancelReply;
+window.openCreateServer = () => openModal('createServerModal');
+window.openCreateGroup = () => openModal('createGroupModal');
+window.createServer = createServer;
+window.createGroup = createGroup;
+window.sendServerMessage = sendServerMessage;
+window.addChannel = addChannel;
+window.startGame = startGame;
+window.exitGame = exitGame;
+window.startScreenShare = startScreenShare;
+window.stopScreenShare = stopScreenShare;
+window.closeModal = closeModal;
+window.showTrollPanel = () => openModal('trollModal');
+window.startTroll = startTroll;
+window.stopTroll = stopTroll;
+window.showMyProfile = showMyProfile;
+window.replyMsg = replyMsg;
+
+// ══════════════════════════════════════
+// BG PARTICLES
+// ══════════════════════════════════════
+(function(){
+  const c = document.getElementById('bgCanvas');
+  const ctx = c.getContext('2d');
+  let particles = [];
+  function resize(){c.width=innerWidth;c.height=innerHeight}
+  resize();
+  window.addEventListener('resize',resize);
+  for(let i=0;i<80;i++){
+    particles.push({
+      x:Math.random()*innerWidth,
+      y:Math.random()*innerHeight,
+      vx:(Math.random()-0.5)*0.3,
+      vy:(Math.random()-0.5)*0.3,
+      r:Math.random()*2+0.5,
+      a:Math.random(),
+      color:Math.random()>0.5?'0,200,255':'124,58,237'
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    particles.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;
+      if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.color},${p.a})`;
+      ctx.fill();
+    });
+    // connections
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x;
+        const dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<100){
+          ctx.beginPath();
+          ctx.strokeStyle=`rgba(0,200,255,${0.08*(1-d/100)})`;
+          ctx.lineWidth=0.5;
+          ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ══════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════
+document.getElementById('photoInput').addEventListener('change',function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = r=>{
+    myPhotoData = r.target.result;
+    document.getElementById('avatarPreview').src = myPhotoData;
+    document.getElementById('avatarPreview').style.display='block';
+    document.getElementById('avatarEmoji').style.display='none';
+  };
+  reader.readAsDataURL(file);
+});
+
+async function doLogin(){
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){showNotif('Digite seu nome!','error');return;}
+  const id = 'user_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  let photoURL = null;
+
+  if(myPhotoData){
+    try{
+      const blob = await (await fetch(myPhotoData)).blob();
+      const storageRef = sRef(storage,`avatars/${id}`);
+      await uploadBytes(storageRef,blob);
+      photoURL = await getDownloadURL(storageRef);
+    }catch(e){console.warn('Photo upload failed',e)}
+  }
+
+  myUser = {id,name,photoURL,points:0,wins:0,gamesPlayed:0,badges:['🌟 Newcomer'],skin:'👤',joinedAt:Date.now()};
+
+  await set(ref(db,`online/${id}`),{...myUser,lastSeen:serverTimestamp()});
+  await set(ref(db,`users/${id}`),myUser);
+
+  // presence
+  window.addEventListener('beforeunload',()=>{remove(ref(db,`online/${id}`))});
+
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  initApp();
+}
+
+// ══════════════════════════════════════
+// INIT APP
+// ══════════════════════════════════════
+function initApp(){
+  buildEmojiGrid();
+  buildSkinGrid();
+  updateMyPill();
+  listenOnline();
+  listenGlobalChat();
+  listenServers();
+  listenGroups();
+  listenRanking();
+  listenActivity();
+  showPage('home');
+}
+
+function updateMyPill(){
+  const av = document.getElementById('myAv');
+  if(myUser.photoURL){
+    av.innerHTML=`<img src="${myUser.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    av.textContent = myUser.name.charAt(0).toUpperCase();
+  }
+  document.getElementById('myName2').textContent = myUser.name;
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function showPage(page){
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const p = document.getElementById('page-'+page);
+  if(p) p.classList.add('active');
+  const btns = document.querySelectorAll(`.nav-btn`);
+  btns.forEach(b=>{if(b.textContent.toLowerCase().includes(page.slice(0,4)))b.classList.add('active')});
+
+  if(page==='ranking') renderRanking();
+  if(page==='store') renderStore();
+  if(page==='admin') renderAdmin();
+}
+
+// ══════════════════════════════════════
+// ONLINE USERS
+// ══════════════════════════════════════
+function listenOnline(){
+  onValue(ref(db,'online'), snap=>{
+    const users = snap.val()||{};
+    const list = Object.values(users);
+    renderOnlineList(list);
+    document.getElementById('chatOnlineList').innerHTML = list.map(u=>onlineItem(u,true)).join('');
+  });
+}
+
+function onlineItem(u, mini=false){
+  const av = u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span>${u.name.charAt(0).toUpperCase()}</span>`;
+  if(mini){
+    return `<div class="online-user" onclick="showProfile('${u.id}')">
+      <div class="av">${av}</div>
+      <div>
+        <div style="font-size:0.8rem;font-weight:600">${esc(u.name)}</div>
+        <div style="font-size:0.7rem;color:var(--neon-g)">Online</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="online-user" onclick="showProfile('${u.id}')">
+    <div class="av">${av}</div>
+    <div>
+      <div class="name">${esc(u.name)}</div>
+      <div class="status">🟢 Online</div>
+    </div>
+    ${u.points?`<div style="margin-left:auto;font-family:'Share Tech Mono',monospace;color:var(--neon);font-size:0.8rem">${u.points}pts</div>`:''}
+  </div>`;
+}
+
+function renderOnlineList(list){
+  document.getElementById('onlineList').innerHTML = list.length?list.map(u=>onlineItem(u)).join(''):'<div style="color:var(--text2);font-size:0.85rem">Nenhum usuário online</div>';
+  document.getElementById('chatOnlineList').innerHTML = list.map(u=>onlineItem(u,true)).join('');
+}
+
+// ══════════════════════════════════════
+// GLOBAL CHAT
+// ══════════════════════════════════════
+function listenGlobalChat(){
+  const msgRef = ref(db,'globalChat');
+  onChildAdded(msgRef, snap=>{
+    const msg = snap.val();
+    appendMsg(msg, 'messages', snap.key);
+    appendMsg(msg, 'homeMessages', snap.key, true);
+  });
+
+  // typing
+  onValue(ref(db,'typing'), snap=>{
+    const typers = snap.val()||{};
+    const names = Object.values(typers).filter(t=>t.uid!==myUser.id&&Date.now()-t.ts<3000).map(t=>t.name);
+    document.getElementById('typingIndicator').textContent = names.length?`${names.join(', ')} está digitando...`:'';
+  });
+}
+
+function appendMsg(msg, containerId, key, mini=false){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const av = msg.photo?`<img src="${msg.photo}">`:`${(msg.name||'?').charAt(0).toUpperCase()}`;
+  const el = document.createElement('div');
+  el.className = 'msg';
+  el.dataset.key = key;
+  let content = `<div class="msg-content">
+    <div class="msg-header">
+      <span class="msg-name" onclick="showProfile('${msg.uid}')" style="cursor:pointer">${esc(msg.name)}</span>
+      <span class="msg-time">${fmtTime(msg.ts)}</span>
+    </div>`;
+  if(msg.replyTo){content+=`<div style="font-size:0.8rem;color:var(--text2);border-left:2px solid var(--neon);padding-left:6px;margin-bottom:4px">↩ ${esc(msg.replyTo)}</div>`}
+  if(msg.imageURL){content+=`<img src="${msg.imageURL}" style="max-width:200px;border-radius:8px;margin-top:4px">`}
+  else{content+=`<div class="msg-text">${esc(msg.text)}</div>`}
+  if(!mini){content+=`<div class="reactions" id="react-${key}"></div>`}
+  content+=`</div>`;
+  if(!mini){content+=`<button class="msg-reply-btn" onclick="replyMsg('${esc(msg.name)}','${key}')">↩</button>`}
+  el.innerHTML = `<div class="av">${av}</div>${content}`;
+  c.appendChild(el);
+  c.scrollTop = c.scrollHeight;
+  if(!mini) loadReactions(key);
+}
+
+async function sendMessage(){
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  const msg = {uid:myUser.id,name:myUser.name,photo:myUser.photoURL||null,text,ts:Date.now(),replyTo:replyTo?replyTo.text:null};
+  await push(ref(db,'globalChat'),msg);
+  cancelReply();
+  addActivity(`${myUser.name} enviou uma mensagem`);
+}
+
+function sendHomeMsg(){
+  const inp = document.getElementById('homeInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  push(ref(db,'globalChat'),{uid:myUser.id,name:myUser.name,photo:myUser.photoURL||null,text,ts:Date.now()});
+}
+
+function handleChatKey(e){if(e.key==='Enter')sendMessage()}
+
+let typingThrottle=0;
+function sendTyping(){
+  const now=Date.now();
+  if(now-typingThrottle<1500) return;
+  typingThrottle=now;
+  set(ref(db,`typing/${myUser.id}`),{uid:myUser.id,name:myUser.name,ts:now});
+  clearTimeout(typingTimeout);
+  typingTimeout=setTimeout(()=>remove(ref(db,`typing/${myUser.id}`)),3000);
+}
+
+function replyMsg(name, key){
+  replyTo={name,key,text:name};
+  document.getElementById('replyText').textContent=`Respondendo ${name}`;
+  document.getElementById('replyBar').classList.add('show');
+  document.getElementById('chatInput').focus();
+}
+function cancelReply(){replyTo=null;document.getElementById('replyBar').classList.remove('show')}
+
+// Reactions
+function loadReactions(key){
+  onValue(ref(db,`reactions/${key}`),snap=>{
+    const data=snap.val()||{};
+    const el=document.getElementById(`react-${key}`);
+    if(!el)return;
+    const counts={};
+    Object.values(data).forEach(r=>{counts[r.emoji]=(counts[r.emoji]||0)+1});
+    el.innerHTML=Object.entries(counts).map(([e,c])=>`<span class="reaction${data[myUser.id]?.emoji===e?' mine':''}" onclick="toggleReaction('${key}','${e}')">${e} ${c}</span>`).join('');
+    // add reaction btn
+    el.innerHTML+=`<span class="reaction" onclick="addReaction('${key}')" style="font-size:0.9rem">＋</span>`;
+  });
+}
+
+window.toggleReaction = async(key,emoji)=>{
+  const r=ref(db,`reactions/${key}/${myUser.id}`);
+  const snap=await get(r);
+  if(snap.exists()&&snap.val().emoji===emoji) await remove(r);
+  else await set(r,{emoji,uid:myUser.id});
+};
+window.addReaction = (key)=>{
+  const e=EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  toggleReaction(key,e);
+};
+window.showProfile = showProfile;
+
+// ══════════════════════════════════════
+// EMOJI
+// ══════════════════════════════════════
+function buildEmojiGrid(){
+  const g=document.getElementById('emojiGrid');
+  g.innerHTML=EMOJIS.map(e=>`<span onclick="insertEmoji('${e}')">${e}</span>`).join('');
+}
+function toggleEmoji(){document.getElementById('emojiGrid').classList.toggle('show')}
+window.insertEmoji=(e)=>{
+  const inp=document.getElementById('chatInput');
+  inp.value+=e;inp.focus();
+  document.getElementById('emojiGrid').classList.remove('show');
+};
+
+// ══════════════════════════════════════
+// IMAGE UPLOAD
+// ══════════════════════════════════════
+async function uploadImage(input){
+  const file=input.files[0];
+  if(!file) return;
+  showNotif('Enviando imagem...','');
+  try{
+    const storageRef=sRef(storage,`chat/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef,file);
+    const url=await getDownloadURL(storageRef);
+    await push(ref(db,'globalChat'),{uid:myUser.id,name:myUser.name,photo:myUser.photoURL||null,text:'',imageURL:url,ts:Date.now()});
+    showNotif('Imagem enviada!','success');
+  }catch(e){showNotif('Erro ao enviar imagem','error')}
+}
+
+// ══════════════════════════════════════
+// SERVERS
+// ══════════════════════════════════════
+function listenServers(){
+  onValue(ref(db,'servers'),snap=>{
+    const data=snap.val()||{};
+    renderServerList(data);
+    document.getElementById('publicServers').innerHTML=Object.values(data).filter(s=>s.public).map(s=>`
+      <div class="online-user" style="cursor:pointer" onclick="joinServer('${s.id}')">
+        <div class="av">${s.icon||'🖧'}</div>
+        <div>
+          <div class="name">${esc(s.name)}</div>
+          <div class="status">${Object.keys(s.members||{}).length} membros</div>
+        </div>
+      </div>`).join('')||'<div style="color:var(--text2);font-size:0.85rem">Nenhum servidor público</div>';
+    document.getElementById('adminServers').innerHTML=Object.values(data).map(s=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span>${s.icon||'🖧'} ${esc(s.name)} (${Object.keys(s.members||{}).length} membros)</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteServer('${s.id}')">Deletar</button>
+      </div>`).join('')||'Nenhum servidor';
+  });
+}
+
+function renderServerList(data){
+  const list=document.getElementById('serverIconList');
+  list.innerHTML=Object.values(data).map(s=>`
+    <div class="sidebar-item${currentServer===s.id?' active':''}" onclick="openServer('${s.id}')">
+      <span class="icon">${s.icon||'🖧'}</span>${esc(s.name)}
+    </div>`).join('');
+}
+
+async function createServer(){
+  const name=document.getElementById('serverName').value.trim();
+  const icon=document.getElementById('serverIcon').value||'🖧';
+  const pub=document.getElementById('serverPublic').value==='true';
+  if(!name){showNotif('Digite o nome','error');return}
+  const id='srv_'+Date.now();
+  const server={id,name,icon,public:pub,owner:myUser.id,ownerName:myUser.name,members:{[myUser.id]:true},channels:{geral:true},createdAt:Date.now()};
+  await set(ref(db,`servers/${id}`),server);
+  closeModal('createServerModal');
+  document.getElementById('serverName').value='';
+  showNotif('Servidor criado!','success');
+  openServer(id);
+  showPage('servers');
+  addActivity(`${myUser.name} criou o servidor ${name}`);
+}
+
+window.joinServer = async(id)=>{
+  await set(ref(db,`servers/${id}/members/${myUser.id}`),true);
+  openServer(id);
+  showPage('servers');
+  showNotif('Entrou no servidor!','success');
+};
+
+function openServer(id){
+  currentServer=id;
+  get(ref(db,`servers/${id}`)).then(snap=>{
+    const s=snap.val();
+    if(!s) return;
+    document.getElementById('noServerMsg').style.display='none';
+    const wrap=document.getElementById('serverChatWrap');
+    wrap.style.display='flex';
+    // channels
+    const channels=Object.keys(s.channels||{geral:true});
+    document.getElementById('channelList').innerHTML=channels.map(ch=>`
+      <div class="channel-item${ch===currentChannel?' active':''}" onclick="switchChannel('${ch}','${id}')">
+        # ${ch}</div>`).join('');
+    // members
+    get(ref(db,'online')).then(os=>{
+      const online=os.val()||{};
+      document.getElementById('serverMemberList').innerHTML=Object.keys(s.members||{}).map(uid=>{
+        const u=online[uid];
+        return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:0.8rem;color:var(--text2)">
+          <div style="width:6px;height:6px;border-radius:50%;background:${u?'var(--neon-g)':'var(--text2)'}"></div>
+          ${u?esc(u.name):uid.slice(0,8)}
+        </div>`;
+      }).join('');
+    });
+    switchChannel(currentChannel,id);
+  });
+}
+
+function switchChannel(ch,serverId){
+  currentChannel=ch;
+  document.getElementById('serverChatTitle').textContent=`# ${ch}`;
+  document.getElementById('serverMessages').innerHTML='';
+  // remove old listeners
+  msgListeners.forEach(off);msgListeners=[];
+  const msgRef=ref(db,`serverChats/${serverId}/${ch}`);
+  const l=onChildAdded(msgRef,snap=>{
+    const msg=snap.val();
+    const av=msg.photo?`<img src="${msg.photo}">`:`${(msg.name||'?').charAt(0).toUpperCase()}`;
+    const el=document.createElement('div');
+    el.className='msg';
+    el.innerHTML=`<div class="av">${av}</div>
+      <div class="msg-content">
+        <div class="msg-header"><span class="msg-name">${esc(msg.name)}</span><span class="msg-time">${fmtTime(msg.ts)}</span></div>
+        <div class="msg-text">${esc(msg.text)}</div>
+      </div>`;
+    document.getElementById('serverMessages').appendChild(el);
+    document.getElementById('serverMessages').scrollTop=99999;
+  });
+  msgListeners.push(l);
+}
+
+async function sendServerMessage(){
+  if(!currentServer) return;
+  const inp=document.getElementById('serverInput');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  await push(ref(db,`serverChats/${currentServer}/${currentChannel}`),{uid:myUser.id,name:myUser.name,photo:myUser.photoURL||null,text,ts:Date.now()});
+}
+
+async function addChannel(){
+  if(!currentServer){showNotif('Selecione um servidor','error');return}
+  const ch=prompt('Nome do canal:');
+  if(!ch) return;
+  await set(ref(db,`servers/${currentServer}/channels/${ch}`),true);
+  openServer(currentServer);
+}
+
+window.deleteServer=async(id)=>{
+  await remove(ref(db,`servers/${id}`));
+  showNotif('Servidor deletado','success');
+};
+
+// ══════════════════════════════════════
+// GROUPS
+// ══════════════════════════════════════
+function listenGroups(){
+  onValue(ref(db,'groups'),snap=>{
+    const data=snap.val()||{};
+    const list=document.getElementById('groupList');
+    list.innerHTML=Object.values(data).map(g=>`
+      <div class="card" style="cursor:pointer" onclick="openGroup('${g.id}')">
+        <div class="card-title">👥 ${esc(g.name)}</div>
+        <div style="font-size:0.8rem;color:var(--text2)">${g.public?'Público':'Privado'} · ${Object.keys(g.members||{}).length} membros</div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();joinGroup('${g.id}')">Entrar</button>
+        </div>
+      </div>`).join('')||'<div style="color:var(--text2)">Nenhum grupo ainda</div>';
+    document.getElementById('groupIconList').innerHTML=Object.values(data).map(g=>`
+      <div class="sidebar-item" onclick="openGroup('${g.id}')"><span class="icon">👥</span>${esc(g.name)}</div>`).join('');
+  });
+}
+
+async function createGroup(){
+  const name=document.getElementById('groupName').value.trim();
+  const pub=document.getElementById('groupPublic').value==='true';
+  if(!name){showNotif('Digite o nome','error');return}
+  const id='grp_'+Date.now();
+  await set(ref(db,`groups/${id}`),{id,name,public:pub,owner:myUser.id,members:{[myUser.id]:true},createdAt:Date.now()});
+  closeModal('createGroupModal');
+  document.getElementById('groupName').value='';
+  showNotif('Grupo criado!','success');
+  addActivity(`${myUser.name} criou o grupo ${name}`);
+}
+
+window.joinGroup=async(id)=>{
+  await set(ref(db,`groups/${id}/members/${myUser.id}`),true);
+  showNotif('Entrou no grupo!','success');
+};
+
+window.openGroup=(id)=>{
+  showNotif('Abrindo grupo...','');
+  // Could open a group chat modal - simplified for now
+};
+
+// ══════════════════════════════════════
+// RANKING
+// ══════════════════════════════════════
+let rankingData=[];
+function listenRanking(){
+  onValue(ref(db,'users'),snap=>{
+    const data=snap.val()||{};
+    rankingData=Object.values(data).sort((a,b)=>(b.points||0)-(a.points||0));
+    renderHomeRanking();
+  });
+}
+
+function renderHomeRanking(){
+  const top3=rankingData.slice(0,3);
+  document.getElementById('homeRanking').innerHTML=top3.map((u,i)=>`
+    <div class="online-user">
+      <div style="font-family:'Orbitron',sans-serif;font-size:1rem;color:${['gold','silver','#cd7f32'][i]};width:24px">${i+1}</div>
+      <div class="av">${u.photoURL?`<img src="${u.photoURL}">`:(u.name||'?').charAt(0).toUpperCase()}</div>
+      <div><div class="name">${esc(u.name)}</div></div>
+      <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;color:var(--neon)">${u.points||0}pts</div>
+    </div>`).join('')||'<div style="color:var(--text2)">Sem dados ainda</div>';
+}
+
+function renderRanking(){
+  document.getElementById('rankingList').innerHTML=rankingData.map((u,i)=>`
+    <div class="rank-item">
+      <div class="rank-num rank-${i+1}">${i+1}</div>
+      <div class="av" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--neon2));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(u.name||'?').charAt(0).toUpperCase()}
+      </div>
+      <div class="rank-name">${esc(u.name)} <span style="font-size:0.75rem;color:var(--text2)">${(u.badges||[])[0]||''}</span></div>
+      <div>${(u.badges||[]).slice(0,2).map(b=>`<span class="badge">${b}</span>`).join('')}</div>
+      <div class="rank-score">${u.points||0} pts</div>
+    </div>`).join('')||'<div style="color:var(--text2)">Nenhum jogador ainda</div>';
+}
+
+// ══════════════════════════════════════
+// ACTIVITY FEED
+// ══════════════════════════════════════
+function listenActivity(){
+  onChildAdded(ref(db,'activity'),snap=>{
+    const a=snap.val();
+    const el=document.createElement('div');
+    el.style.cssText='padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem';
+    el.innerHTML=`<span style="color:var(--text2)">${fmtTime(a.ts)}</span> ${esc(a.text)}`;
+    const feed=document.getElementById('activityFeed');
+    if(feed){feed.prepend(el);if(feed.children.length>20)feed.lastChild.remove()}
+  });
+}
+
+async function addActivity(text){
+  await push(ref(db,'activity'),{text,uid:myUser.id,ts:Date.now()});
+}
+
+// ══════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════
+function showProfile(uid){
+  get(ref(db,`users/${uid}`)).then(snap=>{
+    const u=snap.val();
+    if(!u) return;
+    const modal=document.getElementById('profileModal');
+    document.getElementById('profileModalName').textContent=u.name;
+    const av=document.getElementById('profileModalAv');
+    av.innerHTML=u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:u.name.charAt(0).toUpperCase();
+    document.getElementById('profileModalStats').innerHTML=`
+      <div style="display:flex;justify-content:space-around;margin-bottom:12px">
+        <div style="text-align:center"><div style="font-family:'Orbitron',sans-serif;color:var(--neon);font-size:1.2rem">${u.points||0}</div><div style="font-size:0.75rem;color:var(--text2)">Pontos</div></div>
+        <div style="text-align:center"><div style="font-family:'Orbitron',sans-serif;color:var(--neon2);font-size:1.2rem">${u.wins||0}</div><div style="font-size:0.75rem;color:var(--text2)">Vitórias</div></div>
+        <div style="text-align:center"><div style="font-family:'Orbitron',sans-serif;color:var(--neon3);font-size:1.2rem">${u.gamesPlayed||0}</div><div style="font-size:0.75rem;color:var(--text2)">Jogos</div></div>
+      </div>`;
+    document.getElementById('profileModalBadges').innerHTML=(u.badges||[]).map(b=>`<span class="badge">${b}</span>`).join('');
+    openModal('profileModal');
+  });
+}
+
+function showMyProfile(){showProfile(myUser.id)}
+
+// ══════════════════════════════════════
+// STORE
+// ══════════════════════════════════════
+function renderStore(){
+  document.getElementById('myPoints').textContent=myUser.points||0;
+  document.getElementById('skinGrid').innerHTML=SKINS.map(s=>`
+    <div class="skin-card" onclick="buySkin('${s.id}',${s.cost})">
+      <div class="skin-preview">${s.emoji}</div>
+      <div class="skin-name">${s.name}</div>
+      <div class="skin-cost">${s.cost} pts</div>
+    </div>`).join('');
+}
+
+window.buySkin=(id,cost)=>{
+  if((myUser.points||0)<cost){showNotif('Pontos insuficientes!','error');return}
+  myUser.points-=cost;
+  update(ref(db,`users/${myUser.id}`),{points:myUser.points});
+  update(ref(db,`online/${myUser.id}`),{points:myUser.points});
+  showNotif('Skin comprada! 🎉','success');
+  document.getElementById('myPoints').textContent=myUser.points;
+};
+
+// ══════════════════════════════════════
+// SCREEN SHARE
+// ══════════════════════════════════════
+let screenStream=null;
+async function startScreenShare(){
+  try{
+    screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+    const video=document.getElementById('screenVideo');
+    video.srcObject=screenStream;
+    video.style.display='block';
+    document.getElementById('stopShareBtn').style.display='inline-flex';
+    document.getElementById('shareStatus').textContent='✅ Compartilhando sua tela...';
+    addActivity(`${myUser.name} está compartilhando a tela`);
+    screenStream.getTracks()[0].onended=stopScreenShare;
+  }catch(e){
+    if(e.name!=='NotAllowedError') showNotif('Erro ao compartilhar tela','error');
+  }
+}
+
+function stopScreenShare(){
+  if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null}
+  const video=document.getElementById('screenVideo');
+  video.style.display='none';video.srcObject=null;
+  document.getElementById('stopShareBtn').style.display='none';
+  document.getElementById('shareStatus').textContent='';
+  showNotif('Compartilhamento encerrado','');
+}
+
+// ══════════════════════════════════════
+// GAMES
+// ══════════════════════════════════════
+function startGame(type){
+  document.getElementById('gameGrid').style.display='none';
+  document.getElementById('gameContainer').style.display='block';
+  if(type==='snake') initSnake();
+  else if(type==='pong') initPong();
+  else if(type==='clicker') initClicker();
+  else if(type==='racer') initRacer();
+}
+
+function exitGame(){
+  if(gameLoop){clearInterval(gameLoop);gameLoop=null}
+  document.getElementById('gameGrid').style.display='grid';
+  document.getElementById('gameContainer').style.display='none';
+  document.getElementById('gameContent').innerHTML='';
+}
+
+// ── SNAKE ──
+function initSnake(){
+  myUser.gamesPlayed=(myUser.gamesPlayed||0)+1;
+  update(ref(db,`users/${myUser.id}`),{gamesPlayed:myUser.gamesPlayed});
+
+  const W=400,H=400,SZ=20;
+  document.getElementById('gameContent').innerHTML=`
+    <div class="game-ui">
+      <div class="score-board">
+        <div class="score-item"><div class="score-val" id="snakeScore">0</div><div>PONTOS</div></div>
+        <div class="score-item"><div class="score-val" id="snakeHigh">0</div><div>RECORDE</div></div>
+      </div>
+      <canvas id="snakeCanvas" width="${W}" height="${H}"></canvas>
+      <div class="game-controls">
+        <button class="btn btn-primary btn-sm" id="snakeStart" onclick="snakeStartBtn()">▶ INICIAR</button>
+        <button class="btn btn-ghost btn-sm" onclick="exitGame()">Sair</button>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text2)">Use WASD ou setas do teclado</div>
+    </div>`;
+
+  const canvas=document.getElementById('snakeCanvas');
+  const ctx=canvas.getContext('2d');
+  let snake=[{x:10,y:10}],dir={x:1,y:0},food={x:5,y:5},score=0,running=false,highScore=0;
+
+  function placeFood(){food={x:Math.floor(Math.random()*(W/SZ)),y:Math.floor(Math.random()*(H/SZ))}}
+  placeFood();
+
+  function draw(){
+    ctx.fillStyle='#060810';ctx.fillRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle='rgba(0,200,255,0.05)';ctx.lineWidth=0.5;
+    for(let x=0;x<W;x+=SZ){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=SZ){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    // food
+    ctx.fillStyle='#ff006e';ctx.shadowColor='#ff006e';ctx.shadowBlur=10;
+    ctx.fillRect(food.x*SZ+2,food.y*SZ+2,SZ-4,SZ-4);
+    ctx.shadowBlur=0;
+    // snake
+    snake.forEach((s,i)=>{
+      const t=i/snake.length;
+      ctx.fillStyle=`hsl(${180+t*60},100%,${60-t*20}%)`;
+      ctx.shadowColor='rgba(0,200,255,0.5)';ctx.shadowBlur=i===0?15:5;
+      ctx.fillRect(s.x*SZ+1,s.y*SZ+1,SZ-2,SZ-2);
+    });
+    ctx.shadowBlur=0;
+    if(!running){
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#00c8ff';ctx.font='bold 20px Orbitron';ctx.textAlign='center';
+      ctx.fillText(score?`GAME OVER · ${score}pts`:'PRESSIONE INICIAR',W/2,H/2);
+    }
+  }
+
+  window.snakeStartBtn=()=>{
+    snake=[{x:10,y:10}];dir={x:1,y:0};score=0;running=true;
+    document.getElementById('snakeStart').textContent='↺ REINICIAR';
+    clearInterval(gameLoop);
+    gameLoop=setInterval(()=>{
+      if(!running) return;
+      const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+      if(head.x<0||head.x>=W/SZ||head.y<0||head.y>=H/SZ||snake.some(s=>s.x===head.x&&s.y===head.y)){
+        running=false;
+        if(score>highScore){
+          highScore=score;
+          myUser.points=(myUser.points||0)+score;
+          update(ref(db,`users/${myUser.id}`),{points:myUser.points});
+          update(ref(db,`online/${myUser.id}`),{points:myUser.points});
+          set(ref(db,`rankings/snake/${myUser.id}`),{name:myUser.name,score,uid:myUser.id,ts:Date.now()});
+          addActivity(`${myUser.name} fez ${score} pontos na cobrinha!`);
+        }
+        document.getElementById('snakeHigh').textContent=highScore;
+        draw();return;
+      }
+      snake.unshift(head);
+      if(head.x===food.x&&head.y===food.y){score++;placeFood()}
+      else snake.pop();
+      document.getElementById('snakeScore').textContent=score;
+      draw();
+    },120);
+  };
+
+  document.addEventListener('keydown',e=>{
+    const map={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
+               w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0}};
+    const d=map[e.key];
+    if(d&&!(d.x===-dir.x&&d.y===0)&&!(d.y===-dir.y&&d.x===0)) dir=d;
+  });
+  draw();
+}
+
+// ── PONG ──
+function initPong(){
+  const W=500,H=300;
+  document.getElementById('gameContent').innerHTML=`
+    <div class="game-ui">
+      <div class="score-board">
+        <div class="score-item"><div class="score-val" id="p1score">0</div><div>P1</div></div>
+        <div style="color:var(--text2);font-size:0.8rem;align-self:center">VS</div>
+        <div class="score-item"><div class="score-val" id="p2score">0</div><div>P2</div></div>
+      </div>
+      <canvas id="pongCanvas" width="${W}" height="${H}"></canvas>
+      <div style="font-size:0.75rem;color:var(--text2)">P1: W/S · P2: ↑/↓</div>
+      <button class="btn btn-ghost btn-sm" onclick="exitGame()">Sair</button>
+    </div>`;
+  const canvas=document.getElementById('pongCanvas');
+  const ctx=canvas.getContext('2d');
+  let p1={y:H/2-30},p2={y:H/2-30},ball={x:W/2,y:H/2,vx:3,vy:2},s1=0,s2=0;
+  const PH=60,PW=10,keys={};
+  document.addEventListener('keydown',e=>keys[e.key]=true);
+  document.addEventListener('keyup',e=>keys[e.key]=false);
+
+  gameLoop=setInterval(()=>{
+    if(keys['w']&&p1.y>0)p1.y-=5;
+    if(keys['s']&&p1.y<H-PH)p1.y+=5;
+    if(keys['ArrowUp']&&p2.y>0)p2.y-=5;
+    if(keys['ArrowDown']&&p2.y<H-PH)p2.y+=5;
+    ball.x+=ball.vx;ball.y+=ball.vy;
+    if(ball.y<=0||ball.y>=H)ball.vy*=-1;
+    if(ball.x<=PW+10&&ball.y>=p1.y&&ball.y<=p1.y+PH){ball.vx=Math.abs(ball.vx);ball.vy+=(Math.random()-0.5)*2}
+    if(ball.x>=W-PW-10&&ball.y>=p2.y&&ball.y<=p2.y+PH){ball.vx=-Math.abs(ball.vx);ball.vy+=(Math.random()-0.5)*2}
+    if(ball.x<0){s2++;ball.x=W/2;ball.y=H/2;ball.vx=3;document.getElementById('p2score').textContent=s2}
+    if(ball.x>W){s1++;ball.x=W/2;ball.y=H/2;ball.vx=-3;document.getElementById('p1score').textContent=s1}
+    ctx.fillStyle='#060810';ctx.fillRect(0,0,W,H);
+    ctx.setLineDash([8,8]);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+    ctx.shadowColor='#7c3aed';ctx.shadowBlur=10;
+    ctx.fillStyle='#7c3aed';ctx.fillRect(10,p1.y,PW,PH);
+    ctx.fillStyle='#00c8ff';ctx.fillRect(W-10-PW,p2.y,PW,PH);
+    ctx.fillStyle='#fff';ctx.shadowColor='#fff';ctx.shadowBlur=15;
+    ctx.beginPath();ctx.arc(ball.x,ball.y,7,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  },16);
+}
+
+// ── CLICKER ──
+function initClicker(){
+  let clicks=0,time=10,interval;
+  document.getElementById('gameContent').innerHTML=`
+    <div class="game-ui" style="gap:20px">
+      <div class="score-board">
+        <div class="score-item"><div class="score-val" id="clickCount">0</div><div>CLIQUES</div></div>
+        <div class="score-item"><div class="score-val" id="clickTime">10</div><div>TEMPO</div></div>
+      </div>
+      <div id="clickTarget" onclick="doClick()" style="width:150px;height:150px;border-radius:50%;
+        background:radial-gradient(circle,var(--neon),var(--neon2));
+        display:flex;align-items:center;justify-content:center;
+        cursor:pointer;font-size:3rem;transition:transform 0.05s;
+        box-shadow:0 0 40px rgba(0,200,255,0.5);user-select:none">
+        👆
+      </div>
+      <button class="btn btn-primary btn-sm" id="clickStart" onclick="startClick()">▶ INICIAR</button>
+      <button class="btn btn-ghost btn-sm" onclick="exitGame()">Sair</button>
+      <div id="clickResult" style="font-family:'Orbitron',sans-serif;font-size:0.9rem;color:var(--neon)"></div>
+    </div>`;
+  window.doClick=()=>{
+    if(!interval) return;
+    clicks++;document.getElementById('clickCount').textContent=clicks;
+    const t=document.getElementById('clickTarget');
+    t.style.transform='scale(0.92)';setTimeout(()=>t.style.transform='',50);
+  };
+  window.startClick=()=>{
+    clicks=0;time=10;
+    document.getElementById('clickCount').textContent=0;
+    document.getElementById('clickResult').textContent='';
+    document.getElementById('clickStart').textContent='Reiniciar';
+    clearInterval(interval);
+    interval=setInterval(()=>{
+      time--;document.getElementById('clickTime').textContent=time;
+      if(time<=0){
+        clearInterval(interval);interval=null;
+        const pts=Math.floor(clicks/2);
+        myUser.points=(myUser.points||0)+pts;
+        update(ref(db,`users/${myUser.id}`),{points:myUser.points});
+        update(ref(db,`online/${myUser.id}`),{points:myUser.points});
+        document.getElementById('clickResult').textContent=`${clicks} cliques! +${pts} pts`;
+        addActivity(`${myUser.name} fez ${clicks} cliques!`);
+      }
+    },1000);
+  };
+}
+
+// ── RACER ──
+function initRacer(){
+  const W=300,H=500;
+  document.getElementById('gameContent').innerHTML=`
+    <div class="game-ui">
+      <div class="score-board">
+        <div class="score-item"><div class="score-val" id="racerScore">0</div><div>DISTÂNCIA</div></div>
+      </div>
+      <canvas id="racerCanvas" width="${W}" height="${H}" style="border:1px solid var(--border);border-radius:8px"></canvas>
+      <div style="font-size:0.75rem;color:var(--text2)">← → para mover · Desvie dos obstáculos</div>
+      <button class="btn btn-ghost btn-sm" onclick="exitGame()">Sair</button>
+    </div>`;
+  const canvas=document.getElementById('racerCanvas');
+  const ctx=canvas.getContext('2d');
+  let player={x:W/2,y:H-60},obstacles=[],score=0,speed=3,keys={};
+  document.addEventListener('keydown',e=>keys[e.key]=true);
+  document.addEventListener('keyup',e=>keys[e.key]=false);
+  canvas.addEventListener('touchmove',e=>{
+    const t=e.touches[0];player.x=t.clientX-canvas.getBoundingClientRect().left;e.preventDefault();
+  },{passive:false});
+
+  function spawnObstacle(){obstacles.push({x:Math.random()*(W-40)+10,y:-30,w:40,h:20})}
+  let spawnTimer=0;
+
+  gameLoop=setInterval(()=>{
+    if(keys['ArrowLeft']&&player.x>25)player.x-=6;
+    if(keys['ArrowRight']&&player.x<W-25)player.x+=6;
+    if(spawnTimer++>30){spawnTimer=0;spawnObstacle()}
+    obstacles.forEach(o=>o.y+=speed);
+    obstacles=obstacles.filter(o=>o.y<H+40);
+    score++;if(score%200===0)speed+=0.3;
+    for(const o of obstacles){
+      if(Math.abs(player.x-o.x-o.w/2)<30&&Math.abs(player.y-(o.y+o.h/2))<25){
+        clearInterval(gameLoop);
+        const pts=Math.floor(score/10);
+        myUser.points=(myUser.points||0)+pts;
+        update(ref(db,`users/${myUser.id}`),{points:myUser.points});
+        update(ref(db,`online/${myUser.id}`),{points:myUser.points});
+        ctx.fillStyle='rgba(255,0,0,0.5)';ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#fff';ctx.font='bold 20px Orbitron';ctx.textAlign='center';
+        ctx.fillText(`CRASH! +${pts}pts`,W/2,H/2);
+        return;
+      }
+    }
+    // draw
+    ctx.fillStyle='#080c18';ctx.fillRect(0,0,W,H);
+    // road lines
+    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=2;ctx.setLineDash([20,20]);
+    ctx.beginPath();ctx.moveTo(W/3,0);ctx.lineTo(W/3,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(2*W/3,0);ctx.lineTo(2*W/3,H);ctx.stroke();ctx.setLineDash([]);
+    // obstacles
+    obstacles.forEach(o=>{
+      ctx.fillStyle='#ff006e';ctx.shadowColor='#ff006e';ctx.shadowBlur=10;
+      ctx.fillRect(o.x,o.y,o.w,o.h);
+    });
+    // player car
+    ctx.fillStyle='#00c8ff';ctx.shadowColor='#00c8ff';ctx.shadowBlur=15;
+    ctx.fillRect(player.x-15,player.y-20,30,40);
+    ctx.fillStyle='#fff';ctx.fillRect(player.x-10,player.y-18,8,12);
+    ctx.fillRect(player.x+2,player.y-18,8,12);
+    ctx.shadowBlur=0;
+    document.getElementById('racerScore').textContent=Math.floor(score/10);
+  },16);
+}
+
+// ══════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════
+function renderAdmin(){
+  get(ref(db,'online')).then(snap=>{
+    const data=snap.val()||{};
+    document.getElementById('adminUsers').innerHTML=Object.values(data).map(u=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span>🟢 ${esc(u.name)} (${u.points||0} pts)</span>
+        <button class="btn btn-sm btn-danger" onclick="banUser('${u.id}')">Banir 10min</button>
+      </div>`).join('')||'Nenhum usuário online';
+  });
+  // msgs
+  get(ref(db,'globalChat')).then(snap=>{
+    const data=snap.val()||{};
+    const msgs=Object.entries(data).slice(-10).reverse();
+    document.getElementById('adminMsgs').innerHTML=msgs.map(([k,m])=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <span style="font-size:0.85rem"><b>${esc(m.name)}</b>: ${esc(m.text||'[imagem]').slice(0,40)}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteMsg('${k}')">Deletar</button>
+      </div>`).join('')||'Nenhuma mensagem';
+  });
+}
+
+window.banUser=(uid)=>{set(ref(db,`banned/${uid}`),{until:Date.now()+600000});showNotif('Usuário banido por 10min','success')};
+window.deleteMsg=(key)=>{remove(ref(db,`globalChat/${key}`));showNotif('Mensagem removida','success')};
+
+// ══════════════════════════════════════
+// TROLL MODE
+// ══════════════════════════════════════
+let trollTimers=[];
+let matrixCtx,matrixInterval;
+
+function startTroll(type){
+  closeModal('trollModal');
+  const speed=parseInt(document.getElementById('trollSpeed').value)||2000;
+  const intensity=parseInt(document.getElementById('trollIntensity').value)||5;
+  const fname=document.getElementById('trollFileName').value||'hackertool.exe';
+
+  if(type==='all'||type==='popups') startPopups(speed,intensity,fname);
+  if(type==='all'||type==='matrix') startMatrix();
+  if(type==='all'||type==='terminal') startTerminal();
+  if(type==='all'||type==='glitch') startGlitch(intensity);
+
+  document.getElementById('trollOverlay').classList.add('active');
+}
+
+const POPUP_MSGS=[
+  ['⚠️ AVISO','Arquivo detectado: virus.exe'],
+  ['🔒 SEGURANÇA','Invasor identificado!'],
+  ['💾 DOWNLOAD','Baixando ficheiro...'],
+  ['🖥️ SISTEMA','CPU: 9999%'],
+  ['😈 HACKER','Acessando seus dados... (FAKE!)'],
+  ['💣 ALERT','Bomba digital detectada'],
+  ['🤖 BOT','Bot iniciado com sucesso'],
+  ['👁️ WATCHING','Sua câmera foi ligada... (FAKE!)'],
+];
+
+function createFakePopup(fname){
+  const overlay=document.getElementById('trollOverlay');
+  const msg=POPUP_MSGS[Math.floor(Math.random()*POPUP_MSGS.length)];
+  const div=document.createElement('div');
+  div.className='fake-popup';
+  const x=Math.random()*(window.innerWidth-320);
+  const y=Math.random()*(window.innerHeight-150);
+  div.style.cssText=`left:${x}px;top:${y}px`;
+  const fakeProgress=Math.floor(Math.random()*90)+10;
+  div.innerHTML=`<div class="fake-popup-title">${msg[0]} — ${fname}<button class="fake-close" onclick="this.closest('.fake-popup').remove()">✕</button></div>
+    <div class="fake-popup-body">${msg[1]}<div class="fake-progress"><div class="fake-progress-bar" style="width:${fakeProgress}%"></div></div></div>`;
+  overlay.appendChild(div);
+  setTimeout(()=>div.remove(),6000+Math.random()*4000);
+}
+
+function startPopups(speed,intensity,fname){
+  for(let i=0;i<intensity;i++){
+    const t=setInterval(()=>createFakePopup(fname),speed*(1+Math.random()));
+    trollTimers.push(t);
+  }
+}
+
+function startMatrix(){
+  const canvas=document.getElementById('matrixCanvas');
+  canvas.classList.add('active');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  matrixCtx=canvas.getContext('2d');
+  const cols=Math.floor(window.innerWidth/14);
+  const drops=Array(cols).fill(1);
+  matrixInterval=setInterval(()=>{
+    matrixCtx.fillStyle='rgba(0,0,0,0.05)';matrixCtx.fillRect(0,0,canvas.width,canvas.height);
+    matrixCtx.fillStyle='#00ff88';matrixCtx.font='13px Share Tech Mono';
+    drops.forEach((y,i)=>{
+      const c=String.fromCharCode(0x30A0+Math.random()*96);
+      matrixCtx.fillText(c,i*14,y*14);
+      if(y*14>canvas.height&&Math.random()>0.975)drops[i]=0;
+      drops[i]++;
+    });
+  },50);
+  trollTimers.push(matrixInterval);
+}
+
+const TERMINAL_LINES=['> Connecting to server...','> Access granted.','> Scanning files... (SIMULAÇÃO)','> Found 0 threats.','> This is just for fun!','> 100% FAKE AND SAFE','> echo "hello hacker"','> sudo make me a sandwich'];
+function startTerminal(){
+  const box=document.getElementById('terminalBox');
+  box.classList.add('active');box.innerHTML='';
+  let i=0;
+  const t=setInterval(()=>{
+    const line=document.createElement('div');
+    line.className='terminal-line';
+    line.textContent=TERMINAL_LINES[i%TERMINAL_LINES.length];
+    box.appendChild(line);
+    if(box.children.length>10)box.firstChild.remove();
+    box.scrollTop=99999;i++;
+  },600);
+  trollTimers.push(t);
+}
+
+function startGlitch(intensity){
+  const g=document.getElementById('glitchOverlay');
+  g.classList.add('active');
+  const t=setInterval(()=>{
+    g.style.opacity=Math.random()*0.3;
+    g.style.transform=`translateX(${(Math.random()-0.5)*intensity*2}px)`;
+  },100);
+  trollTimers.push(t);
+}
+
+function stopTroll(){
+  trollTimers.forEach(t=>{clearInterval(t);clearTimeout(t)});
+  trollTimers=[];
+  document.getElementById('trollOverlay').innerHTML='';
+  document.getElementById('trollOverlay').classList.remove('active');
+  document.getElementById('matrixCanvas').classList.remove('active');
+  document.getElementById('glitchOverlay').classList.remove('active');
+  document.getElementById('terminalBox').classList.remove('active');
+  const matCtx=document.getElementById('matrixCanvas').getContext('2d');
+  matCtx.clearRect(0,0,window.innerWidth,window.innerHeight);
+}
+
+// ══════════════════════════════════════
+// MODALS & UTILS
+// ══════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+window.openModal=openModal;
+
+function showNotif(msg,type=''){
+  const el=document.createElement('div');
+  el.className=`notif${type?' '+type:''}`;
+  el.textContent=msg;
+  document.getElementById('notifs').appendChild(el);
+  setTimeout(()=>el.style.opacity='0',2500);
+  setTimeout(()=>el.remove(),3000);
+}
+
+function fmtTime(ts){
+  if(!ts) return '';
+  const d=new Date(ts);
+  return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// close dropdowns on outside click
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.emoji-picker-wrap')) document.getElementById('emojiGrid').classList.remove('show');
+});
+
+</script>
+</body>
+</html>

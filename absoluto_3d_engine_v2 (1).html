@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif;color:#fff}
+#c{display:block;width:100%;height:100%;cursor:grab}
+#c.dragging{cursor:grabbing}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#hud-left{position:absolute;top:12px;left:12px;width:180px}
+.bar-row{margin-bottom:5px}
+.blabel{font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.5);margin-bottom:2px}
+.btrack{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;border:0.5px solid rgba(255,255,255,0.1)}
+.bfill{height:100%;border-radius:3px;transition:width .3s}
+#f-hp{background:linear-gradient(90deg,#ff1144,#ff4488);width:100%}
+#f-en{background:linear-gradient(90deg,#0066ff,#00eeff);width:55%}
+#f-hyp{background:linear-gradient(90deg,#ff00ff,#ffff00);width:20%;animation:hpulse 1.2s ease-in-out infinite}
+@keyframes hpulse{0%,100%{opacity:1}50%{opacity:.4}}
+#boss-area{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:55%;text-align:center}
+#bname{font-size:10px;letter-spacing:4px;color:#ff2200;text-shadow:0 0 10px #ff2200;margin-bottom:4px}
+#btrack{height:10px;background:rgba(255,0,0,0.15);border-radius:5px;overflow:hidden;border:1px solid rgba(255,50,0,0.4)}
+#bfill{height:100%;width:100%;background:linear-gradient(90deg,#ff0000,#ff6600,#ffcc00);border-radius:5px;transition:width .5s}
+#powers{position:absolute;bottom:55px;left:50%;transform:translateX(-50%);display:flex;gap:6px;pointer-events:all}
+.pb{width:50px;height:50px;border-radius:8px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.15);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;transition:transform .15s,border-color .15s;position:relative;overflow:hidden}
+.pb:hover{transform:scale(1.18);border-color:rgba(255,255,255,0.7)}
+.pb.on{border-width:1.5px;animation:pbpulse .8s ease-in-out infinite}
+@keyframes pbpulse{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 20px currentColor,0 0 40px currentColor}}
+.pn{font-size:7px;letter-spacing:.5px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+#hbtn{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);pointer-events:all;background:linear-gradient(135deg,#ff00cc,#ff6600,#ffff00);border:none;color:#000;font-weight:900;font-size:10px;letter-spacing:3px;padding:9px 26px;border-radius:25px;cursor:pointer;text-transform:uppercase;animation:hbtn 1.5s ease-in-out infinite}
+@keyframes hbtn{0%,100%{box-shadow:0 0 10px #ff00ff}50%{box-shadow:0 0 30px #ffff00,0 0 60px #ff00ff}}
+#combo{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:32px;font-weight:900;color:#ffee00;text-shadow:0 0 20px #ff8800;opacity:0;transition:opacity .3s;text-align:right;line-height:1.1}
+#combo.on{opacity:1}
+#pwpop{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:24px;font-weight:900;letter-spacing:5px;text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap}
+#htxt{position:absolute;top:28%;left:50%;transform:translateX(-50%);font-size:36px;font-weight:900;letter-spacing:8px;opacity:0;pointer-events:none;white-space:nowrap;text-align:center}
+#htxt.on{animation:htxtanim 3s forwards}
+@keyframes htxtanim{0%{opacity:0;transform:translateX(-50%) scale(.5)}20%{opacity:1;transform:translateX(-50%) scale(1.08)}80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(.9)}}
+#hover{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;pointer-events:none;transition:opacity .5s}
+#hover.on{opacity:1;animation:hov .6s ease-in-out infinite alternate}
+@keyframes hov{0%{opacity:.5}100%{opacity:1}}
+#kill{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;letter-spacing:10px;opacity:0;pointer-events:none;color:#fff}
+#boss-atk{position:absolute;top:18%;left:50%;transform:translateX(-50%);font-size:22px;font-weight:900;letter-spacing:6px;text-transform:uppercase;opacity:0;pointer-events:none;white-space:nowrap;text-align:center;text-shadow:0 0 30px currentColor}
+#boss-atk.show{animation:batkShow 3.5s forwards}
+@keyframes batkShow{0%{opacity:0;transform:translateX(-50%) scale(.4)}15%{opacity:1;transform:translateX(-50%) scale(1.1)}75%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(.95)}}
+#cam-hint{position:absolute;bottom:110px;right:14px;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.3);text-align:right;pointer-events:none}
+#haki-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 0%,#00000088 40%,#000000ee 100%);opacity:0;pointer-events:none;transition:opacity .3s}
+#haki-overlay.on{animation:hakiPulse 2s forwards}
+@keyframes hakiPulse{0%{opacity:0}10%{opacity:1}60%{opacity:.8}100%{opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="hover"></div>
+  <div id="haki-overlay"></div>
+  <div id="hud-left">
+    <div class="bar-row"><div class="blabel">HP</div><div class="btrack"><div class="bfill" id="f-hp"></div></div></div>
+    <div class="bar-row"><div class="blabel">ENERGIA</div><div class="btrack"><div class="bfill" id="f-en"></div></div></div>
+    <div class="bar-row"><div class="blabel">HIPERCARGA</div><div class="btrack"><div class="bfill" id="f-hyp"></div></div></div>
+  </div>
+  <div id="boss-area">
+    <div id="bname">&#9889; O ABSOLUTO &#9889;</div>
+    <div id="btrack"><div id="bfill"></div></div>
+  </div>
+  <div id="combo">COMBO<br>x<span id="cc">0</span></div>
+  <div id="pwpop"></div>
+  <div id="boss-atk" style="color:#ff2200"></div>
+  <div id="htxt">&#9889; HIPERCARGA SUPREMA &#9889;</div>
+  <div id="kill">INIMIGO DESTRUIDO</div>
+  <div id="cam-hint">🖱 ARRASTAR = girar câmera<br>WASD/Setas = mover<br>Scroll = zoom</div>
+  <div id="powers">
+    <div class="pb on" id="p0" onclick="SP(0)" style="color:#ff4400">&#128293;<div class="pn">Fogo</div></div>
+    <div class="pb" id="p1" onclick="SP(1)" style="color:#00aaff">&#9889;<div class="pn">Raio</div></div>
+    <div class="pb" id="p2" onclick="SP(2)" style="color:#ffffaa">&#10022;<div class="pn">Luz</div></div>
+    <div class="pb" id="p3" onclick="SP(3)" style="color:#aa00ff">&#11835;<div class="pn">Vazio</div></div>
+    <div class="pb" id="p4" onclick="SP(4)" style="color:#00ffff">&#10052;<div class="pn">Gelo</div></div>
+    <div class="pb" id="p5" onclick="SP(5)" style="color:#ff00ff">&#127744;<div class="pn">Gravi</div></div>
+    <div class="pb" id="p6" onclick="SP(6)" style="color:#5500ff">&#11835;<div class="pn">Negro</div></div>
+    <div class="pb" id="p7" onclick="SP(7)" style="color:#ff6600">&#127755;<div class="pn">Magma</div></div>
+    <div class="pb" id="p8" onclick="SP(8)" style="color:#00ffcc">&#128142;<div class="pn">Cristal</div></div>
+    <div class="pb" id="p9" onclick="SP(9)" style="color:#ff88ff">&#9883;<div class="pn">Plasma</div></div>
+  </div>
+  <button id="hbtn" onclick="HYPER()">&#9889; HIPERCARGA &#9889;</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const W = window.innerWidth||680, H = window.innerHeight||500;
+const c = document.getElementById('c');
+c.width=W; c.height=H;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(65, W/H, 0.1, 3000);
+camera.position.set(0, 12, 38);
+camera.lookAt(0, 4, 0);
+
+const renderer = new THREE.WebGLRenderer({canvas:c, antialias:true, alpha:false});
+renderer.setSize(W,H);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+renderer.outputEncoding=THREE.sRGBEncoding;
+
+scene.fog = new THREE.FogExp2(0x000008, 0.012);
+scene.background = new THREE.Color(0x000005);
+
+const pw = [
+  {name:'FOGO SUPREMO',c1:0xff2200,c2:0xff8800,c3:0xffff00,em:0xff4400,str:'#ff4400'},
+  {name:'RELAMPAGO COSMICO',c1:0x0088ff,c2:0x00eeff,c3:0xffffff,em:0x00bbff,str:'#00aaff'},
+  {name:'LUZ DIVINA',c1:0xffffcc,c2:0xffffff,c3:0xffff88,em:0xffffaa,str:'#ffffaa'},
+  {name:'SOMBRAS DO VAZIO',c1:0x9900cc,c2:0x6600aa,c3:0xff44ff,em:0xbb00ff,str:'#aa00ff'},
+  {name:'GELO CELESTIAL',c1:0x00ffff,c2:0x88eeff,c3:0xffffff,em:0x00ddff,str:'#00ffff'},
+  {name:'GRAVIDADE NEGRA',c1:0xff00ff,c2:0xff44cc,c3:0xcc00ff,em:0xff00cc,str:'#ff00ff'},
+  {name:'BURACO NEGRO',c1:0x0000ff,c2:0x4400ff,c3:0x8800ff,em:0x2200ff,str:'#5500ff'},
+  {name:'MAGMA INFERNAL',c1:0xff2200,c2:0xff4400,c3:0xff8800,em:0xff3300,str:'#ff6600'},
+  {name:'CRISTAIS GIGANTES',c1:0x00ffcc,c2:0x88ffee,c3:0xffffff,em:0x00eebb,str:'#00ffcc'},
+  {name:'PLASMA NUCLEAR',c1:0xff44ff,c2:0xff00ff,c3:0xffaaff,em:0xff22ff,str:'#ff88ff'},
+];
+
+let sel=0, hyperOn=false, hyperChg=20, combo=0, comboT=0;
+let bossHp=100, playerHp=100, t=0, shake=0, shakeMag=0;
+let particles3d=[], attacks3d=[], lightArrows=[], lightRain=[];
+let bossAttacking=false, bossAttackTimer=0, bossAttackCooldown=300;
+let bossOrbList=[], shadowTentacles=[], bossClones=[], hakiWave=null, meteorList=[];
+let bossBaseY = 14;
+
+// ---- LIGHTS ----
+const ambient = new THREE.AmbientLight(0x111133, 0.8);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xff3300, 0.5);
+sun.position.set(30,60,20);
+sun.castShadow=true; sun.shadow.mapSize.width=1024; sun.shadow.mapSize.height=1024;
+scene.add(sun);
+const playerLight = new THREE.PointLight(pw[0].em, 3, 25);
+playerLight.position.set(0,4,0); scene.add(playerLight);
+const bossLight = new THREE.PointLight(0xff0000, 4, 40);
+bossLight.position.set(0,16,0); scene.add(bossLight);
+
+// ---- GROUND ----
+const groundGeo = new THREE.PlaneGeometry(300,300,60,60);
+const groundMat = new THREE.MeshStandardMaterial({color:0x0a0015,roughness:.9,metalness:.1});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const gridHelper = new THREE.GridHelper(200,40,0x220044,0x110022);
+scene.add(gridHelper);
+
+function makeBuilding(x,z,w,h,d,col){
+  const g=new THREE.BoxGeometry(w,h,d);
+  const m=new THREE.MeshStandardMaterial({color:col,roughness:.8,metalness:.3,emissive:new THREE.Color(col).multiplyScalar(.05)});
+  const mesh=new THREE.Mesh(g,m); mesh.position.set(x,h/2,z); mesh.castShadow=true; scene.add(mesh);
+  const eg=new THREE.EdgesGeometry(g);
+  const wf=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x442266,opacity:.4,transparent:true}));
+  mesh.add(wf); return mesh;
+}
+const buildings=[];
+const bpos=[[-30,60],[30,55],[-55,40],[50,42],[-25,80],[35,75],[-70,30],[65,32],[-15,95],[20,90],[-45,65],[45,62],[-80,10],[75,12],[0,100],[-35,105],[40,108]];
+bpos.forEach(([x,z])=>{
+  const w=4+Math.random()*8, h=8+Math.random()*20, d=4+Math.random()*8;
+  buildings.push(makeBuilding(x,-z,w,h,d,Math.random()<.5?0x0a0020:0x050010));
+});
+
+const floatRocks=[];
+for(let i=0;i<14;i++){
+  const sz=[1.5+Math.random()*4,.6+Math.random()*2,1.5+Math.random()*4];
+  const g=new THREE.BoxGeometry(...sz);
+  const m=new THREE.MeshStandardMaterial({color:0x1a0030,roughness:.9,metalness:.2,emissive:0x110022});
+  const mesh=new THREE.Mesh(g,m);
+  mesh.position.set((Math.random()-.5)*60, 10+Math.random()*20, -10-Math.random()*40);
+  mesh.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+  const wf=new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:0x440066,opacity:.5,transparent:true}));
+  mesh.add(wf); scene.add(mesh);
+  floatRocks.push({mesh,baseY:mesh.position.y,phase:Math.random()*Math.PI*2,rSpeed:(Math.random()-.5)*.008});
+}
+
+function makePerson(col,glowCol){
+  const g=new THREE.Group();
+  const mat=(c)=>new THREE.MeshStandardMaterial({color:c,emissive:new THREE.Color(glowCol).multiplyScalar(.3),roughness:.6,metalness:.4});
+  const core=mat(col);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(1.4,2.2,.8),core); body.position.y=3; g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.7,12,12),mat(col)); head.position.y=5.2; g.add(head);
+  const ll=new THREE.Mesh(new THREE.BoxGeometry(.55,2,.55),core); ll.position.set(-.45,1.2,0); g.add(ll);
+  const rl=new THREE.Mesh(new THREE.BoxGeometry(.55,2,.55),core); rl.position.set(.45,1.2,0); g.add(rl);
+  const la=new THREE.Mesh(new THREE.BoxGeometry(.5,1.8,.5),core); la.position.set(-1.1,3.2,0); g.add(la);
+  const ra=new THREE.Mesh(new THREE.BoxGeometry(.5,1.8,.5),core); ra.position.set(1.1,3.2,0); g.add(ra);
+  const eyeMat=new THREE.MeshBasicMaterial({color:glowCol});
+  g.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),eyeMat),{position:new THREE.Vector3(-.25,5.35,.62)}));
+  g.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),eyeMat),{position:new THREE.Vector3(.25,5.35,.62)}));
+  g.traverse(m=>{if(m.isMesh)m.castShadow=true});
+  return g;
+}
+
+const player=makePerson(0x0a0020, pw[0].em);
+player.position.set(0,0,15); scene.add(player);
+const playerAura = new THREE.PointLight(pw[0].em, 5, 20);
+player.add(playerAura); playerAura.position.set(0,4,0);
+const auraGeo=new THREE.SphereGeometry(3,16,16);
+const auraMat=new THREE.MeshBasicMaterial({color:pw[0].em,transparent:true,opacity:.12,side:THREE.BackSide});
+const auraMesh=new THREE.Mesh(auraGeo,auraMat);
+auraMesh.position.set(0,4,0); player.add(auraMesh);
+
+function makeBoss(){
+  const g=new THREE.Group();
+  const coreMat=new THREE.MeshStandardMaterial({color:0x110000,emissive:0xff0000,emissiveIntensity:.4,roughness:.5,metalness:.8});
+  const core=new THREE.Mesh(new THREE.SphereGeometry(4,20,20),coreMat); g.add(core);
+  const ring1=new THREE.Mesh(new THREE.TorusGeometry(6,0.4,8,40),new THREE.MeshStandardMaterial({color:0xff0000,emissive:0xff2200,emissiveIntensity:.8,metalness:.9}));
+  ring1.rotation.x=Math.PI/2; g.add(ring1);
+  const ring2=new THREE.Mesh(new THREE.TorusGeometry(8,0.25,8,40),new THREE.MeshStandardMaterial({color:0xff4400,emissive:0xff6600,emissiveIntensity:.6,metalness:.9}));
+  ring2.rotation.x=Math.PI/3; g.add(ring2);
+  for(let i=0;i<8;i++){
+    const ang=(i/8)*Math.PI*2;
+    const spike=new THREE.Mesh(new THREE.ConeGeometry(.5,5,6),new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff0000,emissiveIntensity:.5,metalness:.7}));
+    spike.position.set(Math.cos(ang)*5,Math.sin(ang)*5,0); spike.rotation.z=ang+Math.PI/2; g.add(spike);
+  }
+  const eyeMat=new THREE.MeshBasicMaterial({color:0xff0000});
+  const le=new THREE.Mesh(new THREE.SphereGeometry(.7,10,10),eyeMat); le.position.set(-1.5,.5,3.5); g.add(le);
+  const re=new THREE.Mesh(new THREE.SphereGeometry(.7,10,10),eyeMat); re.position.set(1.5,.5,3.5); g.add(re);
+  const armMat=new THREE.MeshStandardMaterial({color:0x220000,emissive:0xff0000,emissiveIntensity:.3,roughness:.6,metalness:.6});
+  [-1,1].forEach(side=>{
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(1.5,8,1.5),armMat);
+    arm.position.set(side*7,-2,0); arm.rotation.z=side*0.3; g.add(arm);
+    const claw=new THREE.Mesh(new THREE.ConeGeometry(.6,3,5),new THREE.MeshStandardMaterial({color:0xff1100,emissive:0xff2200,emissiveIntensity:.6}));
+    claw.position.set(side*8.5,-6.5,0); claw.rotation.z=side*0.5; g.add(claw);
+  });
+  g.traverse(m=>{if(m.isMesh)m.castShadow=true});
+  return g;
+}
+
+const boss=makeBoss();
+boss.position.set(0,14,0); scene.add(boss);
+
+// ============================
+//    BOSS ATTACKS
+// ============================
+
+// ATAQUE 1 - Metralhadora de bolas azuis + mini raios
+function bossAttack1_OrbMachinegun(){
+  showBossAttack('⚡ METRALHADORA ORBITAL ⚡','#00aaff');
+  bossAttacking = true;
+  // Sobe
+  let phase = 0;
+  const riseTarget = 32;
+  const shotCount = 40;
+  let shotsFired = 0;
+  let rising = true;
+  const interval = setInterval(()=>{
+    if(rising){
+      boss.position.y += 1.2;
+      if(boss.position.y >= riseTarget){ rising = false; }
+      return;
+    }
+    // Metralhа bolas
+    if(shotsFired < shotCount){
+      const spread = (Math.random()-.5)*20;
+      const px = boss.position.x + spread;
+      const pz = boss.position.z + 2 + Math.random()*8;
+      spawnBossOrb_Blue(boss.position.x+(Math.random()-.5)*4, boss.position.y, boss.position.z, px, pz);
+      shotsFired++;
+    } else {
+      clearInterval(interval);
+      // Desce
+      const descInterval = setInterval(()=>{
+        boss.position.y -= 1.0;
+        if(boss.position.y <= bossBaseY){ boss.position.y=bossBaseY; clearInterval(descInterval); bossAttacking=false; bossAttackCooldown=300;}
+      },16);
+    }
+  }, 80);
+}
+
+function spawnBossOrb_Blue(sx,sy,sz, tx, tz){
+  const g=new THREE.SphereGeometry(.45,8,8);
+  const m=new THREE.MeshBasicMaterial({color:0x0088ff,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(g,m);
+  mesh.position.set(sx,sy,sz);
+  const light=new THREE.PointLight(0x00aaff,3,10); mesh.add(light);
+  scene.add(mesh);
+  const dx=tx-sx, dz=tz-sz;
+  const dist=Math.sqrt(dx*dx+dz*dz)||1;
+  const spd=0.6;
+  const vx=(dx/dist)*spd, vz=(dz/dist)*spd;
+  let vy=-0.25, lifeT=0;
+  const orb={mesh, vx, vy, vz, tx, tz, life:1, groundHit:false, timer:0};
+  bossOrbList.push(orb);
+  // Check player hit
+  orb.onGround=false;
+}
+
+// ATAQUE 2 - Haki do Rei (expansão que tira quase toda a vida)
+function bossAttack2_HakiExpansion(){
+  showBossAttack('👑 HAKI DO REI - OPRESSAO SUPREMA 👑','#220022');
+  bossAttacking = true;
+  // Pausa dramática
+  shakeMag = 5;
+  setTimeout(()=>{
+    // Flash preto + onda expansiva
+    const hakiOv = document.getElementById('haki-overlay');
+    hakiOv.classList.add('on');
+    setTimeout(()=>hakiOv.classList.remove('on'),2200);
+
+    // Cria onda esférica expandindo
+    spawnHakiWave();
+
+    // Dano pesado com delay
+    setTimeout(()=>{
+      const dmg = 55 + Math.random()*20;
+      takeDamage(dmg);
+      shakeMag = 35;
+      showStatus('HAKI DO REI!!! -'+Math.round(dmg)+'HP','#aa00ff');
+    },600);
+
+    setTimeout(()=>{ bossAttacking=false; bossAttackCooldown=500; },2500);
+  },800);
+}
+
+function spawnHakiWave(){
+  // Anel expansivo preto/roxo
+  const rings = [];
+  for(let r=0;r<3;r++){
+    const geo=new THREE.TorusGeometry(0.5,0.8,8,64);
+    const mat=new THREE.MeshBasicMaterial({color:r===0?0x000000:0x440066,transparent:true,opacity:.9-r*.2,side:THREE.DoubleSide});
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.copy(boss.position);
+    mesh.rotation.x=Math.PI/2;
+    scene.add(mesh);
+    rings.push({mesh,r:0.5,speed:1.8+r*.6,life:1,decay:.012});
+  }
+  // Partículas pretas
+  for(let i=0;i<80;i++) spawnParticle3D(boss.position.x,boss.position.y,boss.position.z,0x440066,.2,1.5);
+
+  // Anima expansão
+  const animId = {active:true};
+  const step=()=>{
+    if(!animId.active) return;
+    rings.forEach(ring=>{
+      ring.r+=ring.speed;
+      ring.life-=ring.decay;
+      ring.mesh.scale.setScalar(ring.r);
+      if(ring.mesh.material) ring.mesh.material.opacity=ring.life*.8;
+      if(ring.life<=0){ scene.remove(ring.mesh); }
+    });
+    if(rings.some(r=>r.life>0)) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ATAQUE 3 - Chuva de Meteoros de Lava
+function bossAttack3_LavaMeteors(){
+  showBossAttack('☄ CHUVA DE METEOROS INFERNAIS ☄','#ff4400');
+  bossAttacking=true;
+  let count=0; const total=18;
+  const iv=setInterval(()=>{
+    if(count>=total){ clearInterval(iv); setTimeout(()=>{bossAttacking=false;bossAttackCooldown=380;},1500); return; }
+    spawnMeteor();
+    count++;
+  },180);
+}
+
+function spawnMeteor(){
+  const rx=(Math.random()-.5)*36, rz=5+Math.random()*18;
+  const g=new THREE.SphereGeometry(.9+Math.random()*.5,8,8);
+  const m=new THREE.MeshStandardMaterial({color:0xff2200,emissive:0xff4400,emissiveIntensity:1,roughness:.4,metalness:.3,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(g,m);
+  const startY=50+Math.random()*20;
+  mesh.position.set(rx,startY,rz);
+  const light=new THREE.PointLight(0xff4400,5,18); mesh.add(light);
+  // Cola de fogo
+  scene.add(mesh);
+  // Partículas de queda
+  for(let i=0;i<12;i++) spawnParticle3D(rx,startY,rz,0xff6600,.15,.4);
+  meteorList.push({mesh,vx:(Math.random()-.5)*.3,vy:-2.2-Math.random()*.8,vz:(Math.random()-.5)*.2,rx,rz,life:1,hit:false});
+}
+
+// ATAQUE 4 - Tentáculos de Sombra emergindo do chão
+function bossAttack4_ShadowTentacles(){
+  showBossAttack('🌑 TENTÁCULOS DAS TREVAS 🌑','#330044');
+  bossAttacking=true;
+  const positions=[
+    [4,12],[-4,10],[8,8],[-8,14],[0,10],[6,18],[-6,16],[3,6],[-3,20]
+  ];
+  // Cria vários tentáculos em posições ao redor do player
+  positions.forEach((_, i)=>{
+    setTimeout(()=>{
+      const ox=(Math.random()-.5)*26, oz=5+Math.random()*20;
+      spawnShadowTentacle(ox, oz);
+    }, i*200);
+  });
+  setTimeout(()=>{ bossAttacking=false; bossAttackCooldown=400; },3500);
+}
+
+function spawnShadowTentacle(ox, oz){
+  // Aviso no chão
+  const warnGeo=new THREE.CircleGeometry(1.2,16);
+  const warnMat=new THREE.MeshBasicMaterial({color:0x440055,transparent:true,opacity:.7,side:THREE.DoubleSide});
+  const warn=new THREE.Mesh(warnGeo,warnMat);
+  warn.rotation.x=-Math.PI/2; warn.position.set(ox,0.05,oz);
+  scene.add(warn);
+
+  setTimeout(()=>{
+    scene.remove(warn);
+    // Tentáculo emerge
+    const segs=5+Math.floor(Math.random()*4);
+    const tentacleGroup=new THREE.Group();
+    const segMeshes=[];
+    for(let s=0;s<segs;s++){
+      const sg=new THREE.CylinderGeometry(.3-s*.03,.35-s*.02,2.2,7);
+      const sm=new THREE.MeshStandardMaterial({color:0x110011,emissive:0x550055,emissiveIntensity:.8,roughness:.7,transparent:true,opacity:.95});
+      const smesh=new THREE.Mesh(sg,sm);
+      smesh.position.y=s*2.2-segs*2.2;
+      tentacleGroup.add(smesh);
+      segMeshes.push(smesh);
+    }
+    // Ponta com brilho
+    const tipGeo=new THREE.SphereGeometry(.4,8,8);
+    const tipMat=new THREE.MeshBasicMaterial({color:0xaa00ff,transparent:true,opacity:.9});
+    const tip=new THREE.Mesh(tipGeo,tipMat);
+    tip.position.y=0.8;
+    tentacleGroup.add(tip);
+    const tipLight=new THREE.PointLight(0xaa00ff,4,10); tip.add(tipLight);
+
+    tentacleGroup.position.set(ox,0,oz);
+    scene.add(tentacleGroup);
+
+    let phase=0; let emerging=true; let lifeT=0;
+    const t_obj={group:tentacleGroup,phase,emerging,lifeT,ox,oz,tip,segMeshes};
+    shadowTentacles.push(t_obj);
+
+    // Dano se player perto
+    setTimeout(()=>{
+      const dx=player.position.x-ox, dz=player.position.z-oz;
+      const dist2=Math.sqrt(dx*dx+dz*dz);
+      if(dist2<5){ takeDamage(12); showStatus('TENTÁCULO! -12HP','#550055'); shakeMag=14; }
+    },800);
+
+    // Remove depois
+    setTimeout(()=>{
+      scene.remove(tentacleGroup);
+      const idx=shadowTentacles.indexOf(t_obj);
+      if(idx>-1) shadowTentacles.splice(idx,1);
+    },3000);
+  },700);
+}
+
+// ATAQUE 5 - Clones Espectrais
+function bossAttack5_SpectralClones(){
+  showBossAttack('👁 CLONES DO ABISMO 👁','#ff0088');
+  bossAttacking=true;
+  // Remove clones antigos
+  bossClones.forEach(cl=>scene.remove(cl.mesh));
+  bossClones=[];
+
+  const cloneCount=4;
+  for(let i=0;i<cloneCount;i++){
+    setTimeout(()=>{
+      const ang=(i/cloneCount)*Math.PI*2+Math.random()*.5;
+      const radius=14+Math.random()*5;
+      const cx=boss.position.x+Math.cos(ang)*radius;
+      const cz=boss.position.z+Math.sin(ang)*radius;
+      const cloneMesh=makeBoss();
+      // Make clone look ghostly
+      cloneMesh.traverse(m=>{
+        if(m.isMesh && m.material){
+          m.material=m.material.clone();
+          m.material.transparent=true;
+          m.material.opacity=0.45;
+          m.material.emissive=new THREE.Color(0xff00aa);
+          m.material.emissiveIntensity=0.9;
+          m.material.color=new THREE.Color(0x550044);
+        }
+      });
+      cloneMesh.position.set(cx,12,cz);
+      const cLight=new THREE.PointLight(0xff0088,3,20);
+      cloneMesh.add(cLight);
+      scene.add(cloneMesh);
+
+      // Clone shoots orb at player
+      setTimeout(()=>{
+        for(let j=0;j<5;j++){
+          setTimeout(()=>{
+            const dx=player.position.x-cloneMesh.position.x;
+            const dz=player.position.z-cloneMesh.position.z;
+            const dist=Math.sqrt(dx*dx+dz*dz)||1;
+            const spd=.5+Math.random()*.3;
+            spawnCloneProjectile(cloneMesh.position.x,cloneMesh.position.y,cloneMesh.position.z,(dx/dist)*spd,(dz/dist)*spd);
+          },j*200);
+        }
+      },600);
+
+      bossClones.push({mesh:cloneMesh,ang,radius,cy:12,life:1,lifeT:0});
+    },i*400);
+  }
+  setTimeout(()=>{ bossAttacking=false; bossAttackCooldown=450; },4000);
+}
+
+function spawnCloneProjectile(sx,sy,sz,vx,vz){
+  const g=new THREE.SphereGeometry(.35,7,7);
+  const m=new THREE.MeshBasicMaterial({color:0xff0088,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(g,m);
+  mesh.position.set(sx,sy-1,sz);
+  const l=new THREE.PointLight(0xff0088,3,8); mesh.add(l);
+  scene.add(mesh);
+  attacks3d.push({mesh,vx,vy:.05,vz,life:1,decay:.012,type:'clone_orb',isCloneProj:true,vx_orig:vx,vz_orig:vz});
+}
+
+// ============================
+//    DAMAGE / STATUS
+// ============================
+function takeDamage(dmg){
+  playerHp=Math.max(0,playerHp-dmg);
+  document.getElementById('f-hp').style.width=playerHp+'%';
+  if(playerHp<=0){
+    showStatus('VOCÊ FOI DERROTADO...','#ff0000');
+    setTimeout(()=>{playerHp=100; document.getElementById('f-hp').style.width='100%'; showStatus('RENASCENDO...','#00ffff');},3000);
+  }
+}
+
+function damageBoss(dmg){
+  bossHp=Math.max(0,bossHp-dmg);
+  document.getElementById('bfill').style.width=bossHp+'%';
+  if(bossHp<=0){
+    const k=document.getElementById('kill');
+    k.style.opacity=1; k.style.animation='none';
+    k.style.color='#fff'; k.style.textShadow='0 0 40px #ff4400';
+    for(let i=0;i<300;i++) spawnParticle3D((Math.random()-.5)*20+boss.position.x,boss.position.y,(Math.random()-.5)*10,0xff4400,.2,1.5);
+    bossHp=100; setTimeout(()=>{ document.getElementById('bfill').style.width='100%'; k.style.opacity=0; },3000);
+  }
+}
+
+// ============================
+//    CAMERA - rotação livre
+// ============================
+let camAngleX=0, camAngleY=0.35, camDist=38;
+let lastMX=-1,lastMY=-1,dragging=false;
+let camVelX=0, camVelY=0; // inertia
+
+c.addEventListener('mousedown',e=>{
+  dragging=true; lastMX=e.clientX; lastMY=e.clientY;
+  c.classList.add('dragging');
+  e.preventDefault();
+});
+c.addEventListener('mousemove',e=>{
+  if(dragging){
+    const dx=(e.clientX-lastMX)*.006;
+    const dy=(e.clientY-lastMY)*.004;
+    camVelX+=dx; camVelY+=dy;
+    lastMX=e.clientX; lastMY=e.clientY;
+  }
+});
+c.addEventListener('mouseup',()=>{ dragging=false; c.classList.remove('dragging'); });
+c.addEventListener('mouseleave',()=>{ dragging=false; c.classList.remove('dragging'); });
+c.addEventListener('contextmenu',e=>e.preventDefault());
+c.addEventListener('wheel',e=>{
+  camDist=Math.max(12,Math.min(80,camDist+e.deltaY*.04));
+});
+
+// Touch support
+let lastTouchX=-1,lastTouchY=-1,touchDragging=false;
+c.addEventListener('touchstart',e=>{touchDragging=true;lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;},{passive:true});
+c.addEventListener('touchmove',e=>{
+  if(touchDragging){
+    const dx=(e.touches[0].clientX-lastTouchX)*.005;
+    const dy=(e.touches[0].clientY-lastTouchY)*.004;
+    camVelX+=dx; camVelY+=dy;
+    lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;
+  }
+},{passive:true});
+c.addEventListener('touchend',()=>touchDragging=false);
+
+// ============================
+//    PLAYER ATTACKS
+// ============================
+function spawnParticle3D(x,y,z,col,sz,spd){
+  const g=new THREE.SphereGeometry(sz,5,5);
+  const m=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(g,m);
+  mesh.position.set(x,y,z);
+  const ang=Math.random()*Math.PI*2, elev=(Math.random()-.3)*Math.PI;
+  const s=spd+Math.random()*spd;
+  scene.add(mesh);
+  particles3d.push({mesh,vx:Math.cos(ang)*Math.cos(elev)*s,vy:Math.sin(elev)*s+spd*.5,vz:Math.sin(ang)*Math.cos(elev)*s,life:1,decay:.025+Math.random()*.02});
+}
+
+function spawnAttack3D(px,py,pz,power){
+  const p=pw[power];
+  if(power===2){ fireLightRain(px,py,pz,p); return; }
+  if(power===6){ fireBlackhole(px,py,pz,p); return; }
+  if(power===0){ fireFireball(px,py,pz,p); return; }
+  if(power===1){ fireLightning3D(px,py,pz,p); return; }
+  if(power===3){ fireVoid(px,py,pz,p); return; }
+  if(power===4){ fireIce(px,py,pz,p); return; }
+  if(power===8){ fireCrystals(px,py,pz,p); return; }
+  const num=hyperOn?10:4;
+  for(let i=0;i<num;i++){
+    const sz=hyperOn?.35+Math.random()*.4:.18+Math.random()*.25;
+    const g=new THREE.SphereGeometry(sz,7,7);
+    const m=new THREE.MeshBasicMaterial({color:p.c1,transparent:true,opacity:1});
+    const mesh=new THREE.Mesh(g,m);
+    mesh.position.set(px+(Math.random()-.5)*.5,py,pz);
+    const spread=hyperOn?.6:.3;
+    scene.add(mesh);
+    attacks3d.push({mesh,vx:(Math.random()-.5)*spread,vy:hyperOn?4+Math.random()*4:3+Math.random()*3,vz:-2-Math.random()*3,life:1,decay:.018,type:'orb',power});
+    const trail=new THREE.PointLight(p.em,.8,4); mesh.add(trail);
+  }
+  damageBoss(hyperOn?4:1.5);
+}
+
+function fireFireball(px,py,pz,p){
+  const num=hyperOn?8:3;
+  for(let i=0;i<num;i++){
+    const g=new THREE.SphereGeometry(.4+Math.random()*.3,10,10);
+    const m=new THREE.MeshBasicMaterial({color:p.c1,transparent:true,opacity:1});
+    const mesh=new THREE.Mesh(g,m); mesh.position.set(px+(Math.random()-.5),py+Math.random(),pz);
+    scene.add(mesh);
+    const light=new THREE.PointLight(p.em,2,8); mesh.add(light);
+    attacks3d.push({mesh,vx:(Math.random()-.5)*.8,vy:2+Math.random()*3,vz:-2.5-Math.random()*2,life:1,decay:.015,type:'fire',power:0});
+    for(let j=0;j<6;j++) spawnParticle3D(px,py,pz,p.c3,.1,.5);
+  }
+  damageBoss(hyperOn?5:2);
+}
+
+function fireLightning3D(px,py,pz,p){
+  const pts=[];
+  let cx=px,cy=py+2;
+  for(let i=0;i<12;i++){ pts.push(new THREE.Vector3(cx+(Math.random()-.5)*3,cy+i*4,py+i*(-2.5))); cx+=(Math.random()-.5)*3; }
+  const curve=new THREE.CatmullRomCurve3(pts);
+  const geo=new THREE.TubeGeometry(curve,20,.08,4,false);
+  const mat=new THREE.MeshBasicMaterial({color:p.c2,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
+  attacks3d.push({mesh,vx:0,vy:0,vz:0,life:1,decay:.04,type:'lightning',power:1});
+  const light=new THREE.PointLight(p.em,6,25); light.position.set(px,py+10,pz-15); scene.add(light);
+  attacks3d.push({mesh:light,vx:0,vy:0,vz:0,life:1,decay:.05,type:'light_only',isLight:true});
+  damageBoss(hyperOn?6:2.5);
+}
+
+function fireLightRain(px,py,pz,p){
+  const num=hyperOn?30:12;
+  for(let i=0;i<num;i++){
+    const dropGeo=new THREE.CylinderGeometry(.04,.04,2+Math.random()*3,5);
+    const dropMat=new THREE.MeshBasicMaterial({color:0xffffaa,transparent:true,opacity:.9});
+    const drop=new THREE.Mesh(dropGeo,dropMat);
+    const rx=(Math.random()-.5)*50, rz=-20-Math.random()*40;
+    drop.position.set(rx,50+Math.random()*20,rz);
+    const light2=new THREE.PointLight(0xffffaa,.6,6); drop.add(light2); scene.add(drop);
+    lightRain.push({mesh:drop,vy:-18-Math.random()*10,life:1,decay:.008});
+    setTimeout(()=>{
+      const flash=new THREE.PointLight(0xffffff,8,20); flash.position.set(rx,0,rz); scene.add(flash);
+      setTimeout(()=>scene.remove(flash),150);
+      for(let j=0;j<8;j++) spawnParticle3D(rx,.5,rz,0xffffcc,.15,.8);
+    },1000+Math.random()*2000);
+  }
+  const masterLight=new THREE.PointLight(0xffffaa,3,60);
+  masterLight.position.set(px,30,pz-10); scene.add(masterLight);
+  setTimeout(()=>scene.remove(masterLight),3000);
+  showStatus('CHUVA DE LUZ DIVINA!','#ffffaa');
+  damageBoss(hyperOn?8:3);
+}
+
+function fireVoid(px,py,pz,p){
+  const g=new THREE.SphereGeometry(.8,14,14);
+  const m=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:1});
+  const mesh=new THREE.Mesh(g,m); mesh.position.set(px,py+1,pz-2); scene.add(mesh);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,.15,6,30),new THREE.MeshBasicMaterial({color:p.c3,transparent:true,opacity:.9}));
+  mesh.add(ring);
+  attacks3d.push({mesh,vx:(Math.random()-.5)*.3,vy:.5,vz:-3,life:1,decay:.008,type:'void',power:3,ring});
+  const light=new THREE.PointLight(p.em,4,18); mesh.add(light);
+  for(let i=0;i<20;i++) spawnParticle3D(px,py,pz,p.c3,.12,.6);
+  damageBoss(hyperOn?6:2.5);
+}
+
+function fireIce(px,py,pz,p){
+  const num=hyperOn?8:4;
+  for(let i=0;i<num;i++){
+    const g=new THREE.ConeGeometry(.3,.9+Math.random()*.6,5);
+    const m=new THREE.MeshStandardMaterial({color:p.c1,emissive:p.em,emissiveIntensity:.5,transparent:true,opacity:.85,metalness:.9,roughness:.1});
+    const mesh=new THREE.Mesh(g,m); mesh.position.set(px+(Math.random()-.5)*2,py+1+Math.random()*2,pz);
+    mesh.rotation.set(Math.random(),Math.random(),Math.random()); scene.add(mesh);
+    const light=new THREE.PointLight(p.em,.8,6); mesh.add(light);
+    attacks3d.push({mesh,vx:(Math.random()-.5)*2,vy:4+Math.random()*2,vz:-2-Math.random()*2,life:1,decay:.02,type:'ice',power:4});
+  }
+  damageBoss(hyperOn?4:2);
+}
+
+function fireCrystals(px,py,pz,p){
+  for(let i=0;i<(hyperOn?12:5);i++){
+    const h=1+Math.random()*2;
+    const g=new THREE.ConeGeometry(.2+Math.random()*.2,h,6);
+    const m=new THREE.MeshStandardMaterial({color:p.c1,emissive:p.em,emissiveIntensity:.6,transparent:true,opacity:.8,metalness:.95,roughness:.05});
+    const mesh=new THREE.Mesh(g,m); mesh.position.set(px+(Math.random()-.5)*3,py+Math.random()*2,pz+(Math.random()-.5)*2);
+    scene.add(mesh);
+    const light=new THREE.PointLight(p.em,1,8); mesh.add(light);
+    attacks3d.push({mesh,vx:(Math.random()-.5)*2,vy:3+Math.random()*4,vz:-1.5-Math.random()*2,life:1,decay:.018,type:'crystal',power:8});
+  }
+  showStatus('CRISTAIS CELESTIAIS!','#00ffcc');
+  damageBoss(hyperOn?5:2);
+}
+
+function fireBlackhole(px,py,pz,p){
+  const g=new THREE.SphereGeometry(1.5,20,20);
+  const m=new THREE.MeshBasicMaterial({color:0x000000,transparent:false});
+  const mesh=new THREE.Mesh(g,m); mesh.position.set(px,py+3,pz-5); scene.add(mesh);
+  const disk=new THREE.Mesh(new THREE.TorusGeometry(3,.4,8,40),new THREE.MeshBasicMaterial({color:p.c3,transparent:true,opacity:.8}));
+  mesh.add(disk);
+  const disk2=new THREE.Mesh(new THREE.TorusGeometry(4.5,.25,8,40),new THREE.MeshBasicMaterial({color:p.c2,transparent:true,opacity:.5}));
+  disk2.rotation.x=.4; mesh.add(disk2);
+  const light=new THREE.PointLight(p.em,6,30); mesh.add(light);
+  attacks3d.push({mesh,vx:0,vy:.1,vz:-.8,life:1,decay:.004,type:'blackhole',power:6,disk,disk2});
+  for(let i=0;i<40;i++) spawnParticle3D(px,py+3,pz-5,p.c1,.15,.8);
+  showStatus('BURACO NEGRO SUPREMO!',p.str);
+  damageBoss(hyperOn?10:4);
+}
+
+// ============================
+//    UI HELPERS
+// ============================
+function showBossAttack(txt, col){
+  const el=document.getElementById('boss-atk');
+  el.textContent=txt;
+  el.style.color=col;
+  el.style.textShadow=`0 0 30px ${col}, 0 0 60px ${col}`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+function SP(i){
+  sel=i;
+  document.querySelectorAll('.pb').forEach((b,j)=>b.classList.toggle('on',j===i));
+  const p=pw[i];
+  playerAura.color.set(p.em);
+  playerLight.color.set(p.em);
+  auraMat.color.set(p.em);
+  playerAura.intensity=5;
+  setTimeout(()=>playerAura.intensity=3,400);
+  const pop=document.getElementById('pwpop');
+  pop.textContent=p.name; pop.style.color=p.str;
+  pop.style.textShadow=`0 0 20px ${p.str}, 0 0 40px ${p.str}`;
+  pop.style.opacity=1;
+  setTimeout(()=>pop.style.opacity=0,1800);
+  shakeMag=8;
+  spawnAttack3D(player.position.x, player.position.y+4, player.position.z, i);
+  addCombo();
+}
+
+function HYPER(){
+  if(hyperChg<30){showStatus('HIPERCARGA INSUFICIENTE!','#ff4400');return;}
+  hyperOn=true; hyperChg=0;
+  document.getElementById('f-hyp').style.width='0%';
+  document.getElementById('htxt').classList.add('on');
+  setTimeout(()=>document.getElementById('htxt').classList.remove('on'),3000);
+  const ov=document.getElementById('hover');
+  ov.style.background=`radial-gradient(ellipse at center,transparent 20%,${pw[sel].str}44 70%,${pw[sel].str}88 100%)`;
+  ov.classList.add('on');
+  shakeMag=25;
+  for(let i=0;i<300;i++) spawnParticle3D(player.position.x,player.position.y+4,player.position.z,pw[sel].c1,.15,.8);
+  for(let i=0;i<200;i++) spawnParticle3D(player.position.x,player.position.y+4,player.position.z,pw[sel].c2,.12,.5);
+  floatRocks.forEach(r=>{ r.baseY+=10+Math.random()*8; });
+  for(let i=0;i<12;i++){
+    setTimeout(()=>{
+      const pts=[];
+      for(let j=0;j<10;j++) pts.push(new THREE.Vector3(player.position.x+(Math.random()-.5)*30,j*8,player.position.z+(Math.random()-.5)*30));
+      const cv=new THREE.CatmullRomCurve3(pts);
+      const g=new THREE.TubeGeometry(cv,15,.05,4,false);
+      const m=new THREE.MeshBasicMaterial({color:pw[sel].em,transparent:true,opacity:.9});
+      const mesh=new THREE.Mesh(g,m); scene.add(mesh);
+      attacks3d.push({mesh,vx:0,vy:0,vz:0,life:1,decay:.04,type:'lightning',power:sel});
+    },i*120);
+  }
+  showStatus('HIPERCARGA ATIVADA!',pw[sel].str);
+  auraMat.scale=new THREE.Vector3(3,3,3);
+  setTimeout(()=>{ hyperOn=false; ov.classList.remove('on'); },9000);
+}
+
+function addCombo(){
+  combo++; comboT=120;
+  document.getElementById('cc').textContent=combo;
+  document.getElementById('combo').classList.add('on');
+}
+
+function showStatus(txt,col){
+  const s=document.createElement('div');
+  s.style.cssText=`position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;letter-spacing:4px;color:${col};text-shadow:0 0 20px ${col};pointer-events:none;white-space:nowrap;animation:fadeOut 2.5s forwards`;
+  s.textContent=txt;
+  document.getElementById('ui').appendChild(s);
+  const styleEl=document.createElement('style');
+  styleEl.textContent='@keyframes fadeOut{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1}100%{opacity:0}}';
+  document.head.appendChild(styleEl);
+  setTimeout(()=>s.remove(),2600);
+}
+
+// Click = atirar
+c.addEventListener('click',(e)=>{
+  if(Math.abs(camVelX)>.01||Math.abs(camVelY)>.01) return; // ignore click when rotating
+  const rect=c.getBoundingClientRect();
+  const cx=(e.clientX-rect.left)/rect.width*2-1;
+  const cy=-((e.clientY-rect.top)/rect.height)*2+1;
+  spawnAttack3D(player.position.x+(cx*8), player.position.y+4, player.position.z, sel);
+  for(let i=0;i<(hyperOn?60:20);i++) spawnParticle3D(player.position.x,player.position.y+4,player.position.z,pw[sel].c1,.12,.5);
+  shakeMag=10;
+  hyperChg=Math.min(100,hyperChg+10);
+  document.getElementById('f-hyp').style.width=Math.min(100,hyperChg)+'%';
+  addCombo();
+});
+
+const keys={};
+document.addEventListener('keydown',e=>keys[e.code]=true);
+document.addEventListener('keyup',e=>keys[e.code]=false);
+
+// ============================
+//    MAIN LOOP
+// ============================
+const clock=new THREE.Clock();
+let autoShootTimer=0;
+let bossAttackPhase=0; // which attack is next 0-4
+
+function chooseNextBossAttack(){
+  // cycle through 5 attacks in order, then shuffle a bit
+  const atk = bossAttackPhase % 5;
+  bossAttackPhase++;
+  return atk;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  t+=dt*60;
+
+  // PLAYER MOVEMENT
+  const moveSpd=0.2;
+  if(keys['ArrowLeft']||keys['KeyA']) player.position.x-=moveSpd;
+  if(keys['ArrowRight']||keys['KeyD']) player.position.x+=moveSpd;
+  if(keys['ArrowUp']||keys['KeyW']) player.position.z-=moveSpd;
+  if(keys['ArrowDown']||keys['KeyS']) player.position.z+=moveSpd;
+  if(keys['Space']){
+    spawnAttack3D(player.position.x,player.position.y+4,player.position.z,sel);
+    hyperChg=Math.min(100,hyperChg+3);
+    document.getElementById('f-hyp').style.width=Math.min(100,hyperChg)+'%';
+  }
+  player.position.x=Math.max(-22,Math.min(22,player.position.x));
+  player.position.z=Math.max(0,Math.min(24,player.position.z));
+
+  autoShootTimer++;
+  if(hyperOn && autoShootTimer%8===0) spawnAttack3D(player.position.x+(Math.random()-.5)*3,player.position.y+4,player.position.z,sel);
+
+  // CAMERA - suave com inércia
+  camVelX *= 0.88;
+  camVelY *= 0.88;
+  camAngleX += camVelX;
+  camAngleY = Math.max(0.08, Math.min(1.35, camAngleY + camVelY));
+
+  const camH = camDist * Math.sin(camAngleY);
+  const camXZ = camDist * Math.cos(camAngleY);
+  camera.position.x = player.position.x + Math.sin(camAngleX) * camXZ;
+  camera.position.z = player.position.z + Math.cos(camAngleX) * camXZ;
+  camera.position.y = player.position.y + camH;
+  if(shakeMag>0.2){
+    camera.position.x+=(Math.random()-.5)*shakeMag*.25;
+    camera.position.y+=(Math.random()-.5)*shakeMag*.15;
+    shakeMag*=0.84;
+  }
+  camera.lookAt(player.position.x, player.position.y+5, player.position.z-4);
+
+  // PLAYER anim
+  player.rotation.y=Math.sin(t*.015)*.12;
+  if(hyperOn){ auraMat.opacity=.15+.08*Math.sin(t*.08); auraMesh.scale.setScalar(1+.3*Math.sin(t*.06)); }
+
+  // BOSS anim
+  boss.rotation.y+=0.008;
+  boss.children.forEach((ch,i)=>{
+    if(ch.isMesh&&ch.geometry.type==='TorusGeometry') ch.rotation.z+=0.015*(i%2===0?1:-1);
+  });
+  bossLight.intensity=3+2*Math.sin(t*.07);
+  bossLight.position.copy(boss.position);
+  bossLight.position.y+=2;
+
+  // Tentacle animation
+  shadowTentacles.forEach(ten=>{
+    ten.lifeT+=dt;
+    const emerge=Math.min(1,ten.lifeT/0.7);
+    ten.group.position.y=emerge*ten.segMeshes.length*2.2-ten.segMeshes.length*2.2;
+    ten.group.rotation.y+=0.04;
+    ten.segMeshes.forEach((sm,i)=>{ sm.rotation.x=Math.sin(t*.05+i*.6)*.2; });
+  });
+
+  // BOSS CLONES animation
+  bossClones.forEach((cl,i)=>{
+    cl.lifeT+=dt;
+    cl.mesh.rotation.y+=0.025;
+    cl.mesh.position.y=cl.cy+Math.sin(t*.05+i)*1.5;
+    // Fade out near end
+    if(cl.lifeT>2.5){
+      cl.mesh.traverse(m=>{ if(m.isMesh&&m.material) m.material.opacity=Math.max(0,(3.5-cl.lifeT)*.5); });
+    }
+    if(cl.lifeT>3.5){ scene.remove(cl.mesh); }
+  });
+  bossClones=bossClones.filter(cl=>cl.lifeT<=3.5);
+
+  // BOSS ORB (attack 1) update
+  bossOrbList=bossOrbList.filter(orb=>{
+    orb.mesh.position.x+=orb.vx;
+    orb.mesh.position.y+=orb.vy;
+    orb.mesh.position.z+=orb.vz;
+    orb.vy-=0.018;
+    if(orb.mesh.position.y<=0.5&&!orb.onGround){
+      orb.onGround=true;
+      // Mini raio no chão
+      spawnGroundLightning(orb.mesh.position.x,orb.mesh.position.z);
+      scene.remove(orb.mesh);
+      // Dano ao player se perto
+      const dx=player.position.x-orb.mesh.position.x, dz=player.position.z-orb.mesh.position.z;
+      if(Math.sqrt(dx*dx+dz*dz)<3.5){ takeDamage(6); shakeMag=8; }
+      return false;
+    }
+    if(orb.mesh.position.y<-5){ scene.remove(orb.mesh); return false; }
+    return true;
+  });
+
+  // METEORS update
+  meteorList=meteorList.filter(met=>{
+    met.mesh.position.x+=met.vx;
+    met.mesh.position.y+=met.vy;
+    met.mesh.position.z+=met.vz;
+    if(met.mesh.position.y<=0.5&&!met.hit){
+      met.hit=true;
+      // Impacto
+      for(let i=0;i<30;i++) spawnParticle3D(met.rx,1,met.rz,0xff4400,.2,1.2);
+      const flash=new THREE.PointLight(0xff4400,20,30); flash.position.set(met.rx,2,met.rz); scene.add(flash);
+      setTimeout(()=>scene.remove(flash),300);
+      scene.remove(met.mesh);
+      shakeMag=Math.max(shakeMag,16);
+      const dx=player.position.x-met.rx, dz=player.position.z-met.rz;
+      if(Math.sqrt(dx*dx+dz*dz)<5){ takeDamage(14); showStatus('METEORO! -14HP','#ff4400'); }
+      return false;
+    }
+    // Partículas de cauda
+    if(Math.random()<.4) spawnParticle3D(met.mesh.position.x,met.mesh.position.y,met.mesh.position.z,0xff6600,.12,.3);
+    return true;
+  });
+
+  // Clone proj - check player hit
+  attacks3d.forEach(a=>{
+    if(a.isCloneProj){
+      const dx=player.position.x-a.mesh.position.x, dz=player.position.z-a.mesh.position.z;
+      if(Math.sqrt(dx*dx+dz*dz)<2){ takeDamage(8); a.life=0; shakeMag=10; }
+    }
+  });
+
+  // BOSS ATTACK TIMER
+  if(!bossAttacking&&bossHp>0){
+    bossAttackCooldown--;
+    if(bossAttackCooldown<=0){
+      const atk=chooseNextBossAttack();
+      if(atk===0) bossAttack1_OrbMachinegun();
+      else if(atk===1) bossAttack2_HakiExpansion();
+      else if(atk===2) bossAttack3_LavaMeteors();
+      else if(atk===3) bossAttack4_ShadowTentacles();
+      else bossAttack5_SpectralClones();
+    }
+  }
+
+  // FLOAT ROCKS
+  floatRocks.forEach(r=>{
+    r.phase+=0.008;
+    r.mesh.position.y=r.baseY+Math.sin(r.phase)*2.5;
+    r.mesh.rotation.y+=r.rSpeed;
+    r.mesh.rotation.x+=r.rSpeed*.5;
+    if(hyperOn) r.mesh.position.y+=3*Math.sin(t*.04+r.phase);
+  });
+
+  // ATTACKS (player)
+  attacks3d=attacks3d.filter(a=>{
+    if(a.isLight){
+      a.life-=a.decay; a.mesh.intensity=a.life*6;
+      if(a.life<=0){scene.remove(a.mesh);return false;} return true;
+    }
+    a.life-=a.decay;
+    if(a.life<=0){scene.remove(a.mesh);return false;}
+    if(a.type!=='lightning'&&a.type!=='light_only'){
+      a.mesh.position.x+=a.vx;
+      a.mesh.position.y+=a.vy*.06;
+      a.mesh.position.z+=a.vz;
+      a.vy-=.5;
+    }
+    if(a.type==='blackhole'){if(a.disk)a.disk.rotation.y+=.08;if(a.disk2){a.disk2.rotation.y-=.05;a.disk2.rotation.z+=.03;}}
+    if(a.type==='void'&&a.ring){a.ring.rotation.y+=.12;a.ring.rotation.x+=.06;}
+    if(a.type==='ice') a.mesh.rotation.x+=.06;
+    if(a.type==='crystal') a.mesh.rotation.y+=.04;
+    if(a.type==='fire') a.mesh.scale.setScalar(1+.2*Math.sin(t*.2));
+    if(a.mesh.material) a.mesh.material.opacity=a.life;
+    if(a.mesh.position.y<-3||a.life<.01){scene.remove(a.mesh);return false;}
+    return true;
+  });
+
+  lightRain=lightRain.filter(r=>{
+    r.life-=r.decay;
+    if(r.life<=0){scene.remove(r.mesh);return false;}
+    r.mesh.position.y+=r.vy*dt;
+    if(r.mesh.position.y<0){scene.remove(r.mesh);return false;}
+    r.mesh.material.opacity=r.life*.9;
+    return true;
+  });
+
+  particles3d=particles3d.filter(p=>{
+    p.life-=p.decay;
+    if(p.life<=0){scene.remove(p.mesh);return false;}
+    p.mesh.position.x+=p.vx*dt*60*.016;
+    p.mesh.position.y+=p.vy*dt*60*.016;
+    p.mesh.position.z+=p.vz*dt*60*.016;
+    p.vy-=0.03;
+    p.mesh.material.opacity=p.life;
+    p.mesh.scale.setScalar(p.life*.8+.2);
+    return true;
+  });
+
+  if(comboT>0){comboT--;if(comboT===0){combo=0;document.getElementById('combo').classList.remove('on');}}
+
+  sun.color.setHex(hyperOn?pw[sel].em:0xff3300);
+
+  renderer.render(scene,camera);
+}
+
+// Mini raio no chão
+function spawnGroundLightning(gx,gz){
+  const flash=new THREE.PointLight(0x00aaff,12,15);
+  flash.position.set(gx,0.5,gz); scene.add(flash);
+  const numBolts=4+Math.floor(Math.random()*4);
+  const bolts=[];
+  for(let b=0;b<numBolts;b++){
+    const pts=[];
+    let cx=gx,cy=0.1;
+    const endX=gx+(Math.random()-.5)*5, endZ=gz+(Math.random()-.5)*5;
+    for(let s=0;s<7;s++){
+      const frac=s/6;
+      pts.push(new THREE.Vector3(cx+(Math.random()-.5)*1.5, cy+Math.random()*.5, gz+(endZ-gz)*frac+(Math.random()-.5)*1));
+      cx+=(endX-gx)/6;
+    }
+    const curve=new THREE.CatmullRomCurve3(pts);
+    const geo=new THREE.TubeGeometry(curve,10,.04,4,false);
+    const mat=new THREE.MeshBasicMaterial({color:0x00eeff,transparent:true,opacity:1});
+    const mesh=new THREE.Mesh(geo,mat); scene.add(mesh);
+    bolts.push(mesh);
+  }
+  // Partículas
+  for(let i=0;i<15;i++) spawnParticle3D(gx,.5,gz,0x00aaff,.1,.6);
+  // Remove depois
+  setTimeout(()=>{
+    scene.remove(flash);
+    bolts.forEach(b=>scene.remove(b));
+  },350);
+}
+
+animate();
+window.addEventListener('resize',()=>{
+  renderer.setSize(window.innerWidth,window.innerHeight||500);
+  camera.aspect=(window.innerWidth)/(window.innerHeight||500);
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>

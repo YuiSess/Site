@@ -1,0 +1,991 @@
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  #hud { position: absolute; top: 10px; left: 10px; right: 10px; }
+  .bar-wrap { margin-bottom: 6px; }
+  .bar-label { font-size: 10px; letter-spacing: 2px; color: #aaa; margin-bottom: 2px; }
+  .bar-bg { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  #hp-fill { background: linear-gradient(90deg, #ff2244, #ff6688); width: 75%; }
+  #en-fill { background: linear-gradient(90deg, #0088ff, #00ffff); width: 60%; }
+  #hyper-fill { background: linear-gradient(90deg, #ff00ff, #ffff00, #ff00ff); width: 30%; animation: hyperPulse 1s infinite; }
+  @keyframes hyperPulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+  #power-grid { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: all; }
+  .power-btn { width: 52px; height: 52px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.7); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; position: relative; overflow: hidden; }
+  .power-btn:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.8); }
+  .power-btn .pname { font-size: 7px; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+  .power-btn.active { box-shadow: 0 0 20px currentColor; }
+  #hyper-btn { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); pointer-events: all; background: linear-gradient(135deg, #ff00ff, #ff6600, #ffff00); border: none; color: #000; font-weight: 900; font-size: 11px; letter-spacing: 3px; padding: 10px 28px; border-radius: 30px; cursor: pointer; text-transform: uppercase; animation: hyperBtn 2s infinite; }
+  @keyframes hyperBtn { 0%,100% { box-shadow: 0 0 10px #ff00ff; } 50% { box-shadow: 0 0 30px #ffff00, 0 0 60px #ff00ff; } }
+  #boss-bar { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 60%; }
+  #boss-name { font-size: 11px; letter-spacing: 3px; color: #ff3300; text-align: center; margin-bottom: 4px; text-shadow: 0 0 10px #ff3300; }
+  #boss-hp-bg { height: 12px; background: rgba(255,0,0,0.2); border-radius: 6px; overflow: hidden; border: 1px solid #ff3300; }
+  #boss-hp-fill { height: 100%; width: 85%; background: linear-gradient(90deg, #ff0000, #ff6600, #ffff00); border-radius: 6px; }
+  #combo { position: absolute; top: 50%; right: 20px; transform: translateY(-50%); font-size: 36px; font-weight: 900; color: #ffff00; text-shadow: 0 0 20px #ff6600; opacity: 0; transition: opacity 0.3s; text-align: right; }
+  #combo.show { opacity: 1; }
+  #status-text { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); font-size: 13px; letter-spacing: 4px; color: #fff; text-shadow: 0 0 15px #00ffff; opacity: 0; transition: opacity 0.5s; white-space: nowrap; }
+  #status-text.show { opacity: 1; }
+  #hyper-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(255,0,255,0.15) 70%, rgba(255,100,0,0.3) 100%); transition: opacity 0.5s; }
+  #hyper-overlay.active { opacity: 1; animation: hyperOverlay 0.5s infinite alternate; }
+  @keyframes hyperOverlay { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+  #scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); }
+  #vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%); }
+  #power-name-popup { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 900; letter-spacing: 6px; text-transform: uppercase; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  #minimap { position: absolute; top: 100px; right: 10px; width: 80px; height: 80px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.5); }
+  .map-dot { position: absolute; width: 5px; height: 5px; border-radius: 50%; }
+  #hyper-mode-text { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 40px; font-weight: 900; letter-spacing: 8px; color: #fff; text-shadow: 0 0 40px #ff00ff, 0 0 80px #ffff00; opacity: 0; pointer-events: none; }
+  #hyper-mode-text.show { animation: hyperText 3s forwards; }
+  @keyframes hyperText { 0% { opacity:0; transform:translateX(-50%) scale(0.5); } 20% { opacity:1; transform:translateX(-50%) scale(1.1); } 80% { opacity:1; transform:translateX(-50%) scale(1); } 100% { opacity:0; transform:translateX(-50%) scale(0.9); } }
+</style>
+
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="hyper-overlay"></div>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+  
+  <div id="hud">
+    <div style="display:flex; gap:20px; max-width:300px;">
+      <div style="flex:1;">
+        <div class="bar-wrap">
+          <div class="bar-label">HP</div>
+          <div class="bar-bg"><div class="bar-fill" id="hp-fill"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-label">ENERGIA</div>
+          <div class="bar-bg"><div class="bar-fill" id="en-fill"></div></div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-label">HIPERCARGA</div>
+          <div class="bar-bg"><div class="bar-fill" id="hyper-fill"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="boss-bar">
+    <div id="boss-name">⚡ O ABSOLUTO ⚡</div>
+    <div id="boss-hp-bg"><div id="boss-hp-fill"></div></div>
+  </div>
+
+  <div id="minimap">
+    <div class="map-dot" style="background:#00ff88; left:38px; top:38px; box-shadow:0 0 4px #00ff88;"></div>
+    <div class="map-dot" style="background:#ff0000; left:60px; top:20px; box-shadow:0 0 4px #ff0000;"></div>
+    <div class="map-dot" style="background:#ff6600; left:20px; top:55px; box-shadow:0 0 4px #ff6600;"></div>
+  </div>
+
+  <div id="power-name-popup"></div>
+  <div id="hyper-mode-text">⚡ HIPERCARGA ⚡</div>
+  <div id="combo">COMBO x<span id="combo-count">0</span></div>
+  <div id="status-text">PODER SUPREMO ATIVADO</div>
+
+  <div id="power-grid">
+    <div class="power-btn" id="pb0" onclick="selectPower(0)" style="color:#ff4400;">🔥<div class="pname">Fogo</div></div>
+    <div class="power-btn" id="pb1" onclick="selectPower(1)" style="color:#00aaff;">⚡<div class="pname">Raio</div></div>
+    <div class="power-btn" id="pb2" onclick="selectPower(2)" style="color:#ffffff;">✨<div class="pname">Luz</div></div>
+    <div class="power-btn" id="pb3" onclick="selectPower(3)" style="color:#9900ff;">🌑<div class="pname">Vazio</div></div>
+    <div class="power-btn" id="pb4" onclick="selectPower(4)" style="color:#00ffff;">❄️<div class="pname">Gelo</div></div>
+    <div class="power-btn" id="pb5" onclick="selectPower(5)" style="color:#ff00ff;">🌀<div class="pname">Gravit</div></div>
+    <div class="power-btn" id="pb6" onclick="selectPower(6)" style="color:#000033; border-color:#4400ff;">⬛<div class="pname">Buraco</div></div>
+    <div class="power-btn" id="pb7" onclick="selectPower(7)" style="color:#ff6600;">🌋<div class="pname">Magma</div></div>
+    <div class="power-btn" id="pb8" onclick="selectPower(8)" style="color:#aaffff;">💎<div class="pname">Cristal</div></div>
+    <div class="power-btn" id="pb9" onclick="selectPower(9)" style="color:#ff66ff;">⚛️<div class="pname">Plasma</div></div>
+  </div>
+  <button id="hyper-btn" onclick="activateHyper()">⚡ HIPERCARGA ⚡</button>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth || 680;
+  H = canvas.height = window.innerHeight || 400;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const powers = [
+  { name:'FOGO SUPREMO', colors:['#ff2200','#ff6600','#ffaa00','#ffff00'], secondary:'#ff4400' },
+  { name:'RELÂMPAGO CÓSMICO', colors:['#0088ff','#00aaff','#ffffff','#aaddff'], secondary:'#00ccff' },
+  { name:'LUZ DIVINA', colors:['#ffffff','#ffffaa','#ffff00','#ffffcc'], secondary:'#ffff88' },
+  { name:'SOMBRAS DO VAZIO', colors:['#9900cc','#6600aa','#440077','#cc00ff'], secondary:'#aa00ff' },
+  { name:'GELO CELESTIAL', colors:['#00ffff','#aaffff','#88ccff','#ffffff'], secondary:'#00eeee' },
+  { name:'GRAVIDADE NEGRA', colors:['#ff00ff','#cc00cc','#880088','#ff66ff'], secondary:'#ff00cc' },
+  { name:'BURACO NEGRO', colors:['#0000aa','#000066','#110033','#4400ff'], secondary:'#2200ff' },
+  { name:'MAGMA INFERNAL', colors:['#ff4400','#ff2200','#cc1100','#ff8800'], secondary:'#ff5500' },
+  { name:'CRISTAIS GIGANTES', colors:['#00ffee','#88ffff','#aaffcc','#ffffff'], secondary:'#00ffcc' },
+  { name:'PLASMA NUCLEAR', colors:['#ff44ff','#ff00ff','#aa00aa','#ffaaff'], secondary:'#ff88ff' },
+];
+
+let selectedPower = 0;
+let hyperActive = false;
+let hyperCharge = 30;
+let particles = [];
+let attacks = [];
+let enemies = [];
+let stars = [];
+let cracks = [];
+let shockwaves = [];
+let lightnings = [];
+let comboCount = 0;
+let comboTimer = 0;
+let cameraShake = {x:0,y:0,intensity:0};
+let bossHp = 85;
+let bossPhase = 1;
+let time = 0;
+let floatingRocks = [];
+let auraSize = 0;
+
+// Generate stars
+for(let i=0;i<200;i++) {
+  stars.push({x:Math.random()*1400,y:Math.random()*600,size:Math.random()*2+0.5,twinkle:Math.random()*Math.PI*2});
+}
+
+// Generate floating rocks
+for(let i=0;i<12;i++) {
+  floatingRocks.push({
+    x: 100+Math.random()*(W-200),
+    y: 50+Math.random()*150,
+    w: 20+Math.random()*50,
+    h: 10+Math.random()*25,
+    vy: (Math.random()-0.5)*0.3,
+    baseY: 0,
+    rot: Math.random()*Math.PI*2,
+    rSpeed: (Math.random()-0.5)*0.01,
+    alpha: 0.4+Math.random()*0.4
+  });
+  floatingRocks[i].baseY = floatingRocks[i].y;
+}
+
+// Generate enemies
+function spawnEnemies() {
+  enemies = [];
+  for(let i=0;i<5;i++) {
+    enemies.push({
+      x: 150+Math.random()*(W-300),
+      y: H*0.45+Math.random()*60,
+      hp: 1, maxHp:1,
+      phase: Math.random()*Math.PI*2,
+      type: Math.floor(Math.random()*3),
+      alive: true,
+      aura: Math.random()*Math.PI*2
+    });
+  }
+}
+spawnEnemies();
+
+// Player
+const player = {
+  x: W/2, y: H*0.65,
+  vx: 0, vy: 0,
+  aura: 0, auraTarget: 0,
+  trail: [],
+  hyperAura: 0
+};
+
+function selectPower(i) {
+  selectedPower = i;
+  document.querySelectorAll('.power-btn').forEach((b,j)=>{
+    b.classList.toggle('active', j===i);
+  });
+  const popup = document.getElementById('power-name-popup');
+  popup.textContent = powers[i].name;
+  popup.style.color = powers[i].secondary;
+  popup.style.textShadow = `0 0 20px ${powers[i].secondary}, 0 0 40px ${powers[i].secondary}`;
+  popup.style.opacity = '1';
+  setTimeout(()=>{ popup.style.opacity='0'; }, 1500);
+  
+  const st = document.getElementById('status-text');
+  st.textContent = '⚡ ' + powers[i].name + ' SELECIONADO';
+  st.classList.add('show');
+  setTimeout(()=>st.classList.remove('show'), 2000);
+  
+  fireAttack(player.x, player.y - 20);
+  cameraShake.intensity = 5;
+  comboCount++;
+  comboTimer = 120;
+  document.getElementById('combo-count').textContent = comboCount;
+  document.getElementById('combo').classList.add('show');
+}
+
+function activateHyper() {
+  if(hyperCharge < 30) return;
+  hyperActive = true;
+  hyperCharge = 0;
+  auraSize = 0;
+  
+  const overlay = document.getElementById('hyper-overlay');
+  const txt = document.getElementById('hyper-mode-text');
+  overlay.classList.add('active');
+  txt.classList.add('show');
+  
+  document.getElementById('status-text').textContent = '⚡⚡⚡ HIPERCARGA SUPREMA ATIVADA ⚡⚡⚡';
+  document.getElementById('status-text').classList.add('show');
+  
+  cameraShake.intensity = 20;
+  
+  // Spawn massive shockwave
+  for(let i=0;i<3;i++) {
+    shockwaves.push({x:player.x, y:player.y-20, r:10, maxR:400+i*100, alpha:1, color:powers[selectedPower].colors[0], delay:i*5});
+  }
+  
+  // Ground cracks
+  for(let i=0;i<15;i++) {
+    const angle = (i/15)*Math.PI*2;
+    cracks.push({
+      x: player.x, y: H*0.75,
+      angle: angle, length: 0, maxLength: 100+Math.random()*150,
+      alpha: 1, color: powers[selectedPower].secondary
+    });
+  }
+  
+  // Spawn floating rocks
+  floatingRocks.forEach(r => { r.baseY -= 20+Math.random()*30; });
+  
+  // Giant particle burst
+  for(let i=0;i<200;i++) {
+    const angle = Math.random()*Math.PI*2;
+    const speed = 5+Math.random()*20;
+    particles.push({
+      x: player.x, y: player.y-20,
+      vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed-8,
+      life: 1, decay: 0.008+Math.random()*0.015,
+      size: 2+Math.random()*8,
+      color: powers[selectedPower].colors[Math.floor(Math.random()*4)],
+      trail: true, trailLen: Math.floor(Math.random()*5)
+    });
+  }
+  
+  // Lightnings
+  for(let i=0;i<8;i++) {
+    setTimeout(()=>{
+      lightnings.push({
+        x1: Math.random()*W, y1: 0,
+        x2: player.x+(Math.random()-0.5)*200, y2: player.y,
+        alpha: 1, segments: generateLightning(Math.random()*W, 0, player.x, player.y-20),
+        color: powers[selectedPower].colors[0]
+      });
+    }, i*150);
+  }
+  
+  setTimeout(()=>{
+    hyperActive = false;
+    overlay.classList.remove('active');
+    document.getElementById('status-text').classList.remove('show');
+  }, 8000);
+}
+
+function generateLightning(x1,y1,x2,y2) {
+  const segs = [];
+  const steps = 8;
+  let cx=x1, cy=y1;
+  for(let i=0;i<steps;i++) {
+    const t=(i+1)/steps;
+    const nx=x1+(x2-x1)*t+(Math.random()-0.5)*80;
+    const ny=y1+(y2-y1)*t+(Math.random()-0.5)*40;
+    segs.push({x1:cx,y1:cy,x2:nx,y2:ny});
+    cx=nx; cy=ny;
+  }
+  return segs;
+}
+
+function fireAttack(x, y) {
+  const pw = powers[selectedPower];
+  const numProj = hyperActive ? 12 : 3+Math.floor(Math.random()*3);
+  for(let i=0;i<numProj;i++) {
+    const angle = -Math.PI/2 + (Math.random()-0.5)*(hyperActive?1.5:0.6);
+    const speed = 8+Math.random()*12;
+    attacks.push({
+      x,y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed,
+      life: 1, decay: 0.02+Math.random()*0.01,
+      size: hyperActive ? 8+Math.random()*12 : 4+Math.random()*8,
+      colors: pw.colors,
+      power: selectedPower,
+      trail: [],
+      glow: pw.secondary,
+      wave: Math.random()*Math.PI*2
+    });
+  }
+  
+  if(selectedPower === 6) { // Black hole
+    attacks.push({
+      x, y: y-20, vx:0, vy:0,
+      life:1, decay:0.005, size:30, type:'blackhole',
+      colors:pw.colors, glow:pw.secondary, rot:0
+    });
+  }
+  
+  if(selectedPower === 0 && hyperActive) { // Fire supreme
+    for(let i=0;i<20;i++) {
+      particles.push({
+        x,y, vx:(Math.random()-0.5)*4, vy:-3-Math.random()*5,
+        life:1,decay:0.02,size:4+Math.random()*8,
+        color:pw.colors[Math.floor(Math.random()*4)]
+      });
+    }
+  }
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  
+  fireAttack(player.x, player.y-20);
+  
+  // Particles on click
+  const pw = powers[selectedPower];
+  for(let i=0;i<30;i++) {
+    const angle = Math.random()*Math.PI*2;
+    const speed = 2+Math.random()*8;
+    particles.push({
+      x: player.x, y: player.y-20,
+      vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+      life:1,decay:0.03+Math.random()*0.02,size:2+Math.random()*6,
+      color:pw.colors[Math.floor(Math.random()*4)]
+    });
+  }
+  
+  // Shockwave on click
+  shockwaves.push({x:player.x, y:player.y-20, r:5, maxR:150, alpha:0.7, color:pw.secondary, delay:0});
+  
+  cameraShake.intensity = 8;
+  comboCount++;
+  comboTimer = 90;
+  document.getElementById('combo-count').textContent = comboCount;
+  document.getElementById('combo').classList.add('show');
+  
+  // Attack enemy hit check
+  enemies.forEach(en=>{
+    if(en.alive && Math.hypot(en.x-player.x,en.y-player.y)<200) {
+      en.hp -= 0.25+Math.random()*0.25;
+      if(en.hp<=0) {
+        en.alive = false;
+        for(let i=0;i<50;i++) {
+          const ang=Math.random()*Math.PI*2;
+          const spd=3+Math.random()*12;
+          particles.push({x:en.x,y:en.y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-4,life:1,decay:0.025,size:3+Math.random()*8,color:pw.colors[Math.floor(Math.random()*4)]});
+        }
+        bossHp = Math.max(5, bossHp-5);
+        document.getElementById('boss-hp-fill').style.width = bossHp+'%';
+        setTimeout(()=>{
+          spawnEnemies();
+        }, 2000);
+      }
+    }
+  });
+  
+  if(hyperCharge < 100) hyperCharge = Math.min(100, hyperCharge+8);
+  const hf = document.getElementById('hyper-fill');
+  hf.style.width = hyperCharge+'%';
+});
+
+function drawSky() {
+  const pw = powers[selectedPower];
+  const grd = ctx.createLinearGradient(0,0,0,H*0.6);
+  if(hyperActive) {
+    grd.addColorStop(0, '#110022');
+    grd.addColorStop(0.5, '#220033');
+    grd.addColorStop(1, '#000011');
+  } else {
+    grd.addColorStop(0,'#000008');
+    grd.addColorStop(0.3,'#050015');
+    grd.addColorStop(0.7,'#0a0020');
+    grd.addColorStop(1,'#050010');
+  }
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,W,H);
+  
+  // Nebula glow
+  ctx.save();
+  ctx.globalAlpha = hyperActive ? 0.25+0.1*Math.sin(time*0.05) : 0.08;
+  const ng = ctx.createRadialGradient(W*0.3,H*0.2,10,W*0.3,H*0.2,300);
+  ng.addColorStop(0, pw.colors[0]);
+  ng.addColorStop(1,'transparent');
+  ctx.fillStyle = ng;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+
+function drawStars() {
+  stars.forEach(s=>{
+    s.twinkle += 0.03;
+    const alpha = 0.4+0.6*Math.abs(Math.sin(s.twinkle));
+    ctx.save();
+    ctx.globalAlpha = alpha*(hyperActive?1.5:1);
+    ctx.fillStyle = hyperActive ? powers[selectedPower].colors[0] : '#fff';
+    ctx.beginPath();
+    ctx.arc(s.x%W, s.y%(H*0.6), s.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawFloatingRocks() {
+  floatingRocks.forEach(r=>{
+    r.y = r.baseY + Math.sin(time*0.02+r.phase||0)*8;
+    r.phase = r.phase||0;
+    r.phase += 0.01;
+    r.rot += r.rSpeed;
+    ctx.save();
+    ctx.translate(r.x, r.y);
+    ctx.rotate(r.rot);
+    ctx.globalAlpha = r.alpha*(hyperActive?1.3:1);
+    ctx.fillStyle = hyperActive ? '#332233' : '#1a1a2e';
+    ctx.strokeStyle = hyperActive ? powers[selectedPower].secondary : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.rect(-r.w/2,-r.h/2,r.w,r.h);
+    ctx.fill();
+    ctx.stroke();
+    if(hyperActive) {
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = powers[selectedPower].colors[0];
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+function drawGround() {
+  const grd = ctx.createLinearGradient(0,H*0.72,0,H);
+  if(hyperActive) {
+    grd.addColorStop(0,'#1a0033');
+    grd.addColorStop(1,'#050010');
+  } else {
+    grd.addColorStop(0,'#0d001a');
+    grd.addColorStop(1,'#000005');
+  }
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,H*0.72,W,H*0.28);
+  
+  // Grid lines on ground
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.strokeStyle = hyperActive ? powers[selectedPower].secondary : '#4400aa';
+  ctx.lineWidth = 0.5;
+  for(let x=0;x<W;x+=40) {
+    ctx.beginPath();
+    ctx.moveTo(x,H*0.72);
+    ctx.lineTo(x+(x-W/2)*0.3, H);
+    ctx.stroke();
+  }
+  for(let y=H*0.72;y<H;y+=20) {
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(W,y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCracks() {
+  cracks = cracks.filter(c => c.alpha > 0);
+  cracks.forEach(c => {
+    if(c.length < c.maxLength) c.length += 4;
+    ctx.save();
+    ctx.globalAlpha = c.alpha;
+    ctx.strokeStyle = c.color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = c.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(c.x, c.y);
+    const ex = c.x + Math.cos(c.angle)*c.length;
+    const ey = c.y + Math.sin(c.angle)*c.length;
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    c.alpha -= 0.003;
+    ctx.restore();
+  });
+}
+
+function drawShockwaves() {
+  shockwaves = shockwaves.filter(s => s.r < s.maxR && s.alpha > 0);
+  shockwaves.forEach(s => {
+    if(s.delay > 0) { s.delay--; return; }
+    ctx.save();
+    ctx.globalAlpha = s.alpha * (1-s.r/s.maxR);
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 3*(1-s.r/s.maxR)+0.5;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+    s.r += 8+s.r*0.05;
+    s.alpha -= 0.015;
+  });
+}
+
+function drawLightnings() {
+  lightnings = lightnings.filter(l=>l.alpha>0);
+  lightnings.forEach(l=>{
+    ctx.save();
+    ctx.globalAlpha = l.alpha;
+    ctx.strokeStyle = l.color;
+    ctx.shadowColor = l.color;
+    ctx.shadowBlur = 15;
+    ctx.lineWidth = 2;
+    l.segments.forEach(seg=>{
+      ctx.beginPath();
+      ctx.moveTo(seg.x1,seg.y1);
+      ctx.lineTo(seg.x2,seg.y2);
+      ctx.stroke();
+    });
+    ctx.restore();
+    l.alpha -= 0.05;
+  });
+}
+
+function drawEnemies() {
+  enemies.forEach(en=>{
+    if(!en.alive) return;
+    en.aura += 0.05;
+    ctx.save();
+    ctx.translate(en.x, en.y);
+    
+    // Aura
+    const ag = ctx.createRadialGradient(0,0,5,0,0,35);
+    ag.addColorStop(0,'rgba(255,0,0,0.3)');
+    ag.addColorStop(1,'transparent');
+    ctx.fillStyle = ag;
+    ctx.beginPath();
+    ctx.arc(0,0,35+5*Math.sin(en.aura),0,Math.PI*2);
+    ctx.fill();
+    
+    // Body
+    ctx.fillStyle = '#220000';
+    ctx.strokeStyle = '#ff2200';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 15;
+    if(en.type===0) {
+      ctx.beginPath();
+      ctx.arc(0,0,18,0,Math.PI*2);
+      ctx.fill(); ctx.stroke();
+    } else if(en.type===1) {
+      ctx.beginPath();
+      ctx.moveTo(0,-20); ctx.lineTo(18,12); ctx.lineTo(-18,12); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.rect(-14,-14,28,28);
+      ctx.fill(); ctx.stroke();
+    }
+    
+    // Eye glow
+    ctx.fillStyle = '#ff0000';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(0, -3+Math.sin(en.aura*2)*2, 4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawPlayer() {
+  const pw = powers[selectedPower];
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  
+  // Hypercharge aura
+  if(hyperActive) {
+    player.hyperAura = Math.min(80, player.hyperAura+2);
+    const levels = 4;
+    for(let i=levels;i>0;i--) {
+      const size = player.hyperAura*(i/levels);
+      ctx.globalAlpha = 0.15/(i*0.5);
+      const hg = ctx.createRadialGradient(0,-20,5,0,-20,size);
+      hg.addColorStop(0, pw.colors[0]);
+      hg.addColorStop(0.5, pw.colors[1]);
+      hg.addColorStop(1,'transparent');
+      ctx.fillStyle = hg;
+      ctx.beginPath();
+      ctx.arc(0,-20,size+Math.sin(time*0.15+i)*10,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    player.hyperAura = Math.max(0, player.hyperAura-1);
+  }
+  
+  // Normal aura
+  const normSize = 40+(hyperActive?30:0)+10*Math.sin(time*0.1);
+  ctx.globalAlpha = 0.3;
+  const ng = ctx.createRadialGradient(0,-20,5,0,-20,normSize);
+  ng.addColorStop(0, pw.secondary);
+  ng.addColorStop(1,'transparent');
+  ctx.fillStyle = ng;
+  ctx.beginPath();
+  ctx.arc(0,-20,normSize,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Body
+  ctx.shadowColor = pw.secondary;
+  ctx.shadowBlur = hyperActive?30:15;
+  ctx.fillStyle = '#0a0015';
+  ctx.strokeStyle = pw.secondary;
+  ctx.lineWidth = 2;
+  
+  // Legs
+  ctx.beginPath();
+  ctx.rect(-8,0,6,20);
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.rect(2,0,6,20);
+  ctx.fill(); ctx.stroke();
+  
+  // Body
+  ctx.beginPath();
+  ctx.roundRect(-12,-30,24,32,4);
+  ctx.fill(); ctx.stroke();
+  
+  // Arms
+  const armSwing = Math.sin(time*0.1)*10;
+  ctx.beginPath();
+  ctx.rect(-20+armSwing,-28,8,22);
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.rect(12-armSwing,-28,8,22);
+  ctx.fill(); ctx.stroke();
+  
+  // Head
+  ctx.beginPath();
+  ctx.arc(0,-38,12,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  
+  // Eyes glow
+  ctx.fillStyle = pw.colors[0];
+  ctx.shadowBlur = 15;
+  ctx.globalAlpha = hyperActive?1:0.8;
+  ctx.beginPath();
+  ctx.arc(-4,-39,3+Math.sin(time*0.2),0,Math.PI*2);
+  ctx.arc(4,-39,3+Math.sin(time*0.2),0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Hyper energy orbs
+  if(hyperActive) {
+    for(let i=0;i<8;i++) {
+      const ang = (i/8)*Math.PI*2+time*0.08;
+      const r = 30+10*Math.sin(time*0.1+i);
+      const ox = Math.cos(ang)*r;
+      const oy = Math.sin(ang)*r*0.5 - 20;
+      ctx.fillStyle = pw.colors[i%4];
+      ctx.shadowColor = pw.colors[i%4];
+      ctx.shadowBlur = 12;
+      ctx.globalAlpha = 0.8+0.2*Math.sin(time*0.15+i);
+      ctx.beginPath();
+      ctx.arc(ox,oy,3+Math.sin(time*0.2+i)*1.5,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  
+  ctx.restore();
+  
+  // Energy trail
+  player.trail.push({x:player.x, y:player.y-20, alpha:0.8});
+  if(player.trail.length>20) player.trail.shift();
+  player.trail.forEach((t,i)=>{
+    const p = i/player.trail.length;
+    ctx.globalAlpha = t.alpha*p*0.3;
+    ctx.fillStyle = pw.secondary;
+    ctx.shadowColor = pw.secondary;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,3*p,0,Math.PI*2);
+    ctx.fill();
+    t.alpha -= 0.04;
+  });
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+function drawAttacks() {
+  attacks = attacks.filter(a=>a.life>0);
+  attacks.forEach(a=>{
+    a.trail.push({x:a.x,y:a.y});
+    if(a.trail.length>12) a.trail.shift();
+    
+    if(a.type==='blackhole') {
+      a.rot += 0.1;
+      ctx.save();
+      ctx.translate(a.x,a.y);
+      // Accretion disk
+      for(let i=0;i<3;i++) {
+        const r = a.size*(0.8+i*0.5);
+        ctx.globalAlpha = 0.3/(i+1);
+        ctx.strokeStyle = a.colors[0];
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(0,0,r,r*0.3,a.rot+i*0.5,0,Math.PI*2);
+        ctx.stroke();
+      }
+      // Core
+      ctx.globalAlpha = 1;
+      const bg = ctx.createRadialGradient(0,0,0,0,0,a.size);
+      bg.addColorStop(0,'#000000');
+      bg.addColorStop(0.5,'#000033');
+      bg.addColorStop(1,a.colors[0]);
+      ctx.fillStyle = bg;
+      ctx.shadowColor = a.colors[0];
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      ctx.arc(0,0,a.size,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      a.life -= a.decay;
+      return;
+    }
+    
+    a.x += a.vx; a.y += a.vy;
+    a.wave += 0.2;
+    a.vx += Math.sin(a.wave)*0.3;
+    a.vy += 0.15;
+    
+    // Trail
+    a.trail.forEach((t,i)=>{
+      const p = i/a.trail.length;
+      ctx.globalAlpha = a.life*p*0.6;
+      ctx.fillStyle = a.colors[i%a.colors.length];
+      ctx.shadowColor = a.glow;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(t.x,t.y,a.size*p*0.7,0,Math.PI*2);
+      ctx.fill();
+    });
+    
+    // Main projectile
+    ctx.globalAlpha = a.life;
+    ctx.fillStyle = a.colors[0];
+    ctx.shadowColor = a.glow;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(a.x,a.y,a.size,0,Math.PI*2);
+    ctx.fill();
+    
+    // Inner glow
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(a.x,a.y,a.size*0.4,0,Math.PI*2);
+    ctx.fill();
+    
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    a.life -= a.decay;
+  });
+}
+
+function drawParticles() {
+  particles = particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    ctx.globalAlpha = p.life*(p.life>0.5?1:p.life*2);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2);
+    ctx.fill();
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.12;
+    p.vx *= 0.98;
+    p.life -= p.decay;
+  });
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+function drawBoss() {
+  const bx = W*0.5;
+  const by = H*0.3;
+  const bScale = 1+(bossPhase-1)*0.3;
+  
+  ctx.save();
+  ctx.translate(bx, by);
+  
+  // Boss aura
+  ctx.globalAlpha = 0.15+0.05*Math.sin(time*0.05);
+  const bag = ctx.createRadialGradient(0,0,20,0,0,120*bScale);
+  bag.addColorStop(0,'#ff0000');
+  bag.addColorStop(0.5,'#ff3300');
+  bag.addColorStop(1,'transparent');
+  ctx.fillStyle = bag;
+  ctx.beginPath();
+  ctx.arc(0,0,120*bScale,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  ctx.shadowColor = '#ff0000';
+  ctx.shadowBlur = 25;
+  ctx.strokeStyle = '#ff2200';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = '#110000';
+  
+  // Armor plates
+  for(let i=0;i<6;i++) {
+    const ang = (i/6)*Math.PI*2+time*0.01;
+    const r = 55*bScale;
+    ctx.save();
+    ctx.translate(Math.cos(ang)*r, Math.sin(ang)*r);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.rect(-8,-15,16,30);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  
+  // Main body
+  ctx.beginPath();
+  ctx.arc(0,0,45*bScale,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  
+  // Inner ring
+  ctx.strokeStyle = '#ff4400';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0,0,28*bScale,time*0.05,time*0.05+Math.PI*1.5);
+  ctx.stroke();
+  
+  // Crown spikes
+  for(let i=0;i<8;i++) {
+    const ang = (i/8)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(ang)*42*bScale, Math.sin(ang)*42*bScale);
+    ctx.lineTo(Math.cos(ang)*70*bScale, Math.sin(ang)*70*bScale);
+    ctx.strokeStyle = i%2===0 ? '#ff0000':'#ff6600';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  
+  // Eyes
+  ctx.fillStyle = '#ff0000';
+  ctx.shadowBlur = 25;
+  ctx.globalAlpha = 0.7+0.3*Math.sin(time*0.1);
+  ctx.beginPath();
+  ctx.arc(-14*bScale,-8*bScale,8*bScale,0,Math.PI*2);
+  ctx.arc(14*bScale,-8*bScale,8*bScale,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Boss particles
+  if(Math.random()<0.3) {
+    const ang = Math.random()*Math.PI*2;
+    const r = 45*bScale;
+    particles.push({
+      x:Math.cos(ang)*r, y:Math.sin(ang)*r,
+      vx:Math.cos(ang)*2, vy:Math.sin(ang)*2-1,
+      life:1,decay:0.04,size:3+Math.random()*5,color:'#ff2200'
+    });
+  }
+  
+  ctx.restore();
+}
+
+function applyBloom() {
+  if(!hyperActive) return;
+  const pw = powers[selectedPower];
+  ctx.save();
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = pw.colors[0];
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+
+function loop() {
+  time++;
+  
+  // Camera shake
+  if(cameraShake.intensity > 0) {
+    cameraShake.x = (Math.random()-0.5)*cameraShake.intensity;
+    cameraShake.y = (Math.random()-0.5)*cameraShake.intensity;
+    cameraShake.intensity *= 0.85;
+  } else {
+    cameraShake.x = 0; cameraShake.y = 0;
+  }
+  
+  ctx.save();
+  ctx.translate(cameraShake.x, cameraShake.y);
+  
+  drawSky();
+  drawStars();
+  drawFloatingRocks();
+  
+  // Background buildings silhouette
+  ctx.save();
+  ctx.fillStyle = '#050010';
+  for(let i=0;i<12;i++) {
+    const bx = i*(W/10)-20;
+    const bh = 60+Math.sin(i*1.7)*40;
+    ctx.fillRect(bx, H*0.72-bh, 30+i%3*10, bh);
+    // Windows
+    ctx.fillStyle = Math.random()<0.01 ? '#ffaa00':'rgba(100,100,255,0.3)';
+    for(let wy=0;wy<bh;wy+=12) {
+      for(let wx=0;wx<25;wx+=8) {
+        if(Math.random()<0.4) ctx.fillRect(bx+wx+2, H*0.72-bh+wy+2, 5, 8);
+      }
+    }
+    ctx.fillStyle = '#050010';
+  }
+  ctx.restore();
+  
+  drawGround();
+  drawCracks();
+  drawShockwaves();
+  drawLightnings();
+  drawEnemies();
+  drawBoss();
+  drawAttacks();
+  drawPlayer();
+  drawParticles();
+  applyBloom();
+  
+  // Combo fade
+  if(comboTimer > 0) {
+    comboTimer--;
+    if(comboTimer === 0) {
+      comboCount = 0;
+      document.getElementById('combo').classList.remove('show');
+    }
+  }
+  
+  // Spawn background particles in hyper
+  if(hyperActive && Math.random()<0.4) {
+    const pw = powers[selectedPower];
+    particles.push({
+      x:Math.random()*W, y:H*0.75,
+      vx:(Math.random()-0.5)*2, vy:-1-Math.random()*3,
+      life:0.5+Math.random()*0.5, decay:0.01,
+      size:1+Math.random()*4, color:pw.colors[Math.floor(Math.random()*4)]
+    });
+  }
+  
+  // Random lightning in hyper
+  if(hyperActive && time%20===0 && Math.random()<0.5) {
+    lightnings.push({
+      alpha:1,
+      segments: generateLightning(Math.random()*W,0,player.x+(Math.random()-0.5)*100,player.y),
+      color: powers[selectedPower].colors[0]
+    });
+  }
+  
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+selectPower(0);
+loop();
+</script>

@@ -1,156 +1,303 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhythm Game</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Luau Web Runner</title>
 
 <style>
-body {
-    margin: 0;
-    background: #0a0a0a;
-    color: white;
-    font-family: Arial;
-    overflow: hidden;
-}
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:Arial, sans-serif;
+    }
 
-/* ÁREA DO JOGO */
-.game {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-}
+    body{
+        background:#0f0f0f;
+        color:white;
+        height:100vh;
+        display:flex;
+        flex-direction:column;
+    }
 
-/* LINHAS */
-.lane {
-    position: absolute;
-    width: 25%;
-    height: 100%;
-    border-right: 1px solid #222;
-}
+    header{
+        background:#181818;
+        padding:15px;
+        border-bottom:2px solid #2c2c2c;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+    }
 
-.lane:nth-child(1){left:0;}
-.lane:nth-child(2){left:25%;}
-.lane:nth-child(3){left:50%;}
-.lane:nth-child(4){left:75%;}
+    header h1{
+        font-size:20px;
+    }
 
-/* NOTAS */
-.note {
-    position: absolute;
-    width: 20%;
-    height: 20px;
-    background: cyan;
-    border-radius: 5px;
-}
+    .main{
+        flex:1;
+        display:flex;
+        overflow:hidden;
+    }
 
-/* LINHA DE ACERTO */
-.hitline {
-    position: absolute;
-    bottom: 100px;
-    width: 100%;
-    height: 5px;
-    background: white;
-}
+    .editor{
+        width:70%;
+        height:100%;
+        border-right:2px solid #2c2c2c;
+        display:flex;
+        flex-direction:column;
+    }
 
-/* UI */
-.score {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-}
+    textarea{
+        flex:1;
+        background:#111;
+        color:#00ff88;
+        border:none;
+        outline:none;
+        resize:none;
+        padding:20px;
+        font-size:15px;
+        line-height:1.5;
+    }
 
-.feedback {
-    position: absolute;
-    bottom: 150px;
-    width: 100%;
-    text-align: center;
-    font-size: 30px;
-}
+    .buttons{
+        display:flex;
+        gap:10px;
+        padding:15px;
+        background:#181818;
+        border-top:2px solid #2c2c2c;
+    }
+
+    button{
+        padding:12px 18px;
+        border:none;
+        cursor:pointer;
+        border-radius:8px;
+        font-weight:bold;
+        transition:0.2s;
+    }
+
+    .run{
+        background:#00c853;
+        color:white;
+    }
+
+    .clear{
+        background:#ff1744;
+        color:white;
+    }
+
+    button:hover{
+        transform:scale(1.05);
+    }
+
+    .console{
+        width:30%;
+        background:#0b0b0b;
+        display:flex;
+        flex-direction:column;
+    }
+
+    .console h2{
+        padding:15px;
+        border-bottom:2px solid #2c2c2c;
+        background:#161616;
+    }
+
+    #output{
+        flex:1;
+        padding:15px;
+        overflow:auto;
+        white-space:pre-wrap;
+        color:#00ff88;
+    }
+
+    .line{
+        margin-bottom:8px;
+    }
+
 </style>
 </head>
-
 <body>
 
-<div class="game" id="game">
-    <div class="lane"></div>
-    <div class="lane"></div>
-    <div class="lane"></div>
-    <div class="lane"></div>
-    <div class="hitline"></div>
-    <div class="score" id="score">Score: 0</div>
-    <div class="feedback" id="feedback"></div>
+<header>
+    <h1>Luau Script Tester</h1>
+</header>
+
+<div class="main">
+
+    <div class="editor">
+        <textarea id="code">
+print("Hello Roblox")
+
+local player = {
+    Name = "Player123",
+    Health = 100
+}
+
+print(player.Name)
+print(player.Health)
+        </textarea>
+
+        <div class="buttons">
+            <button class="run" onclick="runCode()">Executar</button>
+            <button class="clear" onclick="clearConsole()">Limpar</button>
+        </div>
+    </div>
+
+    <div class="console">
+        <h2>Console</h2>
+        <div id="output"></div>
+    </div>
+
 </div>
 
-<audio id="music" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
-
 <script>
-let game = document.getElementById("game")
-let score = 0
-let notes = []
-let keys = ["a","s","d","f"]
 
-let music = document.getElementById("music")
+const output = document.getElementById("output");
 
-function spawnNote(){
-    let lane = Math.floor(Math.random()*4)
-    
-    let note = document.createElement("div")
-    note.className = "note"
-    note.style.left = (lane*25+2.5)+"%"
-    note.style.top = "0px"
-    
-    game.appendChild(note)
-    
-    notes.push({el: note, lane: lane, y:0})
+function log(text){
+    const div = document.createElement("div");
+    div.className = "line";
+    div.textContent = text;
+    output.appendChild(div);
+
+    output.scrollTop = output.scrollHeight;
 }
 
-function update(){
-    notes.forEach((n,i)=>{
-        n.y += 5
-        n.el.style.top = n.y+"px"
-        
-        if(n.y > window.innerHeight){
-            n.el.remove()
-            notes.splice(i,1)
-            showFeedback("MISS")
-        }
-    })
+function clearConsole(){
+    output.innerHTML = "";
 }
 
-function showFeedback(text){
-    let fb = document.getElementById("feedback")
-    fb.innerText = text
-    setTimeout(()=>fb.innerText="",300)
-}
+function runCode(){
 
-document.addEventListener("keydown", (e)=>{
-    let key = e.key.toLowerCase()
-    let lane = keys.indexOf(key)
-    
-    if(lane !== -1){
-        for(let i=0;i<notes.length;i++){
-            let n = notes[i]
-            
-            if(n.lane === lane && n.y > window.innerHeight-150 && n.y < window.innerHeight-80){
-                score += 100
-                document.getElementById("score").innerText = "Score: "+score
-                n.el.remove()
-                notes.splice(i,1)
-                showFeedback("GOOD")
-                return
+    clearConsole();
+
+    let code = document.getElementById("code").value;
+
+    try{
+
+        // Fake Luau Parser
+        // Simula alguns comandos básicos
+
+        let lines = code.split("\n");
+
+        let variables = {};
+
+        for(let rawLine of lines){
+
+            let line = rawLine.trim();
+
+            if(line.startsWith("print(")){
+
+                let inside = line
+                    .replace("print(", "")
+                    .replace(")", "")
+                    .trim();
+
+                if(inside.startsWith('"') || inside.startsWith("'")){
+                    inside = inside.slice(1,-1);
+                    log(inside);
+                }
+                else{
+
+                    if(inside.includes(".")){
+
+                        let split = inside.split(".");
+                        let obj = split[0];
+                        let prop = split[1];
+
+                        if(variables[obj]){
+                            log(variables[obj][prop]);
+                        }
+
+                    }else{
+
+                        if(variables[inside] !== undefined){
+                            log(variables[inside]);
+                        }else{
+                            log("nil");
+                        }
+
+                    }
+
+                }
+
             }
+
+            else if(line.startsWith("local ")){
+
+                // local x = 5
+
+                if(line.includes("{")){
+
+                    let name = line
+                        .replace("local ","")
+                        .split("=")[0]
+                        .trim();
+
+                    variables[name] = {};
+
+                }else{
+
+                    let parts = line
+                        .replace("local ","")
+                        .split("=");
+
+                    let name = parts[0].trim();
+                    let value = parts[1].trim();
+
+                    if(!isNaN(value)){
+                        value = Number(value);
+                    }else{
+                        value = value.replace(/['"]/g,"");
+                    }
+
+                    variables[name] = value;
+
+                }
+
+            }
+
+            else if(line.includes("=") && !line.startsWith("local")){
+
+                // player.Name = "abc"
+
+                let parts = line.split("=");
+
+                let left = parts[0].trim();
+                let right = parts[1].trim();
+
+                right = right.replace(/['"]/g,"");
+
+                if(left.includes(".")){
+
+                    let split = left.split(".");
+                    let obj = split[0];
+                    let prop = split[1];
+
+                    if(!variables[obj]){
+                        variables[obj] = {};
+                    }
+
+                    variables[obj][prop] = right;
+
+                }
+
+            }
+
         }
-        showFeedback("BAD")
+
+        log("Script finalizado.");
+
+    }catch(err){
+
+        log("Erro: " + err.message);
+
     }
-})
 
-setInterval(spawnNote, 600)
-setInterval(update, 16)
-
-/* START */
-document.body.onclick = ()=>{
-    music.play()
 }
+
 </script>
 
 </body>

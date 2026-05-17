@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lua NVC</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0f;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 14px 20px;
+  background: #111118;
+  border-bottom: 1px solid #222;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #c084fc;
+}
+
+.logo-sub {
+  font-size: 0.62rem;
+  color: #555;
+  margin-top: 2px;
+  font-family: monospace;
+  letter-spacing: 0.08em;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: #555;
+  font-family: monospace;
+  padding: 5px 10px;
+  border: 1px solid #222;
+  border-radius: 20px;
+  background: #0d0d14;
+}
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #ff4444;
+  flex-shrink: 0;
+}
+.dot.online { background: #22c55e; box-shadow: 0 0 6px #22c55e88; animation: blink 2s infinite; }
+.dot.wait { background: #f59e0b; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 20px;
+}
+
+/* VIDEO BOX */
+.video-wrap {
+  width: 100%;
+  max-width: 760px;
+  aspect-ratio: 16/9;
+  background: #07070d;
+  border: 1px solid #222;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.no-video {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #333;
+  text-align: center;
+  padding: 20px;
+}
+
+.no-video svg { opacity: 0.3; }
+.no-video p { font-size: 0.82rem; }
+
+.live-tag {
+  position: absolute;
+  top: 12px; left: 12px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+.live-dot { width: 5px; height: 5px; background: white; border-radius: 50%; animation: blink 1s infinite; }
+
+.viewer-count {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(0,0,0,0.6);
+  color: #aaa;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  display: none;
+}
+
+/* INFO STRIP */
+.info-strip {
+  width: 100%;
+  max-width: 760px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.info-card {
+  background: #111118;
+  border: 1px solid #1e1e2e;
+  border-radius: 7px;
+  padding: 10px 12px;
+}
+
+.info-label {
+  font-size: 0.57rem;
+  color: #444;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: #c084fc;
+  word-break: break-all;
+}
+
+/* CONTROLS */
+.controls {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 11px 16px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #222;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #111118;
+  color: #888;
+}
+
+.btn:hover { border-color: #c084fc; color: #c084fc; background: #1a1025; }
+.btn.active { border-color: #c084fc; color: #c084fc; background: #1a1025; }
+.btn.danger { border-color: #444; color: #666; }
+.btn.danger:hover { border-color: #ef4444; color: #ef4444; background: #1a0a0a; }
+.btn.danger.active { border-color: #ef4444; color: #ef4444; background: #1a0a0a; }
+.btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* ROOM SECTION */
+.room-section {
+  width: 100%;
+  max-width: 760px;
+  background: #111118;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.room-title {
+  font-size: 0.65rem;
+  color: #444;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+}
+
+.room-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+input[type="text"] {
+  flex: 1;
+  background: #0a0a0f;
+  border: 1px solid #222;
+  color: #e0e0e0;
+  font-size: 0.82rem;
+  padding: 9px 12px;
+  border-radius: 6px;
+  outline: none;
+  font-family: monospace;
+  transition: border-color 0.2s;
+  letter-spacing: 0.05em;
+}
+input:focus { border-color: #c084fc44; }
+input::placeholder { color: #333; }
+
+.small-btn {
+  padding: 9px 14px;
+  border: 1px solid #222;
+  background: #0a0a0f;
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  font-family: monospace;
+}
+.small-btn:hover { border-color: #c084fc; color: #c084fc; }
+.small-btn.purple { border-color: #c084fc55; color: #c084fc; background: #1a1025; }
+.small-btn.purple:hover { background: #22133a; }
+
+.code-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #0a0a0f;
+  border: 1px solid #1e1e2e;
+  border-radius: 6px;
+}
+
+.code-val {
+  font-family: monospace;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #c084fc;
+  letter-spacing: 0.25em;
+  flex: 1;
+  text-align: center;
+}
+
+.code-copy {
+  font-size: 0.65rem;
+  color: #444;
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px solid #222;
+  border-radius: 4px;
+  transition: all 0.18s;
+  font-family: monospace;
+}
+.code-copy:hover { border-color: #c084fc; color: #c084fc; }
+
+/* CHAT */
+.chat-wrap {
+  width: 100%;
+  max-width: 760px;
+  background: #111118;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid #1a1a28;
+  font-size: 0.62rem;
+  color: #444;
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-msgs {
+  height: 140px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: #222 transparent;
+}
+
+.chat-msg { font-size: 0.73rem; line-height: 1.5; }
+.chat-name { color: #c084fc; font-weight: 600; margin-right: 6px; font-size: 0.68rem; }
+.chat-text { color: #bbb; }
+.chat-sys { color: #444; font-style: italic; font-size: 0.68rem; }
+
+.chat-input-row {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #1a1a28;
+}
+
+.chat-input-row input {
+  border: none;
+  border-radius: 0;
+  background: #0d0d14;
+  font-size: 0.77rem;
+}
+.chat-input-row input:focus { border-color: transparent; }
+
+.chat-send {
+  padding: 9px 14px;
+  background: #0d0d14;
+  border: none;
+  border-left: 1px solid #1a1a28;
+  color: #555;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: color 0.18s;
+}
+.chat-send:hover { color: #c084fc; }
+
+/* TOAST */
+.toasts {
+  position: fixed;
+  bottom: 18px; right: 18px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toast {
+  background: #111118;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-size: 0.74rem;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  animation: tin 0.2s ease;
+  min-width: 180px;
+}
+@keyframes tin { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:none} }
+@keyframes tout { from{opacity:1} to{opacity:0;transform:translateX(12px)} }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-text">🌙 Lua NVC</div>
+    <div class="logo-sub">Made For Orchidx</div>
+  </div>
+  <div class="status-pill">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">OFFLINE</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- VIDEO -->
+  <div class="video-wrap">
+    <div class="no-video" id="noVideo">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <p>Nenhuma câmera ativa.<br>Inicie ou entre em uma sala.</p>
+    </div>
+    <video id="mainVideo" autoplay playsinline></video>
+    <div class="live-tag" id="liveTag"><div class="live-dot"></div>AO VIVO</div>
+    <div class="viewer-count" id="viewerCount">👁 0 assistindo</div>
+  </div>
+
+  <!-- INFO STRIP -->
+  <div class="info-strip">
+    <div class="info-card">
+      <div class="info-label">IP Público</div>
+      <div class="info-value" id="ipPublic">...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">País</div>
+      <div class="info-value" id="ipCountry">...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Provedor</div>
+      <div class="info-value" id="ipIsp">...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Conexão</div>
+      <div class="info-value" id="connType">...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Navegador</div>
+      <div class="info-value" id="browserInfo">...</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">Tela</div>
+      <div class="info-value" id="screenInfo">...</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn" id="btnCam" onclick="toggleCamera()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Câmera
+    </button>
+    <button class="btn" id="btnMic" onclick="toggleMic()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      Mic
+    </button>
+    <button class="btn danger" id="btnEnd" onclick="endSession()" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Encerrar
+    </button>
+  </div>
+
+  <!-- ROOM SECTION -->
+  <div class="room-section">
+    <div class="room-title">Sala</div>
+    <div class="room-row">
+      <input type="text" id="yourName" placeholder="Seu nome..." maxlength="20">
+      <button class="small-btn purple" onclick="createRoom()">Criar Sala</button>
+      <button class="small-btn" onclick="showJoin()">Entrar</button>
+    </div>
+    <div id="joinRow" style="display:none; margin-top:8px;">
+      <div class="room-row">
+        <input type="text" id="joinCode" placeholder="Código da sala..." maxlength="6" oninput="this.value=this.value.toUpperCase()" style="text-align:center;font-size:1rem;letter-spacing:0.2em">
+        <button class="small-btn purple" onclick="joinRoom()">Conectar</button>
+      </div>
+    </div>
+    <div id="codeDisplay" style="display:none;">
+      <div class="code-display">
+        <div class="code-val" id="codeVal">------</div>
+        <div class="code-copy" onclick="copyCode()">COPIAR</div>
+      </div>
+      <div style="font-size:0.62rem; color:#444; font-family:monospace; margin-top:6px; text-align:center;">
+        Compartilhe esse código para as pessoas entrarem e verem sua câmera
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-wrap">
+    <div class="chat-header">
+      💬 Chat da sala
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="chat-sys">Entre em uma sala para começar...</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Mensagem..." maxlength="200" onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, push, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMz-GuqiF4VyUKnCayURIvPGz0tR3W_7s",
+  authDomain: "handtracking-78c3b.firebaseapp.com",
+  databaseURL: "https://handtracking-78c3b-default-rtdb.firebaseio.com",
+  projectId: "handtracking-78c3b",
+  storageBucket: "handtracking-78c3b.appspot.com",
+  messagingSenderId: "179317156904",
+  appId: "1:179317156904:web:b9dede7364168804f9991d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+]};
+
+const state = {
+  roomCode: null,
+  isHost: false,
+  name: '',
+  camOn: false,
+  micOn: false,
+  localStream: null,
+  pc: null,
+  sessionStart: null,
+  seenMsgs: new Set(),
+  viewerCount: 0,
+};
+
+// ===== IP INFO =====
+async function loadIPInfo() {
+  try {
+    const r = await fetch('https://ipapi.co/json/');
+    const d = await r.json();
+    setEl('ipPublic', d.ip || '--');
+    setEl('ipCountry', (d.country_name || '--'));
+    setEl('ipIsp', d.org ? d.org.replace(/^AS\d+\s+/, '').substring(0, 18) : '--');
+  } catch {
+    try {
+      const r = await fetch('https://api.ipify.org?format=json');
+      const d = await r.json();
+      setEl('ipPublic', d.ip || '--');
+    } catch { setEl('ipPublic', '--'); }
+  }
+
+  // Connection type
+  const conn = navigator.connection || navigator.mozConnection;
+  if (conn) {
+    setEl('connType', (conn.effectiveType || '?').toUpperCase() + (conn.downlink ? ' · ' + conn.downlink + 'Mbps' : ''));
+    conn.addEventListener('change', () => setEl('connType', (conn.effectiveType || '?').toUpperCase()));
+  } else setEl('connType', 'Desconhecido');
+
+  // Browser
+  const ua = navigator.userAgent;
+  let b = 'Outro';
+  if (/Chrome/.test(ua) && !/Edge/.test(ua)) b = 'Chrome';
+  else if (/Firefox/.test(ua)) b = 'Firefox';
+  else if (/Safari/.test(ua) && !/Chrome/.test(ua)) b = 'Safari';
+  else if (/Edge/.test(ua)) b = 'Edge';
+  setEl('browserInfo', b);
+
+  // Screen
+  setEl('screenInfo', `${screen.width}×${screen.height}`);
+}
+
+// ===== CAMERA =====
+async function toggleCamera() {
+  const btn = document.getElementById('btnCam');
+  if (!state.camOn) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: state.micOn });
+      state.localStream = stream;
+      const vid = document.getElementById('mainVideo');
+      vid.srcObject = stream;
+      vid.style.display = 'block';
+      document.getElementById('noVideo').style.display = 'none';
+      state.camOn = true;
+      btn.classList.add('active');
+      toast('Câmera ligada ✓');
+
+      // if host, add tracks to peer connection
+      if (state.pc && state.isHost) {
+        stream.getTracks().forEach(t => state.pc.addTrack(t, stream));
+      }
+    } catch(e) {
+      toast('Sem acesso à câmera', 'err');
+    }
+  } else {
+    if (state.localStream) { state.localStream.getTracks().forEach(t => t.stop()); state.localStream = null; }
+    const vid = document.getElementById('mainVideo');
+    vid.srcObject = null; vid.style.display = 'none';
+    document.getElementById('noVideo').style.display = 'flex';
+    state.camOn = false;
+    btn.classList.remove('active');
+    toast('Câmera desligada');
+  }
+}
+window.toggleCamera = toggleCamera;
+
+async function toggleMic() {
+  const btn = document.getElementById('btnMic');
+  state.micOn = !state.micOn;
+  if (state.localStream) {
+    state.localStream.getAudioTracks().forEach(t => t.enabled = state.micOn);
+  }
+  btn.classList.toggle('active', state.micOn);
+  toast(state.micOn ? 'Mic ligado' : 'Mic desligado');
+}
+window.toggleMic = toggleMic;
+
+// ===== ROOM =====
+function showJoin() {
+  const r = document.getElementById('joinRow');
+  r.style.display = r.style.display === 'none' ? 'block' : 'none';
+}
+window.showJoin = showJoin;
+
+function getName() {
+  return document.getElementById('yourName').value.trim() || 'Anônimo';
+}
+
+function genCode() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)];
+  return s;
+}
+
+async function createRoom() {
+  state.name = getName();
+  state.isHost = true;
+  state.roomCode = genCode();
+  state.sessionStart = Date.now();
+
+  await set(ref(db, `lua_rooms/${state.roomCode}`), {
+    active: true,
+    host: state.name,
+    created: Date.now(),
+  });
+
+  onDisconnect(ref(db, `lua_rooms/${state.roomCode}/active`)).set(false);
+
+  document.getElementById('codeVal').textContent = state.roomCode;
+  document.getElementById('codeDisplay').style.display = 'block';
+  document.getElementById('btnEnd').style.display = 'flex';
+
+  setStatus('wait', 'AGUARDANDO');
+  toast(`Sala criada: ${state.roomCode}`);
+  sysMsg(`Sala criada! Código: ${state.roomCode}`);
+
+  // Listen for viewers joining
+  onValue(ref(db, `lua_rooms/${state.roomCode}/viewers`), async (snap) => {
+    const viewers = snap.val();
+    if (!viewers) return;
+
+    // Count viewers
+    const count = Object.keys(viewers).length;
+    document.getElementById('viewerCount').textContent = `👁 ${count} assistindo`;
+    document.getElementById('viewerCount').style.display = 'block';
+    document.getElementById('liveTag').style.display = 'flex';
+    setStatus('online', 'AO VIVO');
+
+    for (const [key, viewer] of Object.entries(viewers)) {
+      if (viewer.offer && !viewer.answered) {
+        // Create peer connection for this viewer
+        const pc = new RTCPeerConnection(ICE);
+
+        pc.onicecandidate = e => {
+          if (e.candidate) {
+            push(ref(db, `lua_rooms/${state.roomCode}/viewers/${key}/iceCandidatesHost`), JSON.stringify(e.candidate));
+          }
+        };
+
+        // Add local stream tracks
+        if (state.localStream) {
+          state.localStream.getTracks().forEach(t => pc.addTrack(t, state.localStream));
+        }
+
+        await pc.setRemoteDescription(new RTCSessionDescription(viewer.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await set(ref(db, `lua_rooms/${state.roomCode}/viewers/${key}/answer`), { type: answer.type, sdp: answer.sdp });
+        await set(ref(db, `lua_rooms/${state.roomCode}/viewers/${key}/answered`), true);
+
+        // Listen for viewer ICE
+        onValue(ref(db, `lua_rooms/${state.roomCode}/viewers/${key}/iceCandidatesViewer`), cs => {
+          const cands = cs.val();
+          if (!cands) return;
+          Object.values(cands).forEach(c => { try { pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c))); } catch(e){} });
+        });
+
+        sysMsg(`${viewer.name || 'Alguém'} entrou na sala`);
+      }
+    }
+  });
+
+  // Chat
+  listenChat();
+}
+window.createRoom = createRoom;
+
+async function joinRoom() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (!code || code.length !== 6) { toast('Código inválido', 'err'); return; }
+
+  const snap = await get(ref(db, `lua_rooms/${code}`));
+  if (!snap.exists() || !snap.val().active) { toast('Sala não encontrada', 'err'); return; }
+
+  state.name = getName();
+  state.isHost = false;
+  state.roomCode = code;
+
+  document.getElementById('joinRow').style.display = 'none';
+  document.getElementById('btnEnd').style.display = 'flex';
+  setStatus('wait', 'CONECTANDO');
+  toast(`Entrando na sala ${code}...`);
+  sysMsg(`Você entrou na sala de ${snap.val().host}`);
+
+  const pc = new RTCPeerConnection(ICE);
+  state.pc = pc;
+
+  pc.onicecandidate = e => {
+    if (e.candidate) {
+      push(ref(db, `lua_rooms/${code}/viewers/${state.viewerKey}/iceCandidatesViewer`), JSON.stringify(e.candidate));
+    }
+  };
+
+  pc.ontrack = e => {
+    const vid = document.getElementById('mainVideo');
+    if (!vid.srcObject) vid.srcObject = e.streams[0];
+    vid.style.display = 'block';
+    document.getElementById('noVideo').style.display = 'none';
+    document.getElementById('liveTag').style.display = 'flex';
+    setStatus('online', 'CONECTADO');
+    toast('Câmera recebida ✓');
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      setStatus('offline', 'DESCONECTADO');
+    }
+  };
+
+  // Create offer
+  pc.addTransceiver('video', { direction: 'recvonly' });
+  pc.addTransceiver('audio', { direction: 'recvonly' });
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  const viewerRef = await push(ref(db, `lua_rooms/${code}/viewers`), {
+    name: state.name,
+    offer: { type: offer.type, sdp: offer.sdp },
+    joined: Date.now(),
+  });
+  state.viewerKey = viewerRef.key;
+
+  // Wait for answer
+  onValue(ref(db, `lua_rooms/${code}/viewers/${viewerRef.key}/answer`), async snap => {
+    if (!snap.val() || pc.remoteDescription) return;
+    await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+  });
+
+  // Listen for host ICE
+  onValue(ref(db, `lua_rooms/${code}/viewers/${viewerRef.key}/iceCandidatesHost`), cs => {
+    const cands = cs.val();
+    if (!cands) return;
+    Object.values(cands).forEach(c => { try { pc.addIceCandidate(new RTCIceCandidate(JSON.parse(c))); } catch(e){} });
+  });
+
+  listenChat();
+}
+window.joinRoom = joinRoom;
+
+function listenChat() {
+  if (!state.roomCode) return;
+  onValue(ref(db, `lua_rooms/${state.roomCode}/chat`), snap => {
+    const msgs = snap.val();
+    if (!msgs) return;
+    Object.entries(msgs).forEach(([k, m]) => {
+      if (state.seenMsgs.has(k)) return;
+      state.seenMsgs.add(k);
+      addChatMsg(m.name, m.text);
+    });
+  });
+}
+
+function addChatMsg(name, text) {
+  const container = document.getElementById('chatMsgs');
+  // Remove "entre em uma sala" msg
+  const sys = container.querySelector('.chat-sys');
+  if (sys) sys.remove();
+
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="chat-name">${esc(name)}</span><span class="chat-text">${esc(text)}</span>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function sysMsg(text) {
+  const container = document.getElementById('chatMsgs');
+  const sys = container.querySelector('.chat-sys');
+  if (sys) sys.remove();
+  const div = document.createElement('div');
+  div.className = 'chat-sys';
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.roomCode) { toast('Entre em uma sala primeiro', 'err'); return; }
+  input.value = '';
+  await push(ref(db, `lua_rooms/${state.roomCode}/chat`), { name: state.name || 'Anônimo', text, t: Date.now() });
+}
+window.sendMsg = sendMsg;
+
+function endSession() {
+  if (state.localStream) { state.localStream.getTracks().forEach(t => t.stop()); state.localStream = null; }
+  if (state.pc) { state.pc.close(); state.pc = null; }
+  const vid = document.getElementById('mainVideo');
+  vid.srcObject = null; vid.style.display = 'none';
+  document.getElementById('noVideo').style.display = 'flex';
+  document.getElementById('liveTag').style.display = 'none';
+  document.getElementById('viewerCount').style.display = 'none';
+  document.getElementById('codeDisplay').style.display = 'none';
+  document.getElementById('btnEnd').style.display = 'none';
+  document.getElementById('btnCam').classList.remove('active');
+  setStatus('offline', 'OFFLINE');
+  state.camOn = false;
+  state.roomCode = null;
+  toast('Sessão encerrada');
+}
+window.endSession = endSession;
+
+function copyCode() {
+  if (!state.roomCode) return;
+  navigator.clipboard.writeText(state.roomCode).then(() => toast('Código copiado!'));
+}
+window.copyCode = copyCode;
+
+// ===== UTILS =====
+function setEl(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+
+function setStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  const label = document.getElementById('statusText');
+  dot.className = 'dot ' + (type === 'online' ? 'online' : type === 'wait' ? 'wait' : '');
+  label.textContent = text;
+}
+
+function toast(msg, type) {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.borderColor = type === 'err' ? '#ef444466' : '#c084fc33';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.animation = 'tout 0.2s ease forwards'; setTimeout(() => t.remove(), 200); }, 2800);
+}
+
+function esc(s) { const d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
+
+// ===== INIT =====
+loadIPInfo();
+</script>
+
+</body>
+</html>

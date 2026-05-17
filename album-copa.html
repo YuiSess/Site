@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ Copa Gold — Álbum Virtual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #FFD700;
+  --gold2: #FFA500;
+  --dark: #0a0a0f;
+  --dark2: #12121a;
+  --dark3: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #1e2a4a;
+  --accent: #00d4ff;
+  --accent2: #7c3aed;
+  --green: #00ff88;
+  --red: #ff4757;
+  --text: #e8eaf6;
+  --text2: #9099b7;
+  --common: #a0aec0;
+  --rare: #63b3ed;
+  --epic: #b794f4;
+  --legendary: #ffd700;
+  --secret: #ff69b4;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* PARTICLES */
+#particles { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.particle {
+  position:absolute;
+  border-radius:50%;
+  animation: float linear infinite;
+  opacity:0;
+}
+@keyframes float {
+  0% { transform:translateY(100vh) scale(0); opacity:0; }
+  10% { opacity:1; }
+  90% { opacity:0.6; }
+  100% { transform:translateY(-100px) scale(1); opacity:0; }
+}
+
+/* LAYOUT */
+#app { position:relative; z-index:1; height:100vh; display:flex; flex-direction:column; }
+
+/* TOP NAV */
+#topnav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 1.5rem; height:60px;
+  background:linear-gradient(90deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+  border-bottom:1px solid rgba(255,215,0,0.2);
+  position:relative; z-index:100;
+}
+.nav-logo {
+  font-family:'Bebas Neue'; font-size:2rem; letter-spacing:3px;
+  background:linear-gradient(135deg, var(--gold), var(--gold2), var(--accent));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  text-shadow:none;
+}
+.nav-actions { display:flex; align-items:center; gap:1rem; }
+.nav-btn {
+  background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3);
+  color:var(--gold); padding:6px 16px; border-radius:20px;
+  font-family:'Rajdhani'; font-weight:600; font-size:0.9rem;
+  cursor:pointer; transition:all 0.2s; letter-spacing:1px;
+}
+.nav-btn:hover { background:rgba(255,215,0,0.25); box-shadow:0 0 15px rgba(255,215,0,0.3); }
+.nav-btn.accent { background:rgba(0,212,255,0.1); border-color:rgba(0,212,255,0.3); color:var(--accent); }
+.nav-btn.accent:hover { background:rgba(0,212,255,0.2); box-shadow:0 0 15px rgba(0,212,255,0.3); }
+.coins-display {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.2);
+  padding:6px 14px; border-radius:20px;
+}
+.coins-display span { font-weight:700; color:var(--gold); font-size:1rem; }
+#user-info { display:flex; align-items:center; gap:10px; cursor:pointer; }
+.user-avatar {
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg, var(--accent2), var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:0.85rem; border:2px solid var(--gold);
+}
+
+/* MAIN CONTENT */
+#main { flex:1; display:flex; overflow:hidden; }
+
+/* SIDEBAR */
+#sidebar {
+  width:220px; background:var(--dark2);
+  border-right:1px solid rgba(255,215,0,0.1);
+  display:flex; flex-direction:column; padding:1rem 0;
+  overflow-y:auto; flex-shrink:0;
+  transition:width 0.3s;
+}
+.sidebar-section { padding:0 1rem; margin-bottom:1.5rem; }
+.sidebar-label {
+  font-size:0.65rem; letter-spacing:2px; color:var(--text2);
+  text-transform:uppercase; margin-bottom:0.5rem; padding-left:0.25rem;
+}
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; cursor:pointer;
+  transition:all 0.2s; color:var(--text2); font-weight:600;
+  font-size:0.95rem; letter-spacing:0.5px;
+  border:1px solid transparent; margin-bottom:3px;
+}
+.nav-item:hover { background:rgba(255,255,255,0.05); color:var(--text); border-color:rgba(255,255,255,0.08); }
+.nav-item.active { background:rgba(255,215,0,0.1); color:var(--gold); border-color:rgba(255,215,0,0.25); }
+.nav-item .icon { font-size:1.2rem; width:22px; text-align:center; }
+.progress-bar-mini { height:3px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:1rem; }
+.progress-bar-mini-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, var(--gold), var(--gold2)); transition:width 0.5s; }
+
+/* CONTENT AREA */
+#content { flex:1; overflow-y:auto; position:relative; }
+
+/* VIEWS */
+.view { display:none; padding:1.5rem; height:100%; }
+.view.active { display:block; }
+
+/* SCREEN: HOME */
+#screen-home {
+  display:none; flex-direction:column; gap:1.5rem;
+  animation:fadeIn 0.4s ease;
+}
+#screen-home.active { display:flex; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+.hero-banner {
+  background:linear-gradient(135deg, var(--surface) 0%, #0f3460 50%, var(--dark3) 100%);
+  border:1px solid rgba(255,215,0,0.2);
+  border-radius:16px; padding:2rem;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; overflow:hidden;
+}
+.hero-banner::before {
+  content:''; position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-text h1 { font-family:'Bebas Neue'; font-size:3rem; letter-spacing:4px; line-height:1; }
+.hero-text h1 span { background:linear-gradient(135deg,var(--gold),var(--gold2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.hero-text p { color:var(--text2); margin-top:0.5rem; font-size:1rem; }
+.hero-ball { font-size:5rem; animation:spin 20s linear infinite; display:block; }
+@keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+.stat-card {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:1.2rem; text-align:center; position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
+}
+.stat-card.gold::before { background:linear-gradient(90deg,var(--gold),var(--gold2)); }
+.stat-card.blue::before { background:linear-gradient(90deg,var(--accent),#0066ff); }
+.stat-card.purple::before { background:linear-gradient(90deg,var(--accent2),#e040fb); }
+.stat-card.green::before { background:linear-gradient(90deg,var(--green),#00b360); }
+.stat-val { font-family:'Orbitron'; font-size:1.8rem; font-weight:700; }
+.stat-card.gold .stat-val { color:var(--gold); }
+.stat-card.blue .stat-val { color:var(--accent); }
+.stat-card.purple .stat-val { color:#b794f4; }
+.stat-card.green .stat-val { color:var(--green); }
+.stat-label { font-size:0.8rem; color:var(--text2); margin-top:4px; letter-spacing:1px; text-transform:uppercase; }
+
+.section-title {
+  font-family:'Bebas Neue'; font-size:1.6rem; letter-spacing:3px;
+  color:var(--gold); margin-bottom:1rem; border-bottom:1px solid rgba(255,215,0,0.2); padding-bottom:0.5rem;
+}
+
+/* ALBUM GRID */
+#screen-album { display:none; flex-direction:column; }
+#screen-album.active { display:flex; }
+
+.album-controls {
+  display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;
+}
+.search-box {
+  flex:1; min-width:200px;
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.1);
+  border-radius:25px; padding:8px 18px; color:var(--text);
+  font-family:'Rajdhani'; font-size:1rem; outline:none;
+  transition:border-color 0.2s;
+}
+.search-box:focus { border-color:rgba(255,215,0,0.4); }
+.filter-btn {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.1);
+  color:var(--text2); padding:8px 16px; border-radius:20px;
+  cursor:pointer; transition:all 0.2s; font-family:'Rajdhani'; font-weight:600;
+}
+.filter-btn.active { background:rgba(255,215,0,0.15); border-color:var(--gold); color:var(--gold); }
+
+.album-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:1rem;
+  padding-bottom:2rem;
+}
+.sticker-slot {
+  aspect-ratio:0.7; border-radius:10px; position:relative;
+  cursor:pointer; transition:transform 0.2s; overflow:hidden;
+}
+.sticker-slot:hover { transform:scale(1.05) translateY(-4px); }
+.sticker-slot.empty {
+  background:var(--dark2); border:2px dashed rgba(255,255,255,0.1);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:4px;
+}
+.sticker-slot.empty .slot-num { font-size:0.75rem; color:rgba(255,255,255,0.2); font-family:'Orbitron'; }
+.sticker-slot.empty .slot-icon { font-size:1.5rem; opacity:0.15; }
+.sticker-card {
+  width:100%; height:100%; border-radius:10px;
+  background:linear-gradient(160deg, var(--surface), var(--surface2));
+  border:2px solid;
+  display:flex; flex-direction:column; overflow:hidden; position:relative;
+}
+.sticker-card.common { border-color:rgba(160,174,192,0.4); }
+.sticker-card.rare { border-color:rgba(99,179,237,0.6); box-shadow:0 0 15px rgba(99,179,237,0.2); }
+.sticker-card.epic { border-color:rgba(183,148,244,0.6); box-shadow:0 0 20px rgba(183,148,244,0.3); }
+.sticker-card.legendary {
+  border-color:var(--gold);
+  box-shadow:0 0 25px rgba(255,215,0,0.4), inset 0 0 40px rgba(255,215,0,0.05);
+  animation:legendaryGlow 3s ease-in-out infinite;
+}
+@keyframes legendaryGlow {
+  0%,100% { box-shadow:0 0 25px rgba(255,215,0,0.4), inset 0 0 40px rgba(255,215,0,0.05); }
+  50% { box-shadow:0 0 40px rgba(255,215,0,0.7), inset 0 0 60px rgba(255,215,0,0.1); }
+}
+.sticker-card.secret {
+  border-color:var(--secret);
+  box-shadow:0 0 25px rgba(255,105,180,0.5);
+}
+.sticker-header {
+  background:rgba(0,0,0,0.4); padding:4px 8px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.sticker-num { font-family:'Orbitron'; font-size:0.6rem; color:rgba(255,255,255,0.5); }
+.rarity-badge {
+  font-size:0.6rem; font-weight:700; letter-spacing:1px;
+  padding:2px 6px; border-radius:10px;
+}
+.rarity-badge.common { background:rgba(160,174,192,0.2); color:var(--common); }
+.rarity-badge.rare { background:rgba(99,179,237,0.2); color:var(--rare); }
+.rarity-badge.epic { background:rgba(183,148,244,0.2); color:var(--epic); }
+.rarity-badge.legendary { background:rgba(255,215,0,0.2); color:var(--legendary); }
+.rarity-badge.secret { background:rgba(255,105,180,0.2); color:var(--secret); }
+.sticker-img {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  font-size:3rem; position:relative; overflow:hidden;
+}
+.sticker-img .holo-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+  animation:holoShine 3s ease-in-out infinite;
+}
+@keyframes holoShine {
+  0%,100% { transform:translateX(-100%) translateY(-100%) rotate(30deg); }
+  50% { transform:translateX(100%) translateY(100%) rotate(30deg); }
+}
+.sticker-footer { background:rgba(0,0,0,0.5); padding:6px 8px; }
+.sticker-name { font-weight:700; font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sticker-country { font-size:0.65rem; color:var(--text2); }
+.duplicate-badge {
+  position:absolute; top:6px; right:6px;
+  background:rgba(255,71,87,0.9); color:#fff; font-size:0.6rem;
+  font-weight:700; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* PACKS SCREEN */
+#screen-packs { display:none; flex-direction:column; }
+#screen-packs.active { display:flex; }
+
+.packs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1.5rem; padding-bottom:2rem; }
+.pack-card {
+  border-radius:16px; padding:1.5rem; text-align:center;
+  cursor:pointer; transition:transform 0.3s, box-shadow 0.3s;
+  position:relative; overflow:hidden; border:1px solid;
+}
+.pack-card:hover { transform:translateY(-8px) scale(1.02); }
+.pack-card.common-pack {
+  background:linear-gradient(160deg, #1a2a3a, #0d1b2a);
+  border-color:rgba(160,174,192,0.3);
+}
+.pack-card.common-pack:hover { box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+.pack-card.rare-pack {
+  background:linear-gradient(160deg, #0d2040, #0a1520);
+  border-color:rgba(99,179,237,0.4);
+}
+.pack-card.rare-pack:hover { box-shadow:0 20px 40px rgba(99,179,237,0.3); }
+.pack-card.epic-pack {
+  background:linear-gradient(160deg, #1a0d2e, #120820);
+  border-color:rgba(183,148,244,0.4);
+}
+.pack-card.epic-pack:hover { box-shadow:0 20px 40px rgba(183,148,244,0.3); }
+.pack-card.legendary-pack {
+  background:linear-gradient(160deg, #2a1a00, #1a0f00);
+  border-color:rgba(255,215,0,0.5);
+  animation:packGlow 3s ease-in-out infinite;
+}
+.pack-card.legendary-pack:hover { box-shadow:0 20px 60px rgba(255,215,0,0.4); }
+@keyframes packGlow {
+  0%,100% { box-shadow:0 0 20px rgba(255,215,0,0.1); }
+  50% { box-shadow:0 0 40px rgba(255,215,0,0.3); }
+}
+.pack-card.daily-pack {
+  background:linear-gradient(160deg, #002a1a, #001510);
+  border-color:rgba(0,255,136,0.4);
+}
+.pack-card.daily-pack:hover { box-shadow:0 20px 40px rgba(0,255,136,0.3); }
+.pack-card.mystery-pack {
+  background:linear-gradient(160deg, #2a0010, #1a0008);
+  border-color:rgba(255,105,180,0.4);
+}
+.pack-card.mystery-pack:hover { box-shadow:0 20px 40px rgba(255,105,180,0.3); }
+.pack-icon { font-size:4rem; margin-bottom:1rem; display:block; }
+.pack-name { font-family:'Bebas Neue'; font-size:1.4rem; letter-spacing:2px; margin-bottom:0.25rem; }
+.pack-desc { font-size:0.8rem; color:var(--text2); margin-bottom:1rem; }
+.pack-cost {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(0,0,0,0.3); border-radius:20px; padding:6px 14px;
+  font-weight:700; font-size:1rem;
+}
+.pack-chances {
+  margin-top:0.75rem; font-size:0.7rem; color:var(--text2);
+  display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center;
+}
+.chance-tag { padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.05); }
+.pack-card.daily-pack .pack-name { color:var(--green); }
+.pack-card.rare-pack .pack-name { color:var(--rare); }
+.pack-card.epic-pack .pack-name { color:var(--epic); }
+.pack-card.legendary-pack .pack-name { color:var(--legendary); }
+.pack-card.mystery-pack .pack-name { color:var(--secret); }
+
+/* PACK OPENING OVERLAY */
+#pack-overlay {
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,0.95);
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  gap:2rem;
+}
+#pack-overlay.show { display:flex; }
+.pack-opening-title { font-family:'Bebas Neue'; font-size:2.5rem; letter-spacing:5px; color:var(--gold); }
+#pack-stickers { display:flex; gap:1.5rem; flex-wrap:wrap; justify-content:center; max-width:900px; }
+.reveal-sticker {
+  width:140px; aspect-ratio:0.7; border-radius:12px; cursor:pointer;
+  animation:revealAnim 0.5s ease forwards;
+  opacity:0; transform:scale(0.5) rotateY(180deg);
+}
+@keyframes revealAnim {
+  to { opacity:1; transform:scale(1) rotateY(0deg); }
+}
+.close-pack-btn {
+  background:var(--gold); color:#000; padding:12px 36px; border-radius:25px;
+  font-family:'Bebas Neue'; font-size:1.3rem; letter-spacing:3px;
+  cursor:pointer; border:none; transition:all 0.2s;
+}
+.close-pack-btn:hover { transform:scale(1.05); box-shadow:0 0 30px rgba(255,215,0,0.5); }
+
+/* INVENTORY SCREEN */
+#screen-inventory { display:none; flex-direction:column; }
+#screen-inventory.active { display:flex; }
+.inventory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:0.75rem; padding-bottom:2rem; }
+
+/* TRADE SCREEN */
+#screen-trade { display:none; flex-direction:column; gap:1.5rem; }
+#screen-trade.active { display:flex; }
+.trade-board {
+  display:grid; grid-template-columns:1fr auto 1fr; gap:1.5rem; align-items:start;
+}
+.trade-panel {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px; padding:1.5rem;
+}
+.trade-panel h3 { font-family:'Bebas Neue'; letter-spacing:2px; color:var(--gold); margin-bottom:1rem; font-size:1.3rem; }
+.trade-slots { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; min-height:200px; }
+.trade-slot {
+  aspect-ratio:0.7; border-radius:8px; border:2px dashed rgba(255,255,255,0.15);
+  display:flex; align-items:center; justify-content:center; font-size:1.5rem; opacity:0.4;
+  cursor:pointer; transition:all 0.2s;
+}
+.trade-slot:hover { border-color:rgba(255,215,0,0.4); opacity:0.7; background:rgba(255,215,0,0.05); }
+.trade-arrow { font-size:3rem; color:var(--gold); align-self:center; }
+.trade-actions { display:flex; gap:1rem; justify-content:center; margin-top:1rem; }
+.btn-trade-accept {
+  background:linear-gradient(135deg,var(--green),#00b360); color:#000;
+  padding:12px 28px; border-radius:25px; font-family:'Bebas Neue';
+  font-size:1.2rem; letter-spacing:2px; cursor:pointer; border:none; transition:all 0.2s;
+}
+.btn-trade-cancel {
+  background:rgba(255,71,87,0.1); border:1px solid rgba(255,71,87,0.4); color:var(--red);
+  padding:12px 28px; border-radius:25px; font-family:'Bebas Neue';
+  font-size:1.2rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;
+}
+.btn-trade-accept:hover { transform:scale(1.05); box-shadow:0 0 20px rgba(0,255,136,0.4); }
+.btn-trade-cancel:hover { background:rgba(255,71,87,0.2); }
+
+/* RANKING */
+#screen-ranking { display:none; flex-direction:column; gap:1rem; }
+#screen-ranking.active { display:flex; }
+.ranking-list { display:flex; flex-direction:column; gap:0.75rem; }
+.rank-item {
+  display:flex; align-items:center; gap:1rem;
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:1rem 1.5rem; transition:all 0.2s;
+}
+.rank-item:hover { border-color:rgba(255,215,0,0.2); transform:translateX(4px); }
+.rank-num { font-family:'Orbitron'; font-weight:700; font-size:1.5rem; width:40px; text-align:center; }
+.rank-1 .rank-num { color:var(--gold); }
+.rank-2 .rank-num { color:#c0c0c0; }
+.rank-3 .rank-num { color:#cd7f32; }
+.rank-avatar {
+  width:44px; height:44px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:1rem;
+}
+.rank-info { flex:1; }
+.rank-name { font-weight:700; font-size:1rem; }
+.rank-sub { font-size:0.8rem; color:var(--text2); }
+.rank-score { font-family:'Orbitron'; font-size:1.1rem; color:var(--gold); font-weight:700; }
+
+/* CHAT */
+#screen-chat { display:none; flex-direction:column; gap:1rem; height:100%; }
+#screen-chat.active { display:flex; }
+.chat-container { display:grid; grid-template-columns:250px 1fr; gap:1rem; flex:1; min-height:0; }
+.chat-rooms {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:1rem; overflow-y:auto;
+}
+.chat-room-item {
+  padding:10px 12px; border-radius:8px; cursor:pointer;
+  transition:all 0.2s; font-weight:600; font-size:0.9rem;
+  display:flex; align-items:center; gap:8px; color:var(--text2);
+  margin-bottom:4px;
+}
+.chat-room-item:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+.chat-room-item.active { background:rgba(255,215,0,0.1); color:var(--gold); }
+.room-dot { width:8px; height:8px; border-radius:50%; }
+.room-dot.green { background:var(--green); }
+.room-dot.gold { background:var(--gold); }
+.room-dot.blue { background:var(--accent); }
+.room-dot.purple { background:var(--epic); }
+.chat-main {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; display:flex; flex-direction:column; overflow:hidden;
+}
+.chat-messages { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:0.75rem; }
+.msg { display:flex; gap:10px; }
+.msg-avatar {
+  width:34px; height:34px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:0.8rem;
+}
+.msg-content { flex:1; }
+.msg-header { display:flex; align-items:baseline; gap:8px; margin-bottom:3px; }
+.msg-name { font-weight:700; font-size:0.9rem; }
+.msg-time { font-size:0.7rem; color:var(--text2); }
+.msg-text { font-size:0.9rem; color:var(--text2); line-height:1.5; }
+.chat-input-row {
+  padding:1rem; border-top:1px solid rgba(255,255,255,0.07);
+  display:flex; gap:10px;
+}
+.chat-input {
+  flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px; padding:10px 18px; color:var(--text);
+  font-family:'Rajdhani'; font-size:0.95rem; outline:none;
+}
+.chat-input:focus { border-color:rgba(255,215,0,0.3); }
+.chat-send-btn {
+  background:var(--gold); color:#000; border:none; border-radius:50%;
+  width:40px; height:40px; cursor:pointer; font-size:1.1rem; transition:all 0.2s;
+}
+.chat-send-btn:hover { transform:scale(1.1); box-shadow:0 0 15px rgba(255,215,0,0.4); }
+
+/* MARKET */
+#screen-market { display:none; flex-direction:column; gap:1rem; }
+#screen-market.active { display:flex; }
+.market-tabs { display:flex; gap:0.5rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem; }
+.market-tab {
+  padding:8px 20px; border-radius:20px; cursor:pointer; transition:all 0.2s;
+  font-weight:600; color:var(--text2); border:1px solid transparent;
+}
+.market-tab.active { background:rgba(255,215,0,0.1); color:var(--gold); border-color:rgba(255,215,0,0.3); }
+.market-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; padding-bottom:2rem; }
+.market-item {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:1rem; cursor:pointer; transition:all 0.2s;
+}
+.market-item:hover { border-color:rgba(255,215,0,0.3); transform:translateY(-4px); }
+.market-item-img { font-size:3rem; text-align:center; margin-bottom:0.75rem; }
+.market-item-name { font-weight:700; font-size:0.95rem; margin-bottom:4px; }
+.market-item-rarity { font-size:0.75rem; margin-bottom:0.75rem; }
+.market-price { display:flex; align-items:center; justify-content:space-between; }
+.price-tag { font-family:'Orbitron'; font-weight:700; color:var(--gold); font-size:1rem; }
+.buy-btn {
+  background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.3);
+  color:var(--gold); padding:4px 12px; border-radius:12px;
+  font-family:'Rajdhani'; font-weight:700; cursor:pointer; font-size:0.85rem;
+  transition:all 0.2s;
+}
+.buy-btn:hover { background:rgba(255,215,0,0.3); }
+
+/* PROFILE */
+#screen-profile { display:none; flex-direction:column; gap:1.5rem; }
+#screen-profile.active { display:flex; }
+.profile-header {
+  background:linear-gradient(135deg, var(--surface), #0f3460);
+  border:1px solid rgba(255,215,0,0.2); border-radius:16px; padding:2rem;
+  display:flex; gap:2rem; align-items:center;
+}
+.profile-avatar-big {
+  width:90px; height:90px; border-radius:50%;
+  background:linear-gradient(135deg, var(--accent2), var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron'; font-size:2rem; font-weight:700;
+  border:3px solid var(--gold); flex-shrink:0;
+}
+.profile-info h2 { font-family:'Bebas Neue'; font-size:2rem; letter-spacing:3px; }
+.profile-info .level { color:var(--gold); font-weight:700; font-size:1.1rem; }
+.xp-bar { height:8px; background:rgba(255,255,255,0.1); border-radius:4px; margin:8px 0; width:300px; max-width:100%; }
+.xp-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
+.achievements-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:1rem; }
+.achievement {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:1rem; text-align:center; transition:all 0.2s;
+}
+.achievement:hover { transform:scale(1.04); border-color:rgba(255,215,0,0.2); }
+.achievement.locked { opacity:0.4; }
+.ach-icon { font-size:2rem; margin-bottom:0.5rem; }
+.ach-name { font-weight:700; font-size:0.85rem; }
+.ach-desc { font-size:0.7rem; color:var(--text2); margin-top:4px; }
+
+/* MODAL */
+#modal-overlay {
+  position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.8);
+  display:none; align-items:center; justify-content:center;
+}
+#modal-overlay.show { display:flex; }
+#sticker-modal {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px; padding:2rem; max-width:400px; width:90%;
+  position:relative; animation:modalIn 0.3s ease;
+}
+@keyframes modalIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-close {
+  position:absolute; top:1rem; right:1rem;
+  background:rgba(255,255,255,0.1); border:none; color:var(--text);
+  width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem;
+  transition:all 0.2s;
+}
+.modal-close:hover { background:rgba(255,71,87,0.3); }
+.modal-sticker { font-size:6rem; text-align:center; margin:1rem 0; }
+.modal-name { font-family:'Bebas Neue'; font-size:1.8rem; letter-spacing:3px; text-align:center; }
+.modal-details { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:1.5rem; }
+.modal-detail {
+  background:rgba(255,255,255,0.05); border-radius:8px; padding:0.75rem;
+  text-align:center;
+}
+.modal-detail .d-label { font-size:0.7rem; color:var(--text2); letter-spacing:1px; text-transform:uppercase; }
+.modal-detail .d-val { font-weight:700; font-size:1.1rem; margin-top:4px; }
+
+/* TOAST */
+#toast-container {
+  position:fixed; bottom:2rem; right:2rem; z-index:2000;
+  display:flex; flex-direction:column; gap:0.75rem;
+}
+.toast {
+  background:var(--dark2); border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px; padding:1rem 1.5rem; min-width:250px;
+  display:flex; align-items:center; gap:10px;
+  animation:toastIn 0.3s ease; font-weight:600;
+}
+.toast.success { border-color:rgba(0,255,136,0.4); }
+.toast.warning { border-color:rgba(255,215,0,0.4); }
+.toast.legendary-toast { border-color:var(--gold); box-shadow:0 0 30px rgba(255,215,0,0.4); }
+@keyframes toastIn { from{transform:translateX(100%);opacity:0} to{transform:none;opacity:1} }
+@keyframes toastOut { to{transform:translateX(120%);opacity:0} }
+
+/* LOADING */
+#loading-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:var(--dark);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2rem;
+}
+.loading-logo { font-family:'Bebas Neue'; font-size:4rem; letter-spacing:6px; }
+.loading-logo span { background:linear-gradient(135deg,var(--gold),var(--gold2),var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.loading-bar { width:300px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+.loading-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--gold),var(--accent)); animation:loadFill 1.5s ease forwards; }
+@keyframes loadFill { from{width:0} to{width:100%} }
+.loading-text { font-size:0.9rem; color:var(--text2); letter-spacing:2px; animation:pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+/* LOGIN SCREEN */
+#login-screen {
+  position:fixed; inset:0; z-index:5000;
+  background:radial-gradient(ellipse at center, #0f3460 0%, var(--dark) 70%);
+  display:flex; align-items:center; justify-content:center;
+}
+.login-card {
+  background:rgba(255,255,255,0.04); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,215,0,0.2); border-radius:24px;
+  padding:3rem; text-align:center; width:380px; max-width:90%;
+}
+.login-logo { font-family:'Bebas Neue'; font-size:3.5rem; letter-spacing:5px; margin-bottom:0.5rem; }
+.login-logo span { background:linear-gradient(135deg,var(--gold),var(--gold2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.login-ball { font-size:4rem; display:block; margin:1rem auto; animation:bounce 2s ease-in-out infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
+.login-sub { color:var(--text2); margin-bottom:2rem; }
+.login-btn {
+  width:100%; padding:14px; border-radius:12px;
+  font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;
+  cursor:pointer; transition:all 0.2s; margin-bottom:0.75rem; border:none;
+  display:flex; align-items:center; justify-content:center; gap:10px; letter-spacing:1px;
+}
+.login-google { background:#fff; color:#333; }
+.login-google:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(255,255,255,0.3); }
+.login-demo { background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#000; }
+.login-demo:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(255,215,0,0.4); }
+
+/* PROGRESS RING */
+.progress-ring { position:relative; width:60px; height:60px; }
+.progress-ring svg { transform:rotate(-90deg); }
+.progress-ring-text {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron'; font-size:0.65rem; font-weight:700; color:var(--gold);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,215,0,0.2); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,215,0,0.4); }
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+  #sidebar { width:60px; }
+  .nav-item span { display:none; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .trade-board { grid-template-columns:1fr; }
+  .chat-container { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loading-logo">⚽ <span>Copa Gold</span></div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-text">CARREGANDO ÁLBUM...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">⚽ <span>Copa Gold</span></div>
+    <span class="login-ball">🏆</span>
+    <p class="login-sub">Colecione, troque e complete seu álbum virtual da Copa do Mundo!</p>
+    <button class="login-btn login-google" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Entrar com Google
+    </button>
+    <button class="login-btn login-demo" onclick="loginDemo()">⚡ Jogar como Convidado</button>
+    <p style="font-size:0.75rem;color:var(--text2);margin-top:1rem">Conta salva automaticamente com Firebase</p>
+  </div>
+</div>
+
+<!-- PARTICLES -->
+<canvas id="particles"></canvas>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <!-- TOP NAV -->
+  <nav id="topnav">
+    <div class="nav-logo">⚽ Copa Gold</div>
+    <div class="nav-actions">
+      <div class="coins-display">🪙 <span id="coins-display">0</span></div>
+      <button class="nav-btn accent" onclick="showScreen('packs')">🎁 Abrir Pacote</button>
+      <div id="user-info" onclick="showScreen('profile')">
+        <div class="user-avatar" id="user-avatar-nav">?</div>
+        <span id="user-name-nav" style="font-weight:600">Jogador</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- SIDEBAR -->
+    <nav id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Menu</div>
+        <div class="nav-item active" onclick="showScreen('home')" id="nav-home">
+          <span class="icon">🏠</span><span>Início</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('album')" id="nav-album">
+          <span class="icon">📖</span><span>Álbum</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('packs')" id="nav-packs">
+          <span class="icon">🎁</span><span>Pacotes</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('inventory')" id="nav-inventory">
+          <span class="icon">🎒</span><span>Inventário</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Social</div>
+        <div class="nav-item" onclick="showScreen('trade')" id="nav-trade">
+          <span class="icon">🔄</span><span>Trocas</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('market')" id="nav-market">
+          <span class="icon">🛒</span><span>Mercado</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('chat')" id="nav-chat">
+          <span class="icon">💬</span><span>Chat</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('ranking')" id="nav-ranking">
+          <span class="icon">🏆</span><span>Ranking</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Conta</div>
+        <div class="nav-item" onclick="showScreen('profile')" id="nav-profile">
+          <span class="icon">👤</span><span>Perfil</span>
+        </div>
+      </div>
+      <div class="sidebar-section" style="margin-top:auto">
+        <div class="sidebar-label">Progresso</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:4px">Álbum: <span id="sidebar-progress">0%</span></div>
+        <div class="progress-bar-mini"><div class="progress-bar-mini-fill" id="sidebar-bar" style="width:0%"></div></div>
+      </div>
+    </nav>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- HOME -->
+      <div id="screen-home" class="active" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="hero-banner">
+          <div class="hero-text">
+            <h1>Bem-vindo ao<br><span>Copa Gold</span></h1>
+            <p>O maior álbum virtual da Copa do Mundo!</p>
+            <button class="nav-btn" style="margin-top:1rem" onclick="showScreen('packs')">🎁 Abrir Pacotes</button>
+          </div>
+          <span class="hero-ball">⚽</span>
+        </div>
+        <div class="stats-grid" style="margin-top:1.5rem">
+          <div class="stat-card gold">
+            <div class="stat-val" id="stat-total">0</div>
+            <div class="stat-label">Figurinhas</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-val" id="stat-unique">0</div>
+            <div class="stat-label">Únicas</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-val" id="stat-legendary-count">0</div>
+            <div class="stat-label">Lendárias</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-val" id="stat-percent">0%</div>
+            <div class="stat-label">Completo</div>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem">
+          <div class="section-title">🔥 Figurinhas Recentes</div>
+          <div id="recent-stickers" style="display:flex;gap:1rem;flex-wrap:wrap"></div>
+        </div>
+        <div style="margin-top:1.5rem">
+          <div class="section-title">📅 Evento do Dia</div>
+          <div style="background:linear-gradient(135deg,#1a2a0a,#0a1500);border:1px solid rgba(0,255,136,0.3);border-radius:12px;padding:1.5rem;display:flex;align-items:center;gap:1.5rem">
+            <span style="font-size:3rem">🌟</span>
+            <div>
+              <div style="font-family:'Bebas Neue';font-size:1.4rem;letter-spacing:2px;color:var(--green)">PACOTE DIÁRIO GRÁTIS!</div>
+              <div style="color:var(--text2);font-size:0.9rem;margin:4px 0">Colete seu pacote diário e ganhe 5 figurinhas!</div>
+              <button class="nav-btn" style="margin-top:0.5rem;background:rgba(0,255,136,0.1);border-color:rgba(0,255,136,0.3);color:var(--green)" onclick="openPackType('daily')">Coletar Agora!</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALBUM -->
+      <div id="screen-album" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">📖 Meu Álbum</div>
+        <div class="album-controls">
+          <input type="text" class="search-box" placeholder="🔍 Buscar figurinha..." oninput="filterAlbum(this.value)">
+          <button class="filter-btn active" onclick="setFilter('all',this)">Todas</button>
+          <button class="filter-btn" onclick="setFilter('common',this)">Comuns</button>
+          <button class="filter-btn" onclick="setFilter('rare',this)">Raras</button>
+          <button class="filter-btn" onclick="setFilter('epic',this)">Épicas</button>
+          <button class="filter-btn" onclick="setFilter('legendary',this)">Lendárias</button>
+          <button class="filter-btn" onclick="setFilter('missing',this)">Faltando</button>
+        </div>
+        <div class="album-grid" id="album-grid"></div>
+      </div>
+
+      <!-- PACKS -->
+      <div id="screen-packs" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">🎁 Pacotes de Figurinhas</div>
+        <div class="packs-grid">
+          <div class="pack-card common-pack" onclick="openPackType('common')">
+            <span class="pack-icon">📦</span>
+            <div class="pack-name">Pacote Comum</div>
+            <div class="pack-desc">5 figurinhas, chances básicas</div>
+            <div class="pack-cost">🪙 100</div>
+            <div class="pack-chances">
+              <span class="chance-tag">70% Comum</span>
+              <span class="chance-tag">20% Rara</span>
+              <span class="chance-tag">10% Épica</span>
+            </div>
+          </div>
+          <div class="pack-card rare-pack" onclick="openPackType('rare')">
+            <span class="pack-icon">💎</span>
+            <div class="pack-name" style="color:var(--rare)">Pacote Raro</div>
+            <div class="pack-desc">5 figurinhas, sem comuns!</div>
+            <div class="pack-cost">🪙 250</div>
+            <div class="pack-chances">
+              <span class="chance-tag">50% Rara</span>
+              <span class="chance-tag">35% Épica</span>
+              <span class="chance-tag">15% Lendária</span>
+            </div>
+          </div>
+          <div class="pack-card epic-pack" onclick="openPackType('epic')">
+            <span class="pack-icon">🌟</span>
+            <div class="pack-name">Pacote Épico</div>
+            <div class="pack-desc">5 figurinhas épicas+</div>
+            <div class="pack-cost">🪙 500</div>
+            <div class="pack-chances">
+              <span class="chance-tag">60% Épica</span>
+              <span class="chance-tag">30% Lendária</span>
+              <span class="chance-tag">10% Secreta</span>
+            </div>
+          </div>
+          <div class="pack-card legendary-pack" onclick="openPackType('legendary')">
+            <span class="pack-icon">👑</span>
+            <div class="pack-name">Pacote Lendário</div>
+            <div class="pack-desc">Garantido 1 lendária!</div>
+            <div class="pack-cost">🪙 1000</div>
+            <div class="pack-chances">
+              <span class="chance-tag">1 Lendária garantida</span>
+              <span class="chance-tag">4+ Épicas</span>
+            </div>
+          </div>
+          <div class="pack-card daily-pack" onclick="openPackType('daily')">
+            <span class="pack-icon">📅</span>
+            <div class="pack-name">Pacote Diário</div>
+            <div class="pack-desc">Grátis todo dia!</div>
+            <div class="pack-cost" style="color:var(--green)">✨ GRÁTIS</div>
+            <div class="pack-chances">
+              <span class="chance-tag">5 figurinhas</span>
+              <span class="chance-tag">Surpresa!</span>
+            </div>
+          </div>
+          <div class="pack-card mystery-pack" onclick="openPackType('mystery')">
+            <span class="pack-icon">❓</span>
+            <div class="pack-name">Pacote Misterioso</div>
+            <div class="pack-desc">Tudo pode acontecer...</div>
+            <div class="pack-cost">🪙 300</div>
+            <div class="pack-chances">
+              <span class="chance-tag">??? raridade</span>
+              <span class="chance-tag">Surpresa total</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="screen-inventory" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">🎒 Inventário</div>
+        <div class="album-controls">
+          <input type="text" class="search-box" placeholder="🔍 Buscar..." oninput="filterInventory(this.value)">
+          <button class="filter-btn active" onclick="setInvFilter('all',this)">Todas</button>
+          <button class="filter-btn" onclick="setInvFilter('duplicates',this)">Duplicadas</button>
+          <button class="filter-btn" onclick="setInvFilter('legendary',this)">Lendárias</button>
+        </div>
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </div>
+
+      <!-- TRADE -->
+      <div id="screen-trade" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">🔄 Sistema de Trocas</div>
+        <div class="trade-board">
+          <div class="trade-panel">
+            <h3>🧑 Sua Oferta</h3>
+            <div class="trade-slots" id="my-trade-slots">
+              <div class="trade-slot">+</div>
+              <div class="trade-slot">+</div>
+              <div class="trade-slot">+</div>
+            </div>
+            <button class="nav-btn" style="margin-top:1rem;width:100%" onclick="addToTrade()">+ Adicionar Figurinha</button>
+          </div>
+          <div class="trade-arrow">⇄</div>
+          <div class="trade-panel">
+            <h3>👥 Oferta Deles</h3>
+            <div class="trade-slots" id="their-trade-slots">
+              <div class="trade-slot">?</div>
+              <div class="trade-slot">?</div>
+              <div class="trade-slot">?</div>
+            </div>
+            <div style="margin-top:1rem;font-size:0.85rem;color:var(--text2);text-align:center">Buscar jogadores online:</div>
+            <input type="text" class="search-box" placeholder="Nome do jogador..." style="margin-top:0.5rem">
+          </div>
+        </div>
+        <div class="trade-actions">
+          <button class="btn-trade-accept" onclick="proposeTrade()">✅ Propor Troca</button>
+          <button class="btn-trade-cancel" onclick="clearTrade()">❌ Cancelar</button>
+        </div>
+        <div style="margin-top:2rem">
+          <div class="section-title">📋 Pedidos de Troca</div>
+          <div id="trade-requests" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+        </div>
+      </div>
+
+      <!-- RANKING -->
+      <div id="screen-ranking" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">🏆 Ranking Global</div>
+        <div class="ranking-list" id="ranking-list"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="screen-chat" style="padding:1.5rem;height:100%;overflow:hidden;display:none;flex-direction:column">
+        <div class="section-title">💬 Chat Global</div>
+        <div class="chat-container" style="flex:1;min-height:0">
+          <div class="chat-rooms">
+            <div class="sidebar-label" style="margin-bottom:0.5rem">Canais</div>
+            <div class="chat-room-item active">
+              <div class="room-dot green"></div>#geral
+            </div>
+            <div class="chat-room-item">
+              <div class="room-dot gold"></div>#trocas
+            </div>
+            <div class="chat-room-item">
+              <div class="room-dot blue"></div>#raras
+            </div>
+            <div class="chat-room-item">
+              <div class="room-dot purple"></div>#eventos
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-row">
+              <input type="text" class="chat-input" id="chat-input" placeholder="Mensagem..." onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="chat-send-btn" onclick="sendChat()">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MARKET -->
+      <div id="screen-market" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">🛒 Mercado</div>
+        <div class="market-tabs">
+          <div class="market-tab active" onclick="setMarketTab('buy',this)">Comprar</div>
+          <div class="market-tab" onclick="setMarketTab('sell',this)">Vender</div>
+          <div class="market-tab" onclick="setMarketTab('auction',this)">Leilão</div>
+        </div>
+        <div class="market-grid" id="market-grid" style="margin-top:1rem"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="screen-profile" style="padding:1.5rem;overflow-y:auto;height:100%">
+        <div class="section-title">👤 Meu Perfil</div>
+        <div class="profile-header">
+          <div class="profile-avatar-big" id="profile-avatar">?</div>
+          <div class="profile-info">
+            <h2 id="profile-name">Jogador</h2>
+            <div class="level">⭐ Nível <span id="profile-level">1</span></div>
+            <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+            <div style="font-size:0.8rem;color:var(--text2)">XP: <span id="xp-display">0</span> / <span id="xp-next">1000</span></div>
+            <div style="margin-top:0.5rem;font-size:0.85rem;color:var(--text2)">
+              🃏 <span id="profile-total">0</span> figurinhas &nbsp; 
+              🪙 <span id="profile-coins">0</span> moedas &nbsp;
+              🔄 <span id="profile-trades">0</span> trocas
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem">
+          <div class="section-title">🏅 Conquistas</div>
+          <div class="achievements-grid" id="achievements-grid"></div>
+        </div>
+      </div>
+
+    </div><!-- end content -->
+  </div><!-- end main -->
+</div><!-- end app -->
+
+<!-- PACK OVERLAY -->
+<div id="pack-overlay">
+  <div class="pack-opening-title" id="pack-title">🎁 ABRINDO PACOTE...</div>
+  <div id="pack-stickers"></div>
+  <button class="close-pack-btn" onclick="closePack()">GUARDAR FIGURINHAS 🎉</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="sticker-modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-sticker" id="modal-emoji">⚽</div>
+    <div class="modal-name" id="modal-name">Figurinha</div>
+    <div id="modal-rarity-badge" style="text-align:center;margin:8px 0"></div>
+    <div class="modal-details">
+      <div class="modal-detail">
+        <div class="d-label">País</div>
+        <div class="d-val" id="modal-country">-</div>
+      </div>
+      <div class="modal-detail">
+        <div class="d-label">Raridade</div>
+        <div class="d-val" id="modal-rarity">-</div>
+      </div>
+      <div class="modal-detail">
+        <div class="d-label">Número</div>
+        <div class="d-val" id="modal-number">-</div>
+      </div>
+      <div class="modal-detail">
+        <div class="d-label">Valor</div>
+        <div class="d-val" id="modal-value">-</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:1.5rem">
+      <button class="nav-btn" style="flex:1" onclick="tradeSelected()">🔄 Trocar</button>
+      <button class="nav-btn accent" style="flex:1" onclick="sellSelected()">💰 Vender</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, push, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMz-GuqiF4VyUKnCayURIvPGz0tR3W_7s",
+  authDomain: "handtracking-78c3b.firebaseapp.com",
+  databaseURL: "https://handtracking-78c3b-default-rtdb.firebaseio.com",
+  projectId: "handtracking-78c3b",
+  storageBucket: "handtracking-78c3b.appspot.com",
+  messagingSenderId: "179317156904",
+  appId: "1:179317156904:web:b9dede7364168804f9991d"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// STICKER DATABASE
+const STICKER_DB = [];
+const countries = [
+  {name:'Brasil',flag:'🇧🇷'},{name:'Argentina',flag:'🇦🇷'},{name:'França',flag:'🇫🇷'},
+  {name:'Alemanha',flag:'🇩🇪'},{name:'Espanha',flag:'🇪🇸'},{name:'Portugal',flag:'🇵🇹'},
+  {name:'Inglaterra',flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'Itália',flag:'🇮🇹'},{name:'Holanda',flag:'🇳🇱'},
+  {name:'Croácia',flag:'🇭🇷'},{name:'Bélgica',flag:'🇧🇪'},{name:'Uruguai',flag:'🇺🇾'},
+  {name:'Colômbia',flag:'🇨🇴'},{name:'México',flag:'🇲🇽'},{name:'Japão',flag:'🇯🇵'},
+  {name:'Coreia do Sul',flag:'🇰🇷'},{name:'Senegal',flag:'🇸🇳'},{name:'Marrocos',flag:'🇲🇦'},
+  {name:'EUA',flag:'🇺🇸'},{name:'Canadá',flag:'🇨🇦'}
+];
+const players = ['⚽','🧤','🎯','🏃','💪','🦅','🐆','🦁','⚡','🌟','👑','💫','🔥','❄️','🌊','🎭','🏆','🥇','🎖️','💎'];
+const rarities = ['common','rare','epic','legendary','secret'];
+const rarityWeights = [0.55,0.25,0.12,0.06,0.02];
+const playerNames = ['Mateus','Rafael','Carlos','Miguel','João','Pedro','Lucas','Diego','André','Rodrigo','Gabriel','Thiago','Felipe','Eduardo','Bruno','Alex','Marco','Ivan','Oscar','David'];
+const lastNames = ['Silva','Santos','Oliveira','Costa','Ferreira','Alves','Lima','Ribeiro','Martins','Carvalho','Araújo','Melo','Barbosa','Rocha','Correia'];
+const types = ['Jogador','Técnico','Estádio','Escudo','Mascote','Especial'];
+const typeIcons = {Jogador:'⚽',Técnico:'👔',Estádio:'🏟️',Escudo:'🛡️',Mascote:'🦁',Especial:'✨'};
+
+let num = 1;
+for (let c of countries) {
+  // Escudo
+  STICKER_DB.push({ id:`S${num}`, num, nome:`Escudo ${c.name}`, pais:c.name, flag:c.flag, tipo:'Escudo', icone:'🛡️', raridade:'common', holografica:false, animada:false, valor:50 }); num++;
+  // Jogadores
+  for (let i=0; i<8; i++) {
+    const r = pickRarity();
+    const n = playerNames[Math.floor(Math.random()*playerNames.length)] + ' ' + lastNames[Math.floor(Math.random()*lastNames.length)];
+    STICKER_DB.push({ id:`S${num}`, num, nome:n, pais:c.name, flag:c.flag, tipo:'Jogador', icone:players[Math.floor(Math.random()*players.length)], raridade:r, holografica:r==='legendary'||r==='secret', animada:r==='secret', valor:rarityValue(r) }); num++;
+  }
+  // Técnico
+  STICKER_DB.push({ id:`S${num}`, num, nome:`Técnico ${c.name}`, pais:c.name, flag:c.flag, tipo:'Técnico', icone:'👔', raridade:'rare', holografica:false, animada:false, valor:150 }); num++;
+}
+// Lendárias especiais
+const legendaries = [
+  {nome:'Pelé Eterno',icone:'👑',pais:'Brasil',flag:'🇧🇷',raridade:'legendary'},
+  {nome:'El Maestro',icone:'🐐',pais:'Argentina',flag:'🇦🇷',raridade:'legendary'},
+  {nome:'La Máquina',icone:'⚡',pais:'Alemanha',flag:'🇩🇪',raridade:'legendary'},
+  {nome:'CR Galáctico',icone:'🌟',pais:'Portugal',flag:'🇵🇹',raridade:'legendary'},
+  {nome:'Copa Trophy',icone:'🏆',pais:'Mundo',flag:'🌍',raridade:'secret'},
+  {nome:'Figurinha Dourada',icone:'💛',pais:'Especial',flag:'✨',raridade:'secret'},
+];
+for (let l of legendaries) {
+  STICKER_DB.push({ id:`S${num}`, num, ...l, tipo:'Especial', holografica:true, animada:true, valor:5000 }); num++;
+}
+
+function pickRarity() {
+  const r = Math.random();
+  let acc = 0;
+  for (let i=0; i<rarities.length; i++) { acc+=rarityWeights[i]; if(r<acc) return rarities[i]; }
+  return 'common';
+}
+function rarityValue(r) { return {common:50,rare:150,epic:400,legendary:1500,secret:5000}[r]||50; }
+
+function pickRarityForPack(packType) {
+  const tables = {
+    common: ['common','common','common','rare','epic'],
+    rare: ['rare','rare','epic','epic','legendary'],
+    epic: ['epic','epic','epic','legendary','secret'],
+    legendary: ['legendary','legendary','legendary','epic','secret'],
+    daily: null,
+    mystery: null
+  };
+  if (packType==='daily') {
+    const choices=['common','common','rare','epic','legendary'];
+    return choices[Math.floor(Math.random()*choices.length)];
+  }
+  if (packType==='mystery') {
+    return rarities[Math.floor(Math.random()*rarities.length)];
+  }
+  const t = tables[packType];
+  return t[Math.floor(Math.random()*t.length)];
+}
+
+function getStickersByRarity(rarity) {
+  return STICKER_DB.filter(s=>s.raridade===rarity);
+}
+
+function getRandomStickerForPack(packType) {
+  const rarity = pickRarityForPack(packType);
+  const pool = getStickersByRarity(rarity);
+  if(!pool.length) return STICKER_DB[Math.floor(Math.random()*STICKER_DB.length)];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+// GAME STATE
+let currentUser = null;
+let userData = { coins:500, stickers:{}, totalOpened:0, trades:0, xp:0, level:1 };
+let currentFilter = 'all';
+let invFilter = 'all';
+let selectedSticker = null;
+let currentScreen = 'home';
+
+// AUTH
+window.loginGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    showToast('Erro no login Google. Tente como convidado!','warning');
+  }
+};
+
+window.loginDemo = async () => {
+  try {
+    await signInAnonymously(auth);
+  } catch(e) {
+    startOfflineMode();
+  }
+};
+
+function startOfflineMode() {
+  currentUser = { uid: 'offline_' + Date.now(), displayName: 'Colecionador', photoURL: null };
+  userData = { coins:500, stickers:{}, totalOpened:0, trades:0, xp:0, level:1 };
+  initApp();
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    loadUserData();
+  } else {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+});
+
+async function loadUserData() {
+  try {
+    const snap = await get(ref(db, `users/${currentUser.uid}`));
+    if (snap.exists()) {
+      userData = { ...userData, ...snap.val() };
+    } else {
+      await saveUserData();
+    }
+  } catch(e) {
+    console.log('Offline mode');
+  }
+  initApp();
+}
+
+async function saveUserData() {
+  if (!currentUser || currentUser.uid.startsWith('offline_')) return;
+  try {
+    await set(ref(db, `users/${currentUser.uid}`), {
+      name: currentUser.displayName || 'Colecionador',
+      coins: userData.coins,
+      stickers: userData.stickers,
+      totalOpened: userData.totalOpened,
+      trades: userData.trades,
+      xp: userData.xp,
+      level: userData.level,
+      updatedAt: Date.now()
+    });
+  } catch(e) { console.log('Save failed'); }
+}
+
+function initApp() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  updateUI();
+  renderAlbum();
+  renderInventory();
+  renderRanking();
+  renderMarket();
+  renderAchievements();
+  loadChat();
+  initParticles();
+  showScreen('home');
+}
+
+function updateUI() {
+  const name = currentUser?.displayName?.split(' ')[0] || 'Colecionador';
+  const initials = name.substring(0,2).toUpperCase();
+  document.getElementById('user-name-nav').textContent = name;
+  document.getElementById('user-avatar-nav').textContent = initials;
+  document.getElementById('profile-avatar').textContent = initials;
+  document.getElementById('profile-name').textContent = currentUser?.displayName || 'Colecionador';
+  document.getElementById('coins-display').textContent = userData.coins.toLocaleString();
+  document.getElementById('profile-coins').textContent = userData.coins.toLocaleString();
+  document.getElementById('profile-total').textContent = Object.values(userData.stickers).reduce((a,b)=>a+b,0);
+  document.getElementById('profile-trades').textContent = userData.trades;
+  
+  const unique = Object.keys(userData.stickers).filter(k=>userData.stickers[k]>0).length;
+  const total = STICKER_DB.length;
+  const pct = Math.round(unique/total*100);
+  const legendary = Object.keys(userData.stickers).filter(k=>userData.stickers[k]>0&&STICKER_DB.find(s=>s.id===k&&s.raridade==='legendary')).length;
+  
+  document.getElementById('stat-total').textContent = Object.values(userData.stickers).reduce((a,b)=>a+b,0);
+  document.getElementById('stat-unique').textContent = unique;
+  document.getElementById('stat-legendary-count').textContent = legendary;
+  document.getElementById('stat-percent').textContent = pct + '%';
+  document.getElementById('sidebar-progress').textContent = pct + '%';
+  document.getElementById('sidebar-bar').style.width = pct + '%';
+  
+  // Level
+  const level = userData.level || 1;
+  const xp = userData.xp || 0;
+  const xpNeeded = level * 1000;
+  document.getElementById('profile-level').textContent = level;
+  document.getElementById('xp-display').textContent = xp;
+  document.getElementById('xp-next').textContent = xpNeeded;
+  document.getElementById('xp-fill').style.width = Math.min(100, Math.round(xp/xpNeeded*100)) + '%';
+  
+  renderRecentStickers();
+}
+
+function renderRecentStickers() {
+  const container = document.getElementById('recent-stickers');
+  const owned = STICKER_DB.filter(s=>userData.stickers[s.id]>0).slice(-8).reverse();
+  container.innerHTML = owned.map(s=>createStickerCardHTML(s, true)).join('');
+}
+
+function createStickerCardHTML(s, small=false) {
+  const count = userData.stickers[s.id] || 0;
+  const size = small ? '100px' : '130px';
+  return `<div class="sticker-slot" style="width:${size};flex-shrink:0" onclick="openStickerModal('${s.id}')">
+    <div class="sticker-card ${s.raridade}">
+      <div class="sticker-header">
+        <span class="sticker-num">#${s.num}</span>
+        <span class="rarity-badge ${s.raridade}">${s.raridade.toUpperCase()}</span>
+      </div>
+      <div class="sticker-img">
+        <span style="font-size:2.5rem">${s.icone}</span>
+        ${s.holografica?'<div class="holo-overlay"></div>':''}
+        <div style="position:absolute;bottom:2px;left:4px;font-size:0.9rem">${s.flag||''}</div>
+      </div>
+      <div class="sticker-footer">
+        <div class="sticker-name">${s.nome}</div>
+        <div class="sticker-country">${s.pais} · ${s.tipo}</div>
+      </div>
+      ${count>1?`<div class="duplicate-badge">×${count}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// ALBUM RENDER
+function renderAlbum() {
+  const grid = document.getElementById('album-grid');
+  let stickers = STICKER_DB;
+  if (currentFilter==='missing') stickers = STICKER_DB.filter(s=>!userData.stickers[s.id]);
+  else if (currentFilter!=='all') stickers = STICKER_DB.filter(s=>s.raridade===currentFilter);
+  
+  grid.innerHTML = stickers.map(s => {
+    const owned = userData.stickers[s.id] > 0;
+    if (!owned) {
+      return `<div class="sticker-slot empty">
+        <span class="slot-icon">${s.icone}</span>
+        <span class="slot-num">#${s.num}</span>
+        <span style="font-size:0.6rem;color:rgba(255,255,255,0.15)">${s.pais}</span>
+      </div>`;
+    }
+    return createStickerCardHTML(s);
+  }).join('');
+}
+
+window.setFilter = (f, btn) => {
+  currentFilter = f;
+  document.querySelectorAll('.album-controls .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAlbum();
+};
+
+window.filterAlbum = (q) => {
+  const grid = document.getElementById('album-grid');
+  let stickers = STICKER_DB.filter(s=>s.nome.toLowerCase().includes(q.toLowerCase())||s.pais.toLowerCase().includes(q.toLowerCase()));
+  if (currentFilter!=='all'&&currentFilter!=='missing') stickers=stickers.filter(s=>s.raridade===currentFilter);
+  grid.innerHTML = stickers.map(s => {
+    const owned = userData.stickers[s.id]>0;
+    if (!owned) return `<div class="sticker-slot empty"><span class="slot-icon">${s.icone}</span><span class="slot-num">#${s.num}</span></div>`;
+    return createStickerCardHTML(s);
+  }).join('');
+};
+
+// INVENTORY
+function renderInventory() {
+  const grid = document.getElementById('inventory-grid');
+  let stickers = STICKER_DB.filter(s=>userData.stickers[s.id]>0);
+  if (invFilter==='duplicates') stickers=stickers.filter(s=>userData.stickers[s.id]>1);
+  else if (invFilter==='legendary') stickers=stickers.filter(s=>s.raridade==='legendary'||s.raridade==='secret');
+  grid.innerHTML = stickers.map(s=>createStickerCardHTML(s,false)).join('') || '<div style="color:var(--text2);padding:2rem;text-align:center">Seu inventário está vazio. Abra pacotes! 🎁</div>';
+}
+
+window.setInvFilter = (f,btn) => {
+  invFilter = f;
+  document.querySelectorAll('#screen-inventory .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderInventory();
+};
+
+window.filterInventory = (q) => {
+  const grid = document.getElementById('inventory-grid');
+  const stickers = STICKER_DB.filter(s=>userData.stickers[s.id]>0&&(s.nome.toLowerCase().includes(q.toLowerCase())||s.pais.toLowerCase().includes(q.toLowerCase())));
+  grid.innerHTML = stickers.map(s=>createStickerCardHTML(s)).join('');
+};
+
+// PACK SYSTEM
+const packCosts = { common:100, rare:250, epic:500, legendary:1000, daily:0, mystery:300 };
+const packNames = { common:'PACOTE COMUM 📦', rare:'PACOTE RARO 💎', epic:'PACOTE ÉPICO 🌟', legendary:'PACOTE LENDÁRIO 👑', daily:'PACOTE DIÁRIO 📅', mystery:'PACOTE MISTERIOSO ❓' };
+
+window.openPackType = async (type) => {
+  const cost = packCosts[type];
+  if (userData.coins < cost) {
+    showToast('Moedas insuficientes! 💰','warning');
+    return;
+  }
+  userData.coins -= cost;
+  
+  const overlay = document.getElementById('pack-overlay');
+  const stickersDiv = document.getElementById('pack-stickers');
+  document.getElementById('pack-title').textContent = packNames[type];
+  stickersDiv.innerHTML = '';
+  overlay.classList.add('show');
+  
+  const count = type==='daily' ? 5 : 5;
+  const newStickers = [];
+  
+  for (let i=0; i<count; i++) {
+    const s = getRandomStickerForPack(type);
+    newStickers.push(s);
+    userData.stickers[s.id] = (userData.stickers[s.id]||0) + 1;
+    userData.coins += Math.floor(s.valor * 0.1);
+  }
+  
+  userData.totalOpened++;
+  addXP(50 + count * 10);
+  
+  for (let i=0; i<newStickers.length; i++) {
+    await new Promise(r=>setTimeout(r, i*400));
+    const s = newStickers[i];
+    const div = document.createElement('div');
+    div.className = 'reveal-sticker sticker-slot';
+    div.style.animationDelay = `${i*0.1}s`;
+    div.innerHTML = `<div class="sticker-card ${s.raridade}">
+      <div class="sticker-header">
+        <span class="sticker-num">#${s.num}</span>
+        <span class="rarity-badge ${s.raridade}">${s.raridade.toUpperCase()}</span>
+      </div>
+      <div class="sticker-img"><span style="font-size:2.5rem">${s.icone}</span>${s.holografica?'<div class="holo-overlay"></div>':''}<div style="position:absolute;bottom:2px;left:4px">${s.flag||''}</div></div>
+      <div class="sticker-footer"><div class="sticker-name">${s.nome}</div><div class="sticker-country">${s.pais}</div></div>
+    </div>`;
+    stickersDiv.appendChild(div);
+    if (s.raridade==='legendary'||s.raridade==='secret') {
+      showToast(`🌟 LENDÁRIA! ${s.nome} (${s.pais})`, 'legendary-toast');
+    }
+  }
+  
+  updateUI();
+  saveUserData();
+};
+
+window.closePack = () => {
+  document.getElementById('pack-overlay').classList.remove('show');
+  renderAlbum();
+  renderInventory();
+};
+
+// MODAL
+window.openStickerModal = (id) => {
+  const s = STICKER_DB.find(x=>x.id===id);
+  if(!s) return;
+  selectedSticker = s;
+  document.getElementById('modal-emoji').textContent = s.icone;
+  document.getElementById('modal-name').textContent = s.nome;
+  document.getElementById('modal-country').textContent = `${s.flag||''} ${s.pais}`;
+  document.getElementById('modal-rarity').textContent = s.raridade;
+  document.getElementById('modal-number').textContent = `#${s.num}`;
+  document.getElementById('modal-value').textContent = `🪙 ${s.valor}`;
+  const badge = document.getElementById('modal-rarity-badge');
+  badge.innerHTML = `<span class="rarity-badge ${s.raridade}" style="font-size:0.9rem;padding:4px 12px">${s.raridade.toUpperCase()}</span>`;
+  document.getElementById('modal-overlay').classList.add('show');
+};
+window.closeModal = () => { document.getElementById('modal-overlay').classList.remove('show'); selectedSticker=null; };
+
+// RANKING
+async function renderRanking() {
+  const list = document.getElementById('ranking-list');
+  const colors = ['#FFD700','#C0C0C0','#CD7F32','var(--accent)','var(--epic)'];
+  const bgColors = ['rgba(100,60,0,0.3)','rgba(60,60,60,0.3)','rgba(70,40,10,0.3)','rgba(0,60,80,0.3)','rgba(50,20,80,0.3)'];
+  
+  let players = [
+    {name:'ColecionadorBR', stickers:487, legendary:12},
+    {name:'ArgenSwap', stickers:453, legendary:9},
+    {name:'FootballKing', stickers:421, legendary:7},
+    {name:'StickerPro', stickers:398, legendary:5},
+    {name:'CopaMaster', stickers:367, legendary:4},
+  ];
+  
+  try {
+    const snap = await get(ref(db,'users'));
+    if(snap.exists()) {
+      const fbUsers = snap.val();
+      const fbList = Object.entries(fbUsers).map(([uid,u])=>({
+        name: u.name||'Jogador',
+        stickers: Object.values(u.stickers||{}).reduce((a,b)=>a+b,0),
+        legendary: Object.keys(u.stickers||{}).filter(k=>STICKER_DB.find(s=>s.id===k&&s.raridade==='legendary')).length
+      })).sort((a,b)=>b.stickers-a.stickers).slice(0,5);
+      if(fbList.length) players = fbList;
+    }
+  } catch(e){}
+  
+  list.innerHTML = players.map((p,i)=>`
+    <div class="rank-item rank-${i+1}" style="border-color:${bgColors[i]||'rgba(255,255,255,0.07)'}">
+      <div class="rank-num" style="color:${colors[i]||'var(--text2)'}">${i+1}</div>
+      <div class="rank-avatar" style="background:${bgColors[i]||'rgba(255,255,255,0.1)'}">
+        ${p.name.substring(0,2).toUpperCase()}
+      </div>
+      <div class="rank-info">
+        <div class="rank-name">${p.name}</div>
+        <div class="rank-sub">🎖️ ${p.legendary} lendárias · 🃏 ${p.stickers} figurinhas</div>
+      </div>
+      <div class="rank-score">${p.stickers}</div>
+    </div>`).join('');
+}
+
+// MARKET
+function renderMarket() {
+  const grid = document.getElementById('market-grid');
+  const items = STICKER_DB.filter(s=>s.raridade==='legendary'||s.raridade==='epic'||s.raridade==='secret').slice(0,12);
+  grid.innerHTML = items.map(s=>`
+    <div class="market-item">
+      <div class="market-item-img">${s.icone} ${s.flag||''}</div>
+      <div class="market-item-name">${s.nome}</div>
+      <div class="market-item-rarity" style="color:${rarityColor(s.raridade)}">${s.raridade.toUpperCase()} · ${s.pais}</div>
+      <div class="market-price">
+        <span class="price-tag">🪙 ${s.valor}</span>
+        <button class="buy-btn" onclick="buyMarketItem('${s.id}')">Comprar</button>
+      </div>
+    </div>`).join('');
+}
+
+window.buyMarketItem = (id) => {
+  const s = STICKER_DB.find(x=>x.id===id);
+  if(!s) return;
+  if(userData.coins<s.valor) { showToast('Moedas insuficientes! 💰','warning'); return; }
+  userData.coins -= s.valor;
+  userData.stickers[s.id]=(userData.stickers[s.id]||0)+1;
+  addXP(100);
+  showToast(`✅ Comprado: ${s.nome}!`,'success');
+  updateUI(); saveUserData(); renderInventory();
+};
+
+window.setMarketTab = (t,btn) => {
+  document.querySelectorAll('.market-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+function rarityColor(r) { return {common:'var(--common)',rare:'var(--rare)',epic:'var(--epic)',legendary:'var(--legendary)',secret:'var(--secret)'}[r]||'var(--text2)'; }
+
+// ACHIEVEMENTS
+const ACHIEVEMENTS = [
+  {id:'first_pack',icon:'🎁',name:'Primeiro Pacote',desc:'Abra seu primeiro pacote',check:()=>userData.totalOpened>=1},
+  {id:'ten_packs',icon:'📦',name:'Colecionador',desc:'Abra 10 pacotes',check:()=>userData.totalOpened>=10},
+  {id:'first_legendary',icon:'👑',name:'Lendário!',desc:'Colecione uma lendária',check:()=>STICKER_DB.some(s=>s.raridade==='legendary'&&(userData.stickers[s.id]||0)>0)},
+  {id:'trader',icon:'🔄',name:'Negociador',desc:'Faça sua primeira troca',check:()=>userData.trades>=1},
+  {id:'level5',icon:'⭐',name:'Veterano',desc:'Chegue ao nível 5',check:()=>userData.level>=5},
+  {id:'fifty_stickers',icon:'🃏',name:'50 Figurinhas',desc:'Colete 50 figurinhas',check:()=>Object.values(userData.stickers).reduce((a,b)=>a+b,0)>=50},
+  {id:'rich',icon:'🪙',name:'Milionário',desc:'Junte 10.000 moedas',check:()=>userData.coins>=10000},
+  {id:'secret',icon:'🌌',name:'???',desc:'???',check:()=>STICKER_DB.some(s=>s.raridade==='secret'&&(userData.stickers[s.id]||0)>0)},
+];
+
+function renderAchievements() {
+  const grid = document.getElementById('achievements-grid');
+  grid.innerHTML = ACHIEVEMENTS.map(a=>{
+    const unlocked = a.check();
+    return `<div class="achievement ${unlocked?'':'locked'}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${unlocked?a.name:'???'}</div>
+      <div class="ach-desc">${unlocked?a.desc:'Bloqueada'}</div>
+    </div>`;
+  }).join('');
+}
+
+// XP & LEVEL
+function addXP(amount) {
+  userData.xp = (userData.xp||0) + amount;
+  const needed = (userData.level||1)*1000;
+  if(userData.xp>=needed) { userData.xp-=needed; userData.level=(userData.level||1)+1; showToast(`🎉 Nível ${userData.level}! Parabéns!`,'legendary-toast'); }
+}
+
+// CHAT
+function loadChat() {
+  const messages = [
+    {name:'ColecionadorBR',msg:'Alguém tem o Pelé pra trocar? 👑',time:'14:23',color:'var(--gold)'},
+    {name:'ArgenSwap',msg:'Tenho 3 lendárias duplicadas! DM me 🔄',time:'14:25',color:'#c084fc'},
+    {name:'StickerPro',msg:'Acabei de abrir um Pacote Lendário... INCRÍVEL! 🤩',time:'14:26',color:'var(--accent)'},
+    {name:'FootballKing',msg:'Evento de hoje ta dando muito raro! 🔥',time:'14:28',color:'var(--green)'},
+    {name:'CopaMaster',msg:'Galera, quem quer formar guilda? ⚽',time:'14:30',color:'var(--epic)'},
+  ];
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = messages.map(m=>`
+    <div class="msg">
+      <div class="msg-avatar" style="background:${m.color}22;color:${m.color}">${m.name.substring(0,2).toUpperCase()}</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-name" style="color:${m.color}">${m.name}</span>
+          <span class="msg-time">${m.time}</span>
+        </div>
+        <div class="msg-text">${m.msg}</div>
+      </div>
+    </div>`).join('');
+  container.scrollTop = container.scrollHeight;
+  
+  // Firebase real-time chat
+  try {
+    onValue(ref(db,'chat/global'), snap => {
+      if(!snap.exists()) return;
+      const msgs = Object.values(snap.val()).sort((a,b)=>a.ts-b.ts).slice(-50);
+      const myMsgs = msgs.map(m=>`
+        <div class="msg">
+          <div class="msg-avatar" style="background:var(--accent2)22;color:var(--accent2)">${(m.name||'?').substring(0,2).toUpperCase()}</div>
+          <div class="msg-content">
+            <div class="msg-header">
+              <span class="msg-name" style="color:var(--accent2)">${m.name||'Anônimo'}</span>
+              <span class="msg-time">${new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+            </div>
+            <div class="msg-text">${escapeHtml(m.text||'')}</div>
+          </div>
+        </div>`).join('');
+      container.innerHTML = messages.map(m=>`
+        <div class="msg">
+          <div class="msg-avatar" style="background:${m.color}22;color:${m.color}">${m.name.substring(0,2).toUpperCase()}</div>
+          <div class="msg-content">
+            <div class="msg-header">
+              <span class="msg-name" style="color:${m.color}">${m.name}</span>
+              <span class="msg-time">${m.time}</span>
+            </div>
+            <div class="msg-text">${m.msg}</div>
+          </div>
+        </div>`).join('') + myMsgs;
+      container.scrollTop = container.scrollHeight;
+    });
+  } catch(e){}
+}
+
+function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.sendChat = async () => {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  const name = currentUser?.displayName?.split(' ')[0]||'Colecionador';
+  
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<div class="msg-avatar" style="background:var(--gold)22;color:var(--gold)">${name.substring(0,2).toUpperCase()}</div>
+    <div class="msg-content">
+      <div class="msg-header"><span class="msg-name" style="color:var(--gold)">${name}</span><span class="msg-time">agora</span></div>
+      <div class="msg-text">${escapeHtml(text)}</div>
+    </div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  
+  try {
+    await push(ref(db,'chat/global'), { name, text, ts: Date.now(), uid: currentUser?.uid });
+  } catch(e){}
+};
+
+// TRADE
+window.addToTrade = () => showToast('Selecione uma figurinha do inventário para trocar! 🔄','warning');
+window.proposeTrade = () => { userData.trades++; addXP(200); showToast('Pedido de troca enviado! ✅','success'); updateUI(); saveUserData(); };
+window.clearTrade = () => showToast('Troca cancelada.','warning');
+window.tradeSelected = () => { closeModal(); showScreen('trade'); showToast('Selecione o parceiro de troca! 🔄','warning'); };
+window.sellSelected = () => {
+  if(!selectedSticker) return;
+  const val = Math.floor(selectedSticker.valor*0.7);
+  userData.stickers[selectedSticker.id]--;
+  if(userData.stickers[selectedSticker.id]<=0) delete userData.stickers[selectedSticker.id];
+  userData.coins+=val;
+  showToast(`💰 Vendido por 🪙 ${val}`,'success');
+  closeModal(); updateUI(); saveUserData(); renderInventory(); renderAlbum();
+};
+
+// SCREEN NAVIGATION
+window.showScreen = (name) => {
+  currentScreen = name;
+  document.querySelectorAll('#main > #content > div').forEach(d=>{ d.style.display='none'; d.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  
+  const screens = { home:'screen-home', album:'screen-album', packs:'screen-packs', inventory:'screen-inventory', trade:'screen-trade', ranking:'screen-ranking', chat:'screen-chat', market:'screen-market', profile:'screen-profile' };
+  const s = document.getElementById(screens[name]);
+  if(s) { s.style.display='flex'; s.classList.add('active'); }
+  const nav = document.getElementById('nav-'+name);
+  if(nav) nav.classList.add('active');
+  
+  if(name==='chat') { setTimeout(()=>{ const c=document.getElementById('chat-messages'); if(c)c.scrollTop=c.scrollHeight; },100); }
+  if(name==='ranking') renderRanking();
+  if(name==='album') renderAlbum();
+  if(name==='inventory') renderInventory();
+  if(name==='profile') { updateUI(); renderAchievements(); }
+};
+
+// TOAST
+window.showToast = (msg, type='success') => {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = {success:'✅','warning':'⚠️','legendary-toast':'👑'};
+  toast.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(()=>{ toast.style.animation='toastOut 0.3s ease forwards'; setTimeout(()=>toast.remove(),300); },3500);
+};
+
+// PARTICLES
+function initParticles() {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const colors = ['#FFD700','#00d4ff','#7c3aed','#00ff88','rgba(255,215,0,0.5)'];
+  const particles = [];
+  
+  for(let i=0; i<40; i++) {
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height+canvas.height,
+      r: Math.random()*3+1,
+      c: colors[Math.floor(Math.random()*colors.length)],
+      s: Math.random()*0.5+0.2,
+      o: Math.random()*0.5+0.1,
+      drift: (Math.random()-0.5)*0.5
+    });
+  }
+  
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let p of particles) {
+      p.y -= p.s;
+      p.x += p.drift;
+      if(p.y<-10) { p.y=canvas.height+10; p.x=Math.random()*canvas.width; }
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.c;
+      ctx.globalAlpha=p.o;
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(animate);
+  }
+  animate();
+  
+  window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+}
+
+// INIT - dar moedas iniciais e stickers demo
+setTimeout(()=>{
+  if(Object.keys(userData.stickers||{}).length===0) {
+    // Starter pack
+    const starters = STICKER_DB.slice(0,15);
+    for(let s of starters) userData.stickers[s.id]=1;
+    userData.coins = Math.max(userData.coins||0, 500);
+  }
+},100);
+
+</script>
+</body>
+</html>
